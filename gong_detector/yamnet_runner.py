@@ -7,10 +7,10 @@ processing audio, and running inference to detect gong sounds.
 import os
 from typing import Any, List, Optional, Tuple
 
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-import tensorflow_hub as hub
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
+import tensorflow as tf  # type: ignore
+import tensorflow_hub as hub  # type: ignore
 
 
 class YAMNetGongDetector:
@@ -20,7 +20,7 @@ class YAMNetGongDetector:
         """Initialize the YAMNet gong detector."""
         self.model: Optional[Any] = None
         self.class_names: Optional[List[str]] = None
-        self.gong_class_index: int = 138  # YAMNet class index for "gong"
+        self.gong_class_index: int = 172  # YAMNet class index for "gong"
         
     def load_model(self) -> None:
         """Load the YAMNet model from TensorFlow Hub."""

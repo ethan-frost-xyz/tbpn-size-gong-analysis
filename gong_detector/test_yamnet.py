@@ -11,11 +11,12 @@ from typing import List, Tuple
 from yamnet_runner import YAMNetGongDetector
 
 
-def test_yamnet_gong_detection(audio_path: str = "audio.wav") -> None:
+def test_yamnet_gong_detection(audio_path: str = "audio.wav", confidence_threshold: float = 0.5) -> None:
     """Test the complete YAMNet gong detection pipeline.
     
     Args:
         audio_path: Path to the test audio file (should be mono, 16kHz)
+        confidence_threshold: Minimum confidence for gong detection
     """
     print("🎵 Testing YAMNet Gong Detection")
     print("=" * 50)
@@ -49,13 +50,13 @@ def test_yamnet_gong_detection(audio_path: str = "audio.wav") -> None:
         # Run inference
         scores, embeddings, spectrogram = detector.run_inference(waveform)
         
-        # Detect gongs with confidence > 0.5
-        detections = detector.detect_gongs(scores, confidence_threshold=0.5)
+        # Detect gongs with specified confidence threshold
+        detections = detector.detect_gongs(scores, confidence_threshold=confidence_threshold)
         
         # Print results
         if detections:
             print("\n" + "="*50)
-            print("GONG DETECTIONS (confidence > 0.5)")
+            print(f"GONG DETECTIONS (confidence > {confidence_threshold})")
             print("="*50)
             print(f"{'Timestamp (s)':<15} {'Confidence':<12}")
             print("-" * 27)
@@ -77,7 +78,7 @@ def test_yamnet_gong_detection(audio_path: str = "audio.wav") -> None:
                 df.to_csv(output_path, index=False)
                 print(f"💾 Test detections saved to: {output_path}")
         else:
-            print("No gong detections found with confidence > 0.5")
+            print(f"No gong detections found with confidence > {confidence_threshold}")
             
         print(f"\n🎉 Test completed successfully!")
         print(f"Found {len(detections)} gong detections")
@@ -95,8 +96,16 @@ if __name__ == "__main__":
     """Main execution point for testing YAMNet gong detection."""
     # Default to audio.wav, or use command line argument
     audio_file = "audio.wav"
+    confidence_threshold = 0.5
+    
     if len(sys.argv) > 1:
         audio_file = sys.argv[1]
+    if len(sys.argv) > 2:
+        try:
+            confidence_threshold = float(sys.argv[2])
+        except ValueError:
+            print("Warning: Invalid threshold value, using default 0.5")
     
     print(f"Using audio file: {audio_file}")
-    test_yamnet_gong_detection(audio_file) 
+    print(f"Confidence threshold: {confidence_threshold}")
+    test_yamnet_gong_detection(audio_file, confidence_threshold) 

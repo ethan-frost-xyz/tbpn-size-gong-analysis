@@ -12,7 +12,7 @@ A step-by-step tutorial for building an audio event detection pipeline using YAM
 
 ## 📋 Prerequisites
 
-- Python 3.9+
+- Python 3.9+ (Python 3.12 recommended)
 - Basic understanding of Python
 - Familiarity with command line tools
 - macOS (for ffmpeg support)
@@ -276,14 +276,20 @@ After completing each part, test your knowledge:
 
 **TensorFlow Import Error**:
 ```bash
-# Install TensorFlow with proper version
-pip install tensorflow==2.13.0
+# Install TensorFlow with proper version for Python 3.12
+pip install tensorflow>=2.15.0
 ```
 
 **ffmpeg Not Found**:
 ```bash
 # Install ffmpeg on macOS
 brew install ffmpeg
+```
+
+**SSL Certificate Issues (macOS)**:
+```bash
+# Install certificates for Python 3.12
+/Applications/Python\ 3.12/Install\ Certificates.command
 ```
 
 **Audio File Issues**:
