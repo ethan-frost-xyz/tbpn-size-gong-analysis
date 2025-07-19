@@ -1,221 +1,24 @@
+#!/usr/bin/env python3
 """Test YAMNet gong detection functionality.
 
-This module provides a comprehensive test of YAMNet-based gong detection
-in audio files. It demonstrates loading audio, model inference, and
-confidence-based detection of gong sounds.
+This is the definitive "hello world" test to prove the audio + model setup works.
+Tests YAMNet model loading, audio processing, and gong detection on a sample file.
 """
 
-import os
 import sys
-from typing import List, Tuple, Optional, Any
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-import tensorflow_hub as hub
+from typing import List, Tuple
+
+from yamnet_runner import YAMNetGongDetector
 
 
-class YAMNetGongDetector:
-    """YAMNet-based gong sound detector for audio analysis."""
-    
-    def __init__(self) -> None:
-        """Initialize the YAMNet gong detector."""
-        self.model: Optional[Any] = None
-        self.class_names: Optional[List[str]] = None
-        self.gong_class_index: int = 138  # YAMNet class index for "gong"
-        
-    def load_model(self) -> None:
-        """Load the YAMNet model from TensorFlow Hub."""
-        print("Loading YAMNet model from TensorFlow Hub...")
-        try:
-            # Load YAMNet model and class names
-            self.model = hub.load("https://tfhub.dev/google/yamnet/1")
-            
-            # Load class names
-            if self.model is not None:
-                class_map_path = self.model.class_map_path().numpy().decode('utf-8')
-                self.class_names = list(pd.read_csv(class_map_path)['display_name'])
-                
-                print(f"Model loaded successfully. Total classes: {len(self.class_names)}")
-                print(f"Gong class (index {self.gong_class_index}): {self.class_names[self.gong_class_index]}")
-            else:
-                raise RuntimeError("Failed to load model")
-            
-        except Exception as e:
-            print(f"Error loading model: {e}")
-            raise
-            
-    def load_and_preprocess_audio(self, audio_path: str) -> Tuple[np.ndarray, int]:
-        """Load and preprocess audio file for YAMNet inference.
-        
-        Args:
-            audio_path: Path to the audio file
-            
-        Returns:
-            Tuple of (preprocessed_waveform, sample_rate)
-            
-        Raises:
-            FileNotFoundError: If audio file doesn't exist
-            ValueError: If audio processing fails
-        """
-        if not os.path.exists(audio_path):
-            raise FileNotFoundError(f"Audio file not found: {audio_path}")
-            
-        print(f"Loading audio file: {audio_path}")
-        
-        try:
-            # Load audio file using TensorFlow
-            audio_binary = tf.io.read_file(audio_path)
-            audio_decoded = tf.audio.decode_wav(
-                audio_binary,
-                desired_channels=1,  # Convert to mono
-                desired_samples=-1   # Keep original length
-            )
-            
-            # Extract waveform and sample rate (TensorFlow returns tuple-like object)
-            waveform = audio_decoded[0].numpy().flatten()  # type: ignore
-            sample_rate = int(audio_decoded[1].numpy())  # type: ignore
-            
-            # Ensure 16kHz sample rate (YAMNet requirement)
-            if sample_rate != 16000:
-                print(f"Resampling from {sample_rate}Hz to 16000Hz...")
-                # Simple linear interpolation resampling
-                target_length = int(len(waveform) * 16000 / sample_rate)
-                indices = np.linspace(0, len(waveform) - 1, target_length)
-                waveform = np.interp(indices, np.arange(len(waveform)), waveform)
-                sample_rate = 16000
-                
-            # Normalize audio to [-1, 1] range
-            waveform = waveform.astype(np.float32)
-            if np.max(np.abs(waveform)) > 0:
-                waveform = waveform / np.max(np.abs(waveform))
-                
-            print(f"Audio loaded: {len(waveform)} samples at {sample_rate}Hz")
-            print(f"Duration: {len(waveform) / sample_rate:.2f} seconds")
-            
-            return waveform, sample_rate
-            
-        except Exception as e:
-            raise ValueError(f"Failed to process audio file {audio_path}: {e}")
-            
-    def run_inference(self, waveform: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Run YAMNet inference on audio waveform.
-        
-        Args:
-            waveform: Audio waveform as numpy array
-            
-        Returns:
-            Tuple of (scores, embeddings, spectrogram)
-            
-        Raises:
-            RuntimeError: If model is not loaded or inference fails
-        """
-        if self.model is None:
-            raise RuntimeError("Model not loaded. Call load_model() first.")
-            
-        print("Running YAMNet inference...")
-        
-        try:
-            # Convert to TensorFlow tensor
-            waveform_tensor = tf.constant(waveform, dtype=tf.float32)
-            
-            # Run inference
-            scores, embeddings, spectrogram = self.model(waveform_tensor)
-            
-            print(f"Inference complete. Generated {scores.shape[0]} predictions")
-            print(f"Each prediction covers ~0.96 seconds of audio")
-            
-            return scores.numpy(), embeddings.numpy(), spectrogram.numpy()
-            
-        except Exception as e:
-            raise RuntimeError(f"YAMNet inference failed: {e}")
-            
-    def detect_gongs(
-        self, 
-        scores: np.ndarray, 
-        confidence_threshold: float = 0.5,
-        sample_rate: int = 16000
-    ) -> List[Tuple[float, float]]:
-        """Detect gong sounds based on YAMNet scores.
-        
-        Args:
-            scores: YAMNet prediction scores
-            confidence_threshold: Minimum confidence for gong detection
-            sample_rate: Audio sample rate in Hz
-            
-        Returns:
-            List of (timestamp, confidence) tuples for detected gongs
-        """
-        print(f"Detecting gongs with confidence threshold: {confidence_threshold}")
-        
-        # Extract gong class scores
-        gong_scores = scores[:, self.gong_class_index]
-        
-        # Find detections above threshold
-        detections = []
-        for i, confidence in enumerate(gong_scores):
-            if confidence > confidence_threshold:
-                # Calculate timestamp (YAMNet produces ~1 prediction per 0.96 seconds)
-                timestamp = i * 0.96  # seconds
-                detections.append((timestamp, float(confidence)))
-                
-        print(f"Found {len(detections)} gong detections above threshold")
-        
-        return detections
-        
-    def print_detections(self, detections: List[Tuple[float, float]]) -> None:
-        """Print gong detections in a formatted table.
-        
-        Args:
-            detections: List of (timestamp, confidence) tuples
-        """
-        if not detections:
-            print("No gong detections found.")
-            return
-            
-        print("\n" + "="*50)
-        print("GONG DETECTIONS")
-        print("="*50)
-        print(f"{'Timestamp (s)':<15} {'Confidence':<12}")
-        print("-" * 27)
-        
-        for timestamp, confidence in detections:
-            print(f"{timestamp:<15.2f} {confidence:<12.4f}")
-            
-        print("="*50)
-        
-    def detections_to_dataframe(self, detections: List[Tuple[float, float]]) -> pd.DataFrame:
-        """Convert detections to a pandas DataFrame.
-        
-        Args:
-            detections: List of (timestamp, confidence) tuples
-            
-        Returns:
-            DataFrame with timestamp and confidence columns
-        """
-        if not detections:
-            # Create empty DataFrame with proper columns
-            df = pd.DataFrame()
-            df['timestamp_seconds'] = pd.Series([], dtype='float64')
-            df['confidence'] = pd.Series([], dtype='float64')
-            return df
-        
-        # Create DataFrame from detections
-        timestamps = [d[0] for d in detections]
-        confidences = [d[1] for d in detections]
-        df = pd.DataFrame()
-        df['timestamp_seconds'] = timestamps
-        df['confidence'] = confidences
-        return df
-
-
-def test_gong_detection_pipeline(audio_path: str = "audio.wav") -> None:
-    """Test the complete gong detection pipeline.
+def test_yamnet_gong_detection(audio_path: str = "audio.wav") -> None:
+    """Test the complete YAMNet gong detection pipeline.
     
     Args:
-        audio_path: Path to the test audio file
+        audio_path: Path to the test audio file (should be mono, 16kHz)
     """
-    print("🎵 Starting YAMNet Gong Detection Test")
-    print("="*50)
+    print("🎵 Testing YAMNet Gong Detection")
+    print("=" * 50)
     
     try:
         # Initialize detector
@@ -224,7 +27,7 @@ def test_gong_detection_pipeline(audio_path: str = "audio.wav") -> None:
         # Load model
         detector.load_model()
         
-        # Verify gong class exists
+        # Verify gong class exists and is accessible
         if detector.class_names is None:
             raise RuntimeError("Class names not loaded")
             
@@ -235,31 +38,53 @@ def test_gong_detection_pipeline(audio_path: str = "audio.wav") -> None:
         
         print(f"✅ Gong class verification passed: '{detector.class_names[detector.gong_class_index]}'")
         
-        # Load and preprocess audio
+        # Load and preprocess audio (should be mono, 16kHz)
         waveform, sample_rate = detector.load_and_preprocess_audio(audio_path)
+        
+        # Verify audio properties
+        print(f"Audio shape: {waveform.shape}")
+        print(f"Sample rate: {sample_rate}Hz")
+        print(f"Duration: {len(waveform) / sample_rate:.2f} seconds")
         
         # Run inference
         scores, embeddings, spectrogram = detector.run_inference(waveform)
         
-        # Detect gongs
-        detections = detector.detect_gongs(scores, confidence_threshold=0.5, sample_rate=sample_rate)
+        # Detect gongs with confidence > 0.5
+        detections = detector.detect_gongs(scores, confidence_threshold=0.5)
         
         # Print results
-        detector.print_detections(detections)
-        
-        # Create DataFrame
         if detections:
+            print("\n" + "="*50)
+            print("GONG DETECTIONS (confidence > 0.5)")
+            print("="*50)
+            print(f"{'Timestamp (s)':<15} {'Confidence':<12}")
+            print("-" * 27)
+            
+            for timestamp, confidence in detections:
+                print(f"{timestamp:<15.2f} {confidence:<12.4f}")
+            
+            print("="*50)
+            
+            # Convert to DataFrame and display
             df = detector.detections_to_dataframe(detections)
             print(f"\n📊 Detection DataFrame shape: {df.shape}")
-            print("First few detections:")
-            print(df.head())
+            if not df.empty:
+                print("DataFrame contents:")
+                print(df.to_string(index=False))
+                
+                # Save to CSV
+                output_path = "test_gong_detections.csv"
+                df.to_csv(output_path, index=False)
+                print(f"💾 Test detections saved to: {output_path}")
+        else:
+            print("No gong detections found with confidence > 0.5")
             
-            # Optionally save to CSV
-            output_path = "gong_detections.csv"
-            df.to_csv(output_path, index=False)
-            print(f"💾 Detections saved to: {output_path}")
+        print(f"\n🎉 Test completed successfully!")
+        print(f"Found {len(detections)} gong detections")
         
-        print("\n🎉 Test completed successfully!")
+        # Assert that we can access the gong class (main requirement)
+        gong_scores = scores[:, detector.gong_class_index]
+        print(f"✅ Successfully accessed gong class scores: {len(gong_scores)} predictions")
         
     except Exception as e:
         print(f"❌ Test failed: {e}")
@@ -268,12 +93,10 @@ def test_gong_detection_pipeline(audio_path: str = "audio.wav") -> None:
 
 if __name__ == "__main__":
     """Main execution point for testing YAMNet gong detection."""
-    # You can specify a different audio file path here
+    # Default to audio.wav, or use command line argument
     audio_file = "audio.wav"
-    
-    # Check if custom audio path provided via command line
     if len(sys.argv) > 1:
         audio_file = sys.argv[1]
-        
-    # Run the test
-    test_gong_detection_pipeline(audio_file)
+    
+    print(f"Using audio file: {audio_file}")
+    test_yamnet_gong_detection(audio_file) 
