@@ -36,6 +36,13 @@ Thumbs.db
 *.flac
 *.aac
 *.ogg
+*.webm
+*.m4a
+*.wma
+
+# Sample audio files
+samples/
+gong_detector/samples/
 
 # Data files
 *.csv
