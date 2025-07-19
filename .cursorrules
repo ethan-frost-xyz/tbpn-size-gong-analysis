@@ -12,11 +12,11 @@ Comprehensive testing with pytest.
 
 Detailed documentation using docstrings and README files.
 
-Dependency management via https://github.com/astral-sh/uv and virtual environments.
+Dependency management via pip and requirements.txt (or uv if preferred).
 
 Code style consistency using Ruff.
 
-CI/CD implementation with GitHub Actions or GitLab CI.
+CI/CD implementation with GitHub Actions or GitLab CI (when appropriate for project scope).
 
 AI-friendly coding practices:
 
@@ -28,7 +28,7 @@ For any python file, be sure to ALWAYS add typing annotations to each function o
 
 Make sure you keep any comments that exist in a file.
 
-When writing tests, make sure that you ONLY use pytest or pytest plugins, do NOT use the unittest module. All tests should have typing annotations as well. All tests should be in ./tests. Be sure to create all necessary files and folders. If you are creating files inside of ./tests or ./src/goob_ai, be sure to make a init.py file if one does not exist.
+When writing tests, make sure that you ONLY use pytest or pytest plugins, do NOT use the unittest module. All tests should have typing annotations as well. All tests should be in ./tests. Be sure to create all necessary files and folders. If you are creating files inside of ./tests or ./src directories, be sure to make a __init__.py file if one does not exist.
 
 All tests should be fully annotated and should contain docstrings. Be sure to import the following if TYPE_CHECKING:
 
@@ -37,3 +37,9 @@ from _pytest.fixtures import FixtureRequest
 from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+
+Project Structure Guidelines:
+- Use appropriate structure for project scope (flat for simple tools, src/ for complex applications)
+- Keep dependencies minimal and focused on project needs
+- Implement CI/CD only when it adds value to the project workflow
+- Choose dependency management approach based on team preferences and project requirements

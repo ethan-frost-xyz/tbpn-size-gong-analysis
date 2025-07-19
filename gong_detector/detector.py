@@ -1,13 +1,13 @@
-"""Test YAMNet gong detection functionality.
+"""YAMNet-based gong detection module.
 
-This module provides a comprehensive test of YAMNet-based gong detection
-in audio files. It demonstrates loading audio, model inference, and
+This module provides a comprehensive YAMNet-based gong detection system
+for audio analysis. It handles audio preprocessing, model inference, and
 confidence-based detection of gong sounds.
 """
 
 import os
-import sys
-from typing import List, Tuple, Optional, Any
+from typing import Any, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -15,16 +15,31 @@ import tensorflow_hub as hub
 
 
 class YAMNetGongDetector:
-    """YAMNet-based gong sound detector for audio analysis."""
+    """YAMNet-based gong sound detector for audio analysis.
+    
+    This class encapsulates the functionality needed to detect gong sounds
+    in audio files using Google's YAMNet model from TensorFlow Hub.
+    """
     
     def __init__(self) -> None:
-        """Initialize the YAMNet gong detector."""
+        """Initialize the YAMNet gong detector.
+        
+        Sets up the detector with default parameters and prepares it
+        for model loading and inference.
+        """
         self.model: Optional[Any] = None
         self.class_names: Optional[List[str]] = None
         self.gong_class_index: int = 138  # YAMNet class index for "gong"
         
     def load_model(self) -> None:
-        """Load the YAMNet model from TensorFlow Hub."""
+        """Load the YAMNet model from TensorFlow Hub.
+        
+        Downloads and initializes the YAMNet model and its associated
+        class names for audio classification.
+        
+        Raises:
+            RuntimeError: If model loading fails
+        """
         print("Loading YAMNet model from TensorFlow Hub...")
         try:
             # Load YAMNet model and class names
@@ -42,13 +57,13 @@ class YAMNetGongDetector:
             
         except Exception as e:
             print(f"Error loading model: {e}")
-            raise
+            raise RuntimeError(f"Model loading failed: {e}")
             
     def load_and_preprocess_audio(self, audio_path: str) -> Tuple[np.ndarray, int]:
         """Load and preprocess audio file for YAMNet inference.
         
         Args:
-            audio_path: Path to the audio file
+            audio_path: Path to the audio file to process
             
         Returns:
             Tuple of (preprocessed_waveform, sample_rate)
@@ -138,9 +153,9 @@ class YAMNetGongDetector:
         """Detect gong sounds based on YAMNet scores.
         
         Args:
-            scores: YAMNet prediction scores
+            scores: YAMNet prediction scores array
             confidence_threshold: Minimum confidence for gong detection
-            sample_rate: Audio sample rate in Hz
+            sample_rate: Audio sample rate in Hz (not used in calculation but kept for API consistency)
             
         Returns:
             List of (timestamp, confidence) tuples for detected gongs
@@ -151,7 +166,7 @@ class YAMNetGongDetector:
         gong_scores = scores[:, self.gong_class_index]
         
         # Find detections above threshold
-        detections = []
+        detections: List[Tuple[float, float]] = []
         for i, confidence in enumerate(gong_scores):
             if confidence > confidence_threshold:
                 # Calculate timestamp (YAMNet produces ~1 prediction per 0.96 seconds)
@@ -166,7 +181,7 @@ class YAMNetGongDetector:
         """Print gong detections in a formatted table.
         
         Args:
-            detections: List of (timestamp, confidence) tuples
+            detections: List of (timestamp, confidence) tuples to display
         """
         if not detections:
             print("No gong detections found.")
@@ -190,7 +205,7 @@ class YAMNetGongDetector:
             detections: List of (timestamp, confidence) tuples
             
         Returns:
-            DataFrame with timestamp and confidence columns
+            DataFrame with timestamp_seconds and confidence columns
         """
         if not detections:
             # Create empty DataFrame with proper columns
@@ -208,13 +223,19 @@ class YAMNetGongDetector:
         return df
 
 
-def test_gong_detection_pipeline(audio_path: str = "audio.wav") -> None:
-    """Test the complete gong detection pipeline.
+def run_detection_pipeline(audio_path: str = "audio.wav") -> None:
+    """Run the complete gong detection pipeline on an audio file.
+    
+    This is a convenience function that demonstrates the full workflow
+    of loading the model, processing audio, and detecting gongs.
     
     Args:
-        audio_path: Path to the test audio file
+        audio_path: Path to the audio file to analyze
+        
+    Raises:
+        Various exceptions from the detection pipeline
     """
-    print("🎵 Starting YAMNet Gong Detection Test")
+    print("🎵 Starting YAMNet Gong Detection Pipeline")
     print("="*50)
     
     try:
@@ -259,21 +280,8 @@ def test_gong_detection_pipeline(audio_path: str = "audio.wav") -> None:
             df.to_csv(output_path, index=False)
             print(f"💾 Detections saved to: {output_path}")
         
-        print("\n🎉 Test completed successfully!")
+        print("\n🎉 Detection pipeline completed successfully!")
         
     except Exception as e:
-        print(f"❌ Test failed: {e}")
-        raise
-
-
-if __name__ == "__main__":
-    """Main execution point for testing YAMNet gong detection."""
-    # You can specify a different audio file path here
-    audio_file = "audio.wav"
-    
-    # Check if custom audio path provided via command line
-    if len(sys.argv) > 1:
-        audio_file = sys.argv[1]
-        
-    # Run the test
-    test_gong_detection_pipeline(audio_file)
+        print(f"❌ Detection pipeline failed: {e}")
+        raise 
