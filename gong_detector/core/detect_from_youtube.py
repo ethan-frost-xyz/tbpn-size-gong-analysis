@@ -10,12 +10,37 @@ import os
 import subprocess
 import sys
 import tempfile
+import glob
 from typing import List, Optional, Tuple
 
 import pandas as pd  # type: ignore
 import yt_dlp  # type: ignore
 
 from yamnet_runner import YAMNetGongDetector
+
+
+def cleanup_old_temp_files(temp_dir: str, max_age_hours: int = 24) -> None:
+    """Clean up old temporary audio files.
+    
+    Args:
+        temp_dir: Directory containing temp files
+        max_age_hours: Maximum age in hours before cleanup
+    """
+    import time
+    current_time = time.time()
+    max_age_seconds = max_age_hours * 3600
+    
+    # Find all temp audio files
+    temp_files = glob.glob(os.path.join(temp_dir, "temp_youtube_audio_*.wav"))
+    
+    for temp_file in temp_files:
+        file_age = current_time - os.path.getmtime(temp_file)
+        if file_age > max_age_seconds:
+            try:
+                os.remove(temp_file)
+                print(f"Cleaned up old temp file: {temp_file}")
+            except OSError:
+                pass  # File might already be gone
 
 
 def download_and_trim_youtube_audio(
@@ -86,68 +111,22 @@ def download_and_trim_youtube_audio(
 
 
 def format_time(seconds: float) -> str:
-    """Format seconds as MM:SS string.
+    """Format seconds as HH:MM:SS string.
     
     Args:
         seconds: Time in seconds
         
     Returns:
-        Formatted time string
+        Formatted time string in HH:MM:SS format
     """
-    minutes = int(seconds // 60)
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
     secs = int(seconds % 60)
-    return f"{minutes:02d}:{secs:02d}"
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 
-def print_detection_results(detections: List[Tuple[float, float]]) -> None:
-    """Print detection results in a formatted table.
-    
-    Args:
-        detections: List of (timestamp, confidence) tuples
-    """
-    if not detections:
-        print("No gong detections found.")
-        return
-        
-    print("\n" + "="*60)
-    print("GONG DETECTIONS")
-    print("="*60)
-    print(f"{'Timestamp':<12} {'Time':<8} {'Confidence':<12}")
-    print("-" * 32)
-    
-    for timestamp, confidence in detections:
-        time_str = format_time(timestamp)
-        print(f"{timestamp:<12.2f} {time_str:<8} {confidence:<12.4f}")
-        
-    print("="*60)
-
-
-def save_detections_to_csv(
-    detections: List[Tuple[float, float]], 
-    csv_path: str
-) -> None:
-    """Save detections to CSV file.
-    
-    Args:
-        detections: List of (timestamp, confidence) tuples
-        csv_path: Output CSV file path
-    """
-    if not detections:
-        print("No detections to save.")
-        return
-        
-    # Convert to DataFrame
-    df = pd.DataFrame({
-        'timestamp_seconds': [d[0] for d in detections],
-        'confidence': [d[1] for d in detections]
-    })
-    
-    # Add formatted time column
-    df['time_mmss'] = df['timestamp_seconds'].apply(format_time)
-    
-    # Save to CSV
-    df.to_csv(csv_path, index=False)
-    print(f"Results saved to: {csv_path}")
+# Note: print_detection_results and save_detections_to_csv functions removed
+# as they are now handled by the YAMNetGongDetector class methods
 
 
 def print_summary(
@@ -216,9 +195,18 @@ Examples:
     
     args = parser.parse_args()
     
-    # Temporary audio file with unique name
+    # Create organized folders if they don't exist
+    temp_audio_dir = "temp_audio"
+    csv_results_dir = "csv_results"
+    os.makedirs(temp_audio_dir, exist_ok=True)
+    os.makedirs(csv_results_dir, exist_ok=True)
+    
+    # Clean up old temp files
+    cleanup_old_temp_files(temp_audio_dir)
+    
+    # Temporary audio file with unique name in temp_audio folder
     import uuid
-    temp_audio = f"temp_youtube_audio_{uuid.uuid4().hex[:8]}.wav"
+    temp_audio = os.path.join(temp_audio_dir, f"temp_youtube_audio_{uuid.uuid4().hex[:8]}.wav")
     
     try:
         # Download and process audio
@@ -243,18 +231,30 @@ Examples:
         print("\nStep 4: Running gong detection...")
         scores, _, _ = detector.run_inference(waveform)
         
-        # Detect gongs
-        detections = detector.detect_gongs(scores, args.threshold)
+        # Detect gongs with duration validation
+        total_duration = len(waveform) / sample_rate
+        detections = detector.detect_gongs(
+            scores=scores, 
+            confidence_threshold=args.threshold, 
+            audio_duration=total_duration
+        )
         
-        # Print results
-        print_detection_results(detections)
+        # Print results using detector's formatted output
+        detector.print_detections(detections)
         
         # Save to CSV if requested
         if args.save_csv:
-            save_detections_to_csv(detections, args.save_csv)
+            # Put CSV file in csv_results folder
+            csv_filename = args.save_csv
+            if not csv_filename.endswith('.csv'):
+                csv_filename += '.csv'
+            csv_path = os.path.join(csv_results_dir, csv_filename)
+            
+            df = detector.detections_to_dataframe(detections)
+            df.to_csv(csv_path, index=False)
+            print(f"Results saved to: {csv_path}")
         
         # Print summary
-        total_duration = len(waveform) / sample_rate
         start_offset = args.start_time or 0
         print_summary(detections, total_duration, start_offset)
         
@@ -266,9 +266,11 @@ Examples:
         print(f"Error: {e}")
         sys.exit(1)
         
+    finally:
         # Clean up temporary file
         if os.path.exists(temp_audio):
             os.remove(temp_audio)
+            print(f"Cleaned up temporary file: {temp_audio}")
 
 
 if __name__ == "__main__":

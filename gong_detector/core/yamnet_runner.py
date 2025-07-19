@@ -123,13 +123,15 @@ class YAMNetGongDetector:
     def detect_gongs(
         self, 
         scores: np.ndarray, 
-        confidence_threshold: float = 0.5
+        confidence_threshold: float = 0.5,
+        audio_duration: Optional[float] = None
     ) -> List[Tuple[float, float]]:
         """Detect gong sounds based on YAMNet scores.
         
         Args:
             scores: YAMNet prediction scores array
             confidence_threshold: Minimum confidence for gong detection
+            audio_duration: Total audio duration in seconds (for validation)
             
         Returns:
             List of (timestamp, confidence) tuples for detected gongs
@@ -141,12 +143,19 @@ class YAMNetGongDetector:
         
         # Find detections above threshold
         detections: List[Tuple[float, float]] = []
+        
+        # Calculate actual hop length from audio duration and number of predictions
+        if audio_duration is not None and len(gong_scores) > 0:
+            hop_length = audio_duration / len(gong_scores)
+        else:
+            hop_length = 0.48  # Default YAMNet hop length
+            
         for i, confidence in enumerate(gong_scores):
             if confidence > confidence_threshold:
-                # Calculate timestamp (YAMNet produces ~1 prediction per 0.96 seconds)
-                timestamp = i * 0.96  # seconds
+                # Calculate timestamp using actual hop length
+                timestamp = i * hop_length
                 detections.append((timestamp, float(confidence)))
-                
+                    
         print(f"Found {len(detections)} gong detections above threshold")
         
         return detections
@@ -190,6 +199,7 @@ class YAMNetGongDetector:
         # Create DataFrame from detections
         timestamps = [d[0] for d in detections]
         confidences = [d[1] for d in detections]
+        
         df = pd.DataFrame()
         df['timestamp_seconds'] = timestamps
         df['confidence'] = confidences
