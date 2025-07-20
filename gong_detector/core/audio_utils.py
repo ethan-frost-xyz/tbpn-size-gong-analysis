@@ -12,6 +12,7 @@ import numpy as np
 # Constants
 SILENCE_FLOOR_DBFS = -80.0  # Silence floor threshold in dBFS
 MIN_AMPLITUDE = 1e-8  # Minimum amplitude to avoid log(0) errors
+DEFAULT_SAMPLE_RATE = 16000  # Default sample rate for audio processing
 
 
 def compute_peak_dbfs(waveform: np.ndarray) -> float:
@@ -26,17 +27,12 @@ def compute_peak_dbfs(waveform: np.ndarray) -> float:
     if len(waveform) == 0:
         return SILENCE_FLOOR_DBFS
         
-    # Find peak amplitude
     peak_amplitude = np.max(np.abs(waveform))
     
-    # Handle silence case
     if peak_amplitude < MIN_AMPLITUDE:
         return SILENCE_FLOOR_DBFS
         
-    # Convert to dBFS: 20 * log10(amplitude)
-    peak_dbfs = 20.0 * np.log10(peak_amplitude)
-    
-    return float(peak_dbfs)
+    return float(20.0 * np.log10(peak_amplitude))
 
 
 def compute_rms_dbfs(waveform: np.ndarray) -> float:
@@ -51,17 +47,12 @@ def compute_rms_dbfs(waveform: np.ndarray) -> float:
     if len(waveform) == 0:
         return SILENCE_FLOOR_DBFS
         
-    # Compute RMS amplitude
     rms_amplitude = np.sqrt(np.mean(waveform ** 2))
     
-    # Handle silence case
     if rms_amplitude < MIN_AMPLITUDE:
         return SILENCE_FLOOR_DBFS
         
-    # Convert to dBFS: 20 * log10(amplitude)
-    rms_dbfs = 20.0 * np.log10(rms_amplitude)
-    
-    return float(rms_dbfs)
+    return float(20.0 * np.log10(rms_amplitude))
 
 
 def compute_audio_levels(waveform: np.ndarray) -> Tuple[float, float]:
@@ -73,10 +64,26 @@ def compute_audio_levels(waveform: np.ndarray) -> Tuple[float, float]:
     Returns:
         Tuple of (peak_dbfs, rms_dbfs)
     """
-    peak_dbfs = compute_peak_dbfs(waveform)
-    rms_dbfs = compute_rms_dbfs(waveform)
+    if len(waveform) == 0:
+        return SILENCE_FLOOR_DBFS, SILENCE_FLOOR_DBFS
+        
+    # Compute both levels efficiently in single pass
+    abs_waveform = np.abs(waveform)
+    peak_amplitude = np.max(abs_waveform)
+    rms_amplitude = np.sqrt(np.mean(waveform ** 2))
     
-    return peak_dbfs, rms_dbfs
+    # Handle silence case
+    if peak_amplitude < MIN_AMPLITUDE:
+        return SILENCE_FLOOR_DBFS, SILENCE_FLOOR_DBFS
+        
+    peak_dbfs = 20.0 * np.log10(peak_amplitude)
+    
+    if rms_amplitude < MIN_AMPLITUDE:
+        rms_dbfs = SILENCE_FLOOR_DBFS
+    else:
+        rms_dbfs = 20.0 * np.log10(rms_amplitude)
+        
+    return float(peak_dbfs), float(rms_dbfs)
 
 
 def extract_audio_slice(
@@ -84,7 +91,7 @@ def extract_audio_slice(
     timestamp: float,
     duration_before: float = 20.0,
     duration_after: float = 5.0,
-    sample_rate: int = 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> np.ndarray:
     """Extract an audio slice around a specific timestamp.
     
@@ -102,21 +109,16 @@ def extract_audio_slice(
         return np.array([])
         
     # Convert times to sample indices
-    start_time = timestamp - duration_before
-    end_time = timestamp + duration_after
-    
-    start_sample = int(start_time * sample_rate)
-    end_sample = int(end_time * sample_rate)
-    
-    # Handle boundaries with zero-padding
+    start_sample = int((timestamp - duration_before) * sample_rate)
+    end_sample = int((timestamp + duration_after) * sample_rate)
     slice_length = end_sample - start_sample
+    
+    # Initialize output array
     audio_slice = np.zeros(slice_length, dtype=waveform.dtype)
     
-    # Calculate valid range within original waveform
+    # Calculate valid ranges
     waveform_start = max(0, start_sample)
     waveform_end = min(len(waveform), end_sample)
-    
-    # Calculate corresponding range in output slice
     slice_start = max(0, -start_sample)
     slice_end = slice_start + (waveform_end - waveform_start)
     
@@ -131,7 +133,7 @@ def get_slice_around_timestamp(
     waveform: np.ndarray,
     timestamp: float,
     context_seconds: float = 20.0,
-    sample_rate: int = 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> np.ndarray:
     """Simple wrapper to extract audio slice centered around a timestamp.
     
@@ -158,7 +160,7 @@ def analyze_audio_slice_levels(
     waveform: np.ndarray,
     timestamp: float,
     context_seconds: float = 20.0,
-    sample_rate: int = 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> Tuple[float, float]:
     """Extract audio slice and compute its dBFS levels.
     
@@ -178,7 +180,10 @@ def analyze_audio_slice_levels(
     return compute_audio_levels(audio_slice)
 
 
-def is_silent(waveform: np.ndarray, threshold_dbfs: float = SILENCE_FLOOR_DBFS + 10) -> bool:
+def is_silent(
+    waveform: np.ndarray, 
+    threshold_dbfs: float = SILENCE_FLOOR_DBFS + 10
+) -> bool:
     """Check if an audio waveform is effectively silent.
     
     Args:
@@ -191,5 +196,69 @@ def is_silent(waveform: np.ndarray, threshold_dbfs: float = SILENCE_FLOOR_DBFS +
     if len(waveform) == 0:
         return True
         
-    rms_dbfs = compute_rms_dbfs(waveform)
-    return rms_dbfs <= threshold_dbfs 
+    # Use RMS for silence detection as it's more representative
+    rms_amplitude = np.sqrt(np.mean(waveform ** 2))
+    
+    if rms_amplitude < MIN_AMPLITUDE:
+        return True
+        
+    rms_dbfs = 20.0 * np.log10(rms_amplitude)
+    return rms_dbfs <= threshold_dbfs
+
+
+def normalize_waveform(waveform: np.ndarray, target_level_dbfs: float = -3.0) -> np.ndarray:
+    """Normalize waveform to a target peak level in dBFS.
+    
+    Args:
+        waveform: Audio waveform as numpy array
+        target_level_dbfs: Target peak level in dBFS (default: -3.0 dBFS)
+        
+    Returns:
+        Normalized waveform as numpy array
+    """
+    if len(waveform) == 0:
+        return waveform.copy()
+        
+    peak_amplitude = np.max(np.abs(waveform))
+    
+    if peak_amplitude < MIN_AMPLITUDE:
+        return waveform.copy()
+        
+    # Calculate required gain
+    target_amplitude = 10 ** (target_level_dbfs / 20.0)
+    gain = target_amplitude / peak_amplitude
+    
+    return waveform * gain
+
+
+def get_audio_stats(waveform: np.ndarray) -> dict:
+    """Get comprehensive audio statistics for a waveform.
+    
+    Args:
+        waveform: Audio waveform as numpy array
+        
+    Returns:
+        Dictionary with audio statistics including peak, RMS, duration info
+    """
+    if len(waveform) == 0:
+        return {
+            'length': 0,
+            'peak_dbfs': SILENCE_FLOOR_DBFS,
+            'rms_dbfs': SILENCE_FLOOR_DBFS,
+            'is_silent': True,
+            'peak_amplitude': 0.0,
+            'rms_amplitude': 0.0
+        }
+    
+    peak_dbfs, rms_dbfs = compute_audio_levels(waveform)
+    peak_amplitude = np.max(np.abs(waveform))
+    rms_amplitude = np.sqrt(np.mean(waveform ** 2))
+    
+    return {
+        'length': len(waveform),
+        'peak_dbfs': peak_dbfs,
+        'rms_dbfs': rms_dbfs,
+        'is_silent': is_silent(waveform),
+        'peak_amplitude': float(peak_amplitude),
+        'rms_amplitude': float(rms_amplitude)
+    } 
