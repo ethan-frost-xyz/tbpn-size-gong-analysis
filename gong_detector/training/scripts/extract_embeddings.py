@@ -14,7 +14,7 @@ import pandas as pd
 
 # Add core module to path
 sys.path.append(str(Path(__file__).parent.parent.parent / "core"))
-from yamnet_runner import YAMNetGongDetector
+from core.yamnet_runner import YAMNetGongDetector
 
 
 def get_audio_files(folder_path: Path) -> List[Path]:
