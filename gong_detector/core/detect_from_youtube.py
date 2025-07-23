@@ -293,6 +293,11 @@ Examples:
         help="Confidence threshold for gong detection (default: 0.4)",
     )
     parser.add_argument("--save_csv", help="Save results to CSV file (optional)")
+    parser.add_argument(
+        "--keep_audio", 
+        action="store_true", 
+        help="Keep temporary audio file for training data extraction"
+    )
 
     return parser
 
@@ -339,9 +344,11 @@ def main() -> None:
 
     finally:
         # Clean up temporary file
-        if os.path.exists(temp_audio):
+        if not args.keep_audio and os.path.exists(temp_audio):
             os.remove(temp_audio)
             print(f"Cleaned up temporary file: {temp_audio}")
+        elif args.keep_audio and os.path.exists(temp_audio):
+            print(f"Temporary file preserved for training: {temp_audio}")
 
 
 if __name__ == "__main__":
