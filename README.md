@@ -1,6 +1,8 @@
 # 🎵 YAMNet Gong Detection Tutorial
 
-A step-by-step tutorial for building an audio event detection pipeline using YAMNet to detect gong sounds in podcast episodes. This tutorial teaches you how to build a modular system from scratch.
+A step-by-step tutorial for building an audio event detection pipeline using
+YAMNet to detect gong sounds in podcast episodes. This tutorial teaches you how to
+build a modular system from scratch.
 
 ## 🎯 What You'll Learn
 
@@ -35,17 +37,21 @@ python test_yamnet.py audio.wav
 **Goal**: Create a "hello world" test to prove the audio + model setup works.
 
 **What You'll Learn**:
+
 - Loading pre-trained YAMNet model from TensorFlow Hub
 - Audio preprocessing (mono, 16kHz, normalization)
 - Running inference and extracting confidence scores
 - Basic error handling and validation
 
 **Key Concepts**:
-- **YAMNet**: A pre-trained neural network that can classify 521 different audio events
+
+- **YAMNet**: A pre-trained neural network that can classify 521 different audio
+  events
 - **Gong Class Index**: YAMNet has a specific class for "gong" sounds (index 138)
 - **Confidence Threshold**: Filtering detections based on model confidence
 
 **Step-by-Step Process**:
+
 1. Load YAMNet model from TensorFlow Hub
 2. Load and preprocess audio file (convert to mono, 16kHz)
 3. Run inference to get confidence scores for all classes
@@ -55,6 +61,7 @@ python test_yamnet.py audio.wav
 7. Save results to CSV for analysis
 
 **Try It**:
+
 ```bash
 python test_yamnet.py audio.wav
 ```
@@ -64,17 +71,20 @@ python test_yamnet.py audio.wav
 **Goal**: Convert YouTube URLs or local files to the required format.
 
 **What You'll Learn**:
+
 - Using `yt-dlp` for YouTube downloads
 - Audio format conversion with `ffmpeg`
 - Command-line argument parsing
 - Error handling for network/file operations
 
 **Key Concepts**:
+
 - **yt-dlp**: Modern YouTube downloader (replacement for youtube-dl)
 - **ffmpeg**: Powerful audio/video processing tool
 - **Audio Requirements**: YAMNet needs mono, 16kHz WAV files
 
 **Step-by-Step Process**:
+
 1. Accept YouTube URL or local file path as input
 2. Download audio using yt-dlp (if YouTube URL)
 3. Convert to WAV format using ffmpeg
@@ -83,6 +93,7 @@ python test_yamnet.py audio.wav
 6. Clean up temporary files
 
 **Try It**:
+
 ```bash
 # Convert YouTube video
 python convert_audio.py "https://youtube.com/watch?v=example"
@@ -96,17 +107,20 @@ python convert_audio.py input.mp3 output.wav
 **Goal**: Process multiple audio files and save detection results.
 
 **What You'll Learn**:
+
 - Batch file processing
 - Error handling for malformed audio
 - Multiple output formats (CSV/JSON)
 - Progress tracking and summaries
 
 **Key Concepts**:
+
 - **Batch Processing**: Efficiently handle multiple files
 - **Graceful Degradation**: Continue processing even if some files fail
 - **Output Formats**: CSV for spreadsheet analysis, JSON for programmatic use
 
 **Step-by-Step Process**:
+
 1. Find all `.wav` files in a directory
 2. Load YAMNet model once (efficient for multiple files)
 3. Process each file:
@@ -118,6 +132,7 @@ python convert_audio.py input.mp3 output.wav
 5. Print summary statistics
 
 **Try It**:
+
 ```bash
 # Process all WAV files in current directory
 python batch_detect.py .
@@ -131,23 +146,27 @@ python batch_detect.py . --threshold 0.7 --format json
 **Goal**: Analyze audio levels and extract audio slices around events.
 
 **What You'll Learn**:
+
 - Audio level calculations (peak, RMS, dBFS)
 - Audio slicing and manipulation
 - Working with numpy arrays
 - Audio analysis concepts
 
 **Key Concepts**:
+
 - **dBFS**: Decibels relative to full scale (digital audio measurement)
 - **Peak vs RMS**: Different ways to measure audio levels
 - **Audio Slicing**: Extracting portions of audio around specific timestamps
 
 **Key Functions**:
+
 - `compute_peak_dbfs()`: Calculate peak level in dBFS
 - `compute_rms_dbfs()`: Calculate RMS level in dBFS
 - `extract_audio_slice()`: Get audio around a timestamp
 - `analyze_audio_slice_levels()`: Combined analysis function
 
 **Try It**:
+
 ```python
 from audio_utils import compute_peak_dbfs, extract_audio_slice
 import numpy as np
@@ -163,17 +182,20 @@ print(f"Peak level: {peak_db:.1f} dBFS")
 **Goal**: Create video snippets from detected gong events.
 
 **What You'll Learn**:
+
 - Using ffmpeg for video creation
 - Loading detection data from CSV/JSON
 - Audio-to-video conversion
 - File naming and organization
 
 **Key Concepts**:
+
 - **Audio-Only Video**: MP4 files with audio track but no visual content
 - **Context Windows**: Extract audio before and after the detected event
 - **ffmpeg Integration**: Using subprocess to call ffmpeg command-line tool
 
 **Step-by-Step Process**:
+
 1. Load detection data from CSV/JSON file
 2. For each detected gong:
    - Extract 20 seconds before and 5 seconds after
@@ -182,6 +204,7 @@ print(f"Peak level: {peak_db:.1f} dBFS")
 3. Optional: Calculate and display dB levels for each snippet
 
 **Try It**:
+
 ```bash
 # Export snippets from detection results
 python export_snippets.py audio.wav detections.csv --output-dir snippets
@@ -192,17 +215,20 @@ python export_snippets.py audio.wav detections.csv --output-dir snippets
 **Goal**: Create clean, reusable modules with proper structure.
 
 **What You'll Learn**:
+
 - Modular design principles
 - Import/export patterns
 - Clean separation of concerns
 - Professional project structure
 
 **Key Concepts**:
+
 - **Modularity**: Each file has a single, clear responsibility
 - **Reusability**: Functions can be imported and used in other scripts
 - **Main Pattern**: `if __name__ == '__main__':` for script execution
 
 **Architecture**:
+
 - `yamnet_runner.py`: Core YAMNet functionality
 - `audio_utils.py`: Audio processing utilities
 - `convert_audio.py`: Audio conversion tools
@@ -212,6 +238,7 @@ python export_snippets.py audio.wav detections.csv --output-dir snippets
 ## 🔧 Usage Examples
 
 ### Basic Detection
+
 ```bash
 # Single file detection
 python detect.py audio.wav --threshold 0.5
@@ -221,6 +248,7 @@ python detect.py audio.wav --output detections.csv
 ```
 
 ### Batch Processing
+
 ```bash
 # Process all WAV files in a directory
 python batch_detect.py /path/to/audio/files/
@@ -230,6 +258,7 @@ python batch_detect.py . --threshold 0.7 --format json --output-dir results/
 ```
 
 ### Audio Conversion
+
 ```bash
 # Convert YouTube video
 python convert_audio.py "https://youtube.com/watch?v=example"
@@ -239,6 +268,7 @@ python convert_audio.py input.mp3
 ```
 
 ### Export Snippets
+
 ```bash
 # Create video snippets from detections
 python export_snippets.py source.wav detections.csv --episode-name "episode_01"
@@ -246,7 +276,7 @@ python export_snippets.py source.wav detections.csv --episode-name "episode_01"
 
 ## 📁 Project Structure
 
-```
+```text
 gong_detector/
 ├── detect.py            # Simple CLI detection script
 ├── convert_audio.py     # YouTube/audio conversion
@@ -263,7 +293,8 @@ gong_detector/
 
 After completing each part, test your knowledge:
 
-1. **Part 1**: Can you modify the confidence threshold and see how it affects detections?
+1. **Part 1**: Can you modify the confidence threshold and see how it affects
+   detections?
 2. **Part 2**: Try converting different audio formats (MP3, M4A, etc.)
 3. **Part 3**: Process a folder with mixed audio files and handle errors
 4. **Part 4**: Calculate audio levels for different types of sounds
@@ -275,24 +306,28 @@ After completing each part, test your knowledge:
 ### Common Issues
 
 **TensorFlow Import Error**:
+
 ```bash
 # Install TensorFlow with proper version for Python 3.12
 pip install tensorflow>=2.15.0
 ```
 
 **ffmpeg Not Found**:
+
 ```bash
 # Install ffmpeg on macOS
 brew install ffmpeg
 ```
 
 **SSL Certificate Issues (macOS)**:
+
 ```bash
 # Install certificates for Python 3.12
 /Applications/Python\ 3.12/Install\ Certificates.command
 ```
 
 **Audio File Issues**:
+
 - Ensure files are in supported formats (WAV, MP3, M4A)
 - Check file permissions and paths
 - Verify audio files aren't corrupted
@@ -300,6 +335,7 @@ brew install ffmpeg
 ### Debug Mode
 
 Add debug prints to understand what's happening:
+
 ```python
 print(f"Audio shape: {waveform.shape}")
 print(f"Sample rate: {sample_rate}Hz")
@@ -325,6 +361,8 @@ Once you've mastered this tutorial:
 
 ---
 
-**Happy Coding! 🎵** 
+## Happy Coding! 🎵
 
-This tutorial teaches you to build a complete audio analysis pipeline from scratch. Each part builds on the previous, creating a solid foundation for audio machine learning projects. 
+This tutorial teaches you to build a complete audio analysis pipeline from scratch.
+Each part builds on the previous, creating a solid foundation for audio machine
+learning projects.

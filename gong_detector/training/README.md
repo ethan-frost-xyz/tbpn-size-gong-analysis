@@ -20,4 +20,4 @@ When you're ready to train the gong detector:
 
 - Positive samples: `gong_positive_*.wav`
 - Negative samples: `gong_negative_*.wav`
-- Background noise: `background_*.wav` 
+- Background noise: `background_*.wav`
