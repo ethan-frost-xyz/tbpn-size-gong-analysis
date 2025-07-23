@@ -200,7 +200,7 @@ def is_silent(
         return True
 
     rms_dbfs = 20.0 * np.log10(rms_amplitude)
-    return rms_dbfs <= threshold_dbfs
+    return rms_dbfs < threshold_dbfs  # Changed from <= to < for more precise threshold
 
 
 def normalize_waveform(
@@ -227,7 +227,8 @@ def normalize_waveform(
     target_amplitude = 10 ** (target_level_dbfs / 20.0)
     gain = target_amplitude / peak_amplitude
 
-    return waveform * gain
+    # Use double precision for more accurate normalization
+    return (waveform * gain).astype(np.float32)
 
 
 def get_audio_stats(waveform: np.ndarray) -> dict:

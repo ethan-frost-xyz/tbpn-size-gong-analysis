@@ -46,12 +46,12 @@ class TestModelLoading:
 
         # Mock the CSV reading
         mock_df = Mock()
-        mock_df.__getitem__.return_value = [
+        mock_df.__getitem__ = Mock(return_value=[
             "class1",
             "class2",
             "gong",
             "class4",
-        ] * 50  # 200+ classes
+        ] * 50)  # 200+ classes
         mock_read_csv.return_value = mock_df
 
         detector = YAMNetGongDetector()
@@ -128,7 +128,7 @@ class TestAudioPreprocessing:
         with pytest.raises(FileNotFoundError, match="Audio file not found"):
             detector.load_and_preprocess_audio("nonexistent.wav")
 
-    @patch("gong_detector.core.yamnet_runner.tf.signal.resample")
+    @patch("gong_detector.core.yamnet_runner.tf.signal.resample", create=True)
     def test_resample_if_needed_different_rate(self, mock_resample: Mock) -> None:
         """Test resampling when sample rates differ."""
         detector = YAMNetGongDetector()
@@ -195,9 +195,9 @@ class TestInference:
         # Mock model
         mock_model = Mock()
         mock_scores = Mock()
-        mock_scores.numpy.return_value = np.random.random(
-            (100, 521)
-        )  # 100 time steps, 521 classes
+        mock_scores_array = np.random.random((100, 521))  # 100 time steps, 521 classes
+        mock_scores.numpy.return_value = mock_scores_array
+        mock_scores.shape = mock_scores_array.shape  # Add shape attribute
         mock_embeddings = Mock()
         mock_embeddings.numpy.return_value = np.random.random((100, 1024))
         mock_spectrogram = Mock()
@@ -223,7 +223,7 @@ class TestGongDetection:
         detector = YAMNetGongDetector()
 
         # Create mock scores with some gong detections
-        scores = np.random.random((10, 521))
+        scores = np.zeros((10, 521))  # Start with all zeros
         scores[2, 172] = 0.8  # High confidence gong at position 2
         scores[7, 172] = 0.6  # Medium confidence gong at position 7
         scores[5, 172] = 0.3  # Low confidence gong (below threshold)
@@ -332,7 +332,7 @@ class TestIntegration:
         mock_hub_load.return_value = mock_model
 
         mock_df = Mock()
-        mock_df.__getitem__.return_value = ["class"] * 521
+        mock_df.__getitem__ = Mock(return_value=["class"] * 521)
         mock_read_csv.return_value = mock_df
 
         # Mock audio loading

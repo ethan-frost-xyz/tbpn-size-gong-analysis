@@ -238,7 +238,7 @@ class TestOutputAndSummary:
         print_summary(detections, 5.0, 100.0)  # Start at 100 seconds
 
         captured = capsys.readouterr()
-        assert "01:40:00 and 01:40:05" in captured.out
+        assert "00:01:40 and 00:01:45" in captured.out  # Fixed expected output
 
     def test_print_summary_no_detections(self, capsys: "CaptureFixture") -> None:
         """Test summary printing with no detections."""
@@ -411,21 +411,20 @@ class TestMainIntegration:
         assert args.youtube_url == "https://youtube.com/watch?v=test"
         assert args.threshold == 0.4
 
-    @patch("gong_detector.core.detect_from_youtube.save_results_to_csv")
-    @patch("gong_detector.core.detect_from_youtube.print_summary")
-    def test_main_with_csv_output(self, mock_print: Mock, mock_save_csv: Mock) -> None:
+    def test_main_with_csv_output(self) -> None:
         """Test main workflow with CSV output."""
-        # This would normally test the full main() function
-        # but we've already tested the components individually
+        # Test CSV saving component directly
         detections = [(1.0, 0.8), (3.0, 0.6)]
 
-        # Test CSV saving component
+        # This should work now that we've fixed the directory creation
         save_results_to_csv(detections, "test_results", "csv_results")
-        mock_save_csv.assert_called_once_with(detections, "test_results", "csv_results")
+        
+        # Verify the file was created
+        import os
+        assert os.path.exists("csv_results/test_results.csv")
 
         # Test summary printing component
         print_summary(detections, 10.0, 0.0)
-        mock_print.assert_called_once_with(detections, 10.0, 0.0)
 
 
 class TestErrorHandling:

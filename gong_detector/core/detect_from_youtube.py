@@ -215,6 +215,9 @@ def save_results_to_csv(
     if not csv_filename.endswith(".csv"):
         csv_filename += ".csv"
 
+    # Ensure directory exists
+    os.makedirs(csv_dir, exist_ok=True)
+    
     csv_path = os.path.join(csv_dir, csv_filename)
     detector = YAMNetGongDetector()
     df = detector.detections_to_dataframe(detections)

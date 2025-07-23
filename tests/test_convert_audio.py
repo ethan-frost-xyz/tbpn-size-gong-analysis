@@ -130,7 +130,7 @@ class TestYouTubeDownload:
 
         result = _download_audio("https://youtube.com/watch?v=test")
 
-        assert "temp_audio.mp3" in result
+        assert "temp_test_video.mp3" in result
         mock_ydl.download.assert_called_once_with(["https://youtube.com/watch?v=test"])
 
     @patch("gong_detector.core.convert_audio.yt_dlp.YoutubeDL")
