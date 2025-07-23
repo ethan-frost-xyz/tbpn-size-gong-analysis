@@ -154,7 +154,9 @@ class TestAudioAnalysis:
         result = normalize_waveform(audio, -6.0)
 
         # Peak should now be at 0.5 (since original was 0.5)
-        assert abs(np.max(np.abs(result)) - 0.5) < 2e-3  # Further relaxed tolerance for float32 precision
+        assert (
+            abs(np.max(np.abs(result)) - 0.5) < 2e-3
+        )  # Further relaxed tolerance for float32 precision
 
     def test_normalize_waveform_silent(self) -> None:
         """Test normalization of silent audio."""

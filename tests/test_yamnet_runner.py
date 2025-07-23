@@ -46,12 +46,15 @@ class TestModelLoading:
 
         # Mock the CSV reading
         mock_df = Mock()
-        mock_df.__getitem__ = Mock(return_value=[
-            "class1",
-            "class2",
-            "gong",
-            "class4",
-        ] * 50)  # 200+ classes
+        mock_df.__getitem__ = Mock(
+            return_value=[
+                "class1",
+                "class2",
+                "gong",
+                "class4",
+            ]
+            * 50
+        )  # 200+ classes
         mock_read_csv.return_value = mock_df
 
         detector = YAMNetGongDetector()

@@ -7,12 +7,14 @@ The `compare_spectrograms.py` script has been created and tested successfully.
 ## 🚀 **How to Use:**
 
 ### 1. **With Test Audio (Ready Now):**
+
 ```bash
 # Compare the generated test files
 python compare_spectrograms.py samples/tbpn_gong.wav samples/reference_gong.wav
 ```
 
 ### 2. **With Your Real Audio Files:**
+
 ```bash
 # Replace with your actual TBPN gong and reference files
 python compare_spectrograms.py path/to/your_tbpn_gong.wav path/to/reference_gong.wav
@@ -41,7 +43,8 @@ python compare_spectrograms.py path/to/your_tbpn_gong.wav path/to/reference_gong
 ## 🎯 **Example Output:**
 
 The script will show:
-```
+
+```text
 Loading TBPN gong: samples/tbpn_gong.wav
 Loading reference gong: samples/reference_gong.wav
 Generating spectrogram comparison...
@@ -58,4 +61,4 @@ Reference Gong: 2.000s, Peak: 0.700
 1. Run the script with your real TBPN gong audio
 2. Compare with a reference gong from YAMNet/AudioSet
 3. Analyze the visual differences in frequency patterns
-4. Use insights to improve gong detection accuracy 
+4. Use insights to improve gong detection accuracy

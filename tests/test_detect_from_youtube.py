@@ -418,9 +418,10 @@ class TestMainIntegration:
 
         # This should work now that we've fixed the directory creation
         save_results_to_csv(detections, "test_results", "csv_results")
-        
+
         # Verify the file was created
         import os
+
         assert os.path.exists("csv_results/test_results.csv")
 
         # Test summary printing component
