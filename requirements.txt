@@ -3,26 +3,23 @@ tensorflow>=2.15.0
 tensorflow-hub>=0.14.0
 
 # Audio processing
-librosa>=0.10.0
 numpy>=1.24.0
-
-# Data handling
 pandas>=2.0.0
 
 # YouTube downloading
 yt-dlp>=2023.7.6
 
-# Visualization
+# Visualization and analysis
 matplotlib>=3.7.0
 
-# Testing
+# Development dependencies
 pytest>=7.0.0
-pytest-mock>=3.10.0
 pytest-cov>=4.0.0
-
-# Code quality
+pytest-mock>=3.10.0
 ruff>=0.1.0
 
+# Optional audio processing (for advanced features)
+librosa>=0.10.0
+
 # Development tools
-ipython>=8.0.0
-jupyter>=1.0.0 
+ipython>=8.0.0 
