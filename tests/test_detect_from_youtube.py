@@ -431,19 +431,14 @@ class TestMainIntegration:
 class TestErrorHandling:
     """Tests for error handling scenarios."""
 
-    @patch("gong_detector.core.detect_from_youtube.download_and_trim_youtube_audio")
-    def test_download_error_handling(self, mock_download: Mock) -> None:
+    def test_download_error_handling(self) -> None:
         """Test error handling during download."""
-        mock_download.side_effect = RuntimeError("Download failed")
-
-        # In main function, this would be caught and result in sys.exit(1)
-        with pytest.raises(RuntimeError, match="Download failed"):
+        # Test that invalid URLs raise appropriate exceptions
+        with pytest.raises(Exception):  # yt-dlp raises DownloadError for invalid URLs
             download_and_trim_youtube_audio("invalid_url", "output.wav")
 
-    @patch("gong_detector.core.detect_from_youtube.process_audio_with_yamnet")
-    def test_yamnet_error_handling(self, mock_process: Mock) -> None:
+    def test_yamnet_error_handling(self) -> None:
         """Test error handling during YAMNet processing."""
-        mock_process.side_effect = RuntimeError("Model loading failed")
-
-        with pytest.raises(RuntimeError, match="Model loading failed"):
+        # Test that non-existent files raise FileNotFoundError
+        with pytest.raises(FileNotFoundError):
             process_audio_with_yamnet("test.wav", 0.5)

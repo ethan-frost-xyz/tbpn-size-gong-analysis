@@ -351,6 +351,7 @@ class TestIntegration:
         # Mock inference
         mock_scores = Mock()
         mock_scores.numpy.return_value = np.random.random((10, 521))
+        mock_scores.shape = (10, 521)  # Add shape attribute for the print statement
         mock_embeddings = Mock()
         mock_embeddings.numpy.return_value = np.random.random((10, 1024))
         mock_spectrogram = Mock()
