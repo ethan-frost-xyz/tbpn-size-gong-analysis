@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
+import yt_dlp
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -435,7 +436,7 @@ class TestErrorHandling:
         """Test error handling during download."""
         # Test that invalid URLs raise appropriate exceptions
         with pytest.raises(
-            (ValueError, RuntimeError)
+            (ValueError, RuntimeError, yt_dlp.utils.DownloadError)
         ):  # yt-dlp raises specific errors for invalid URLs
             download_and_trim_youtube_audio("invalid_url", "output.wav")
 
