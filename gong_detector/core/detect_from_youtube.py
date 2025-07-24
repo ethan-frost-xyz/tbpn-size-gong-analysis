@@ -303,7 +303,7 @@ Examples:
 
 
 def main() -> None:
-    """Main function for YouTube gong detection."""
+    """Run YouTube gong detection."""
     parser = create_argument_parser()
     args = parser.parse_args()
 

@@ -133,7 +133,7 @@ def get_slice_around_timestamp(
     context_seconds: float = 20.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
 ) -> np.ndarray:
-    """Simple wrapper to extract audio slice centered around a timestamp.
+    """Extract audio slice centered around a timestamp.
 
     Args:
         waveform: Full audio waveform as numpy array

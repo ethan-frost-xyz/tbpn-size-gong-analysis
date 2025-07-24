@@ -36,11 +36,11 @@ def load_training_data(processed_dir: Path) -> tuple[np.ndarray, np.ndarray]:
     return embeddings, labels
 
 
-def train_model(X_train: np.ndarray, y_train: np.ndarray) -> RandomForestClassifier:
+def train_model(x_train: np.ndarray, y_train: np.ndarray) -> RandomForestClassifier:
     """Train a Random Forest classifier.
 
     Args:
-        X_train: Training embeddings
+        x_train: Training embeddings
         y_train: Training labels
 
     Returns:
@@ -56,20 +56,20 @@ def train_model(X_train: np.ndarray, y_train: np.ndarray) -> RandomForestClassif
         n_jobs=-1,  # Use all CPU cores
     )
 
-    classifier.fit(X_train, y_train)
+    classifier.fit(x_train, y_train)
     print("✓ Training complete")
 
     return classifier
 
 
 def evaluate_model(
-    classifier: RandomForestClassifier, X_test: np.ndarray, y_test: np.ndarray
+    classifier: RandomForestClassifier, x_test: np.ndarray, y_test: np.ndarray
 ) -> dict[str, float]:
     """Evaluate the trained classifier.
 
     Args:
         classifier: Trained classifier
-        X_test: Test embeddings
+        x_test: Test embeddings
         y_test: Test labels
 
     Returns:
@@ -78,7 +78,7 @@ def evaluate_model(
     print("Evaluating model...")
 
     # Make predictions
-    y_pred = classifier.predict(X_test)
+    y_pred = classifier.predict(x_test)
 
     # Calculate metrics
     accuracy = accuracy_score(y_test, y_pred)
@@ -154,7 +154,7 @@ def main() -> None:
         return
 
     # Split into train/test
-    X_train, X_test, y_train, y_test = train_test_split(
+    x_train, x_test, y_train, y_test = train_test_split(
         embeddings,
         labels,
         test_size=0.2,  # 20% for testing
@@ -162,14 +162,14 @@ def main() -> None:
         stratify=labels,  # Keep class balance
     )
 
-    print(f"Training samples: {len(X_train)}")
-    print(f"Test samples: {len(X_test)}")
+    print(f"Training samples: {len(x_train)}")
+    print(f"Test samples: {len(x_test)}")
 
     # Train the model
-    classifier = train_model(X_train, y_train)
+    classifier = train_model(x_train, y_train)
 
     # Evaluate performance
-    metrics = evaluate_model(classifier, X_test, y_test)
+    metrics = evaluate_model(classifier, x_test, y_test)
 
     # Save everything
     save_model(classifier, metrics, models_dir)
