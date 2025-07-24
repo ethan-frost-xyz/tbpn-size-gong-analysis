@@ -16,7 +16,7 @@ from compare_spectrograms import get_audio_stats, load_audio, plot_spectrograms
 
 def example_comparison(tbpn_path: str, reference_path: str) -> None:
     """
-    Example function showing how to compare two audio files.
+    Show how to compare two audio files.
 
     Args:
         tbpn_path: Path to TBPN gong audio file
@@ -50,7 +50,7 @@ def example_comparison(tbpn_path: str, reference_path: str) -> None:
 
 
 def main() -> None:
-    """Main function demonstrating usage."""
+    """Demonstrate usage."""
     # Example file paths (update these with your actual files)
     tbpn_file = "samples/tbpn_gong.wav"
     reference_file = "samples/reference_gong.wav"

@@ -155,7 +155,7 @@ def plot_spectrograms(
 
 
 def main() -> None:
-    """Main function to run spectrogram comparison."""
+    """Run spectrogram comparison."""
     parser = argparse.ArgumentParser(
         description="Compare spectrograms of TBPN gong and reference audio"
     )

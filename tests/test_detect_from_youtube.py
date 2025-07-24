@@ -434,7 +434,9 @@ class TestErrorHandling:
     def test_download_error_handling(self) -> None:
         """Test error handling during download."""
         # Test that invalid URLs raise appropriate exceptions
-        with pytest.raises(Exception):  # yt-dlp raises DownloadError for invalid URLs
+        with pytest.raises(
+            (ValueError, RuntimeError)
+        ):  # yt-dlp raises specific errors for invalid URLs
             download_and_trim_youtube_audio("invalid_url", "output.wav")
 
     def test_yamnet_error_handling(self) -> None:

@@ -122,7 +122,7 @@ def save_preprocessed_audio(
 
 
 def main() -> None:
-    """Main function to extract and preprocess YouTube segment."""
+    """Extract and preprocess YouTube segment."""
     parser = argparse.ArgumentParser(
         description="Extract YouTube segment and preprocess for YAMNet"
     )

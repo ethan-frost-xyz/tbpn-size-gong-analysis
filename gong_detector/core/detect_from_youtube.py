@@ -296,7 +296,7 @@ Examples:
     parser.add_argument(
         "--keep_audio",
         action="store_true",
-        help="Keep temporary audio file for training data extraction"
+        help="Keep temporary audio file for training data extraction",
     )
 
     return parser
