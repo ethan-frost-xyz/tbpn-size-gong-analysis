@@ -14,6 +14,7 @@ from .results_utils import format_time, print_summary, save_positive_samples, sa
 from .yamnet_runner import YAMNetGongDetector
 from .youtube_utils import (
     cleanup_old_temp_files,
+    create_folder_name_from_date,
     create_temp_audio_path,
     download_and_trim_youtube_audio,
     sanitize_title_for_folder,
@@ -119,7 +120,7 @@ def main() -> None:
     try:
         # Step 1: Download and process audio
         print("Step 1: Downloading and processing audio...")
-        temp_audio, video_title = download_and_trim_youtube_audio(
+        temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
             url=args.youtube_url,
             output_path=temp_audio,
             start_time=args.start_time,
@@ -133,23 +134,21 @@ def main() -> None:
 
         # Save to CSV if requested
         if args.save_csv:
-            start_offset = args.start_time or 0
-            save_results_to_csv(detections, args.save_csv, csv_results_dir, start_offset)
+            save_results_to_csv(detections, args.save_csv, csv_results_dir)
 
         # Save positive samples if requested
         if args.save_positive_samples and detections:
-            # Create folder based on video title
-            sanitized_title = sanitize_title_for_folder(video_title)
+            # Create folder based on upload date
+            folder_name = create_folder_name_from_date(upload_date)
             positive_dir = (
                 Path("gong_detector/training/data/raw_samples/positive")
-                / sanitized_title
+                / folder_name
             )
             print(f"\nSaving positive samples to: {positive_dir}")
             save_positive_samples(detections, temp_audio, positive_dir)
 
         # Print summary and max confidence
-        start_offset = args.start_time or 0
-        print_summary(detections, total_duration, start_offset)
+        print_summary(detections, total_duration)
         print(f"Max gong confidence: {max_gong_confidence:.4f}")
 
     except Exception as e:
