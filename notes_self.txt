@@ -1,3 +1,7 @@
-## convert back to minutes, seconds, etc.
+Bugs
+[x] = issue created
+[x] convert back to minutes, seconds, etc.
     ## half working, not quite done
-## add auto trim start and end of each episode automatically
+
+Features
+[ ] add auto trim start and end of each episode automatically
