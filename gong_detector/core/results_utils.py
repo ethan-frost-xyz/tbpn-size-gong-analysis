@@ -34,18 +34,16 @@ def format_time(seconds: float) -> str:
 def print_summary(
     detections: list[tuple[float, float]],
     total_duration: float,
-    start_offset: float = 0.0,
 ) -> None:
     """Print detection summary.
 
     Args:
         detections: List of (timestamp, confidence) tuples
         total_duration: Total audio duration in seconds
-        start_offset: Start time offset if audio was trimmed
     """
     count = len(detections)
-    start_time = format_time(start_offset)
-    end_time = format_time(start_offset + total_duration)
+    start_time = format_time(0.0)
+    end_time = format_time(total_duration)
 
     print(f"\nSUMMARY: Detected {count} gongs between {start_time} and {end_time}")
 
@@ -60,8 +58,7 @@ def print_summary(
 def save_results_to_csv(
     detections: list[tuple[float, float]], 
     csv_filename: str, 
-    csv_dir: str,
-    start_offset: float = 0.0
+    csv_dir: str
 ) -> None:
     """Save detection results to CSV file.
 
@@ -69,7 +66,6 @@ def save_results_to_csv(
         detections: List of detection tuples
         csv_filename: Name of the CSV file
         csv_dir: Directory to save CSV files
-        start_offset: Time offset in seconds to add to YouTube timestamps
     """
     if not csv_filename.endswith(".csv"):
         csv_filename += ".csv"
@@ -79,7 +75,7 @@ def save_results_to_csv(
 
     csv_path = os.path.join(csv_dir, csv_filename)
     detector = YAMNetGongDetector()
-    df = detector.detections_to_dataframe(detections, start_offset)
+    df = detector.detections_to_dataframe(detections)
     df.to_csv(csv_path, index=False)
     print(f"Results saved to: {csv_path}")
 
