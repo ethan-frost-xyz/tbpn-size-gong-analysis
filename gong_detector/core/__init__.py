@@ -19,12 +19,15 @@ from .audio_utils import (
     normalize_waveform,
 )
 from .convert_audio import convert_youtube_audio, get_audio_info, validate_audio_file
-from .detect_from_youtube import (
-    download_and_trim_youtube_audio,
-    format_time,
-    print_summary,
-)
+from .results_utils import format_time, print_summary, save_positive_samples, save_results_to_csv
 from .yamnet_runner import YAMNetGongDetector
+from .youtube_utils import (
+    cleanup_old_temp_files,
+    create_temp_audio_path,
+    download_and_trim_youtube_audio,
+    sanitize_title_for_folder,
+    setup_directories,
+)
 
 __version__ = "1.0.0"
 
@@ -50,6 +53,14 @@ __all__ = [
     "download_and_trim_youtube_audio",
     "format_time",
     "print_summary",
+    # YouTube utilities
+    "cleanup_old_temp_files",
+    "create_temp_audio_path",
+    "sanitize_title_for_folder",
+    "setup_directories",
+    # Results utilities
+    "save_positive_samples",
+    "save_results_to_csv",
     # Constants
     "SILENCE_FLOOR_DBFS",
     "DEFAULT_SAMPLE_RATE",

@@ -49,9 +49,3 @@ from _pytest.fixtures import FixtureRequest
 from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
-
-Project Structure Guidelines:
-- Use appropriate structure for project scope (flat for simple tools, src/ for complex applications)
-- Keep dependencies minimal and focused on project needs
-- Implement CI/CD only when it adds value to the project workflow
-- Choose dependency management approach based on team preferences and project requirements
