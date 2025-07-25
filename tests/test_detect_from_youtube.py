@@ -228,7 +228,7 @@ class TestOutputAndSummary:
         """Test basic summary printing."""
         detections = [(1.5, 0.8), (3.2, 0.6), (5.1, 0.7)]
 
-        print_summary(detections, 10.0, 0.0)
+        print_summary(detections, 10.0)
 
         captured = capsys.readouterr()
         assert "Detected 3 gongs" in captured.out
@@ -236,18 +236,11 @@ class TestOutputAndSummary:
         assert "Average confidence: 0.700" in captured.out
         assert "Maximum confidence: 0.800" in captured.out
 
-    def test_print_summary_with_offset(self, capsys: "CaptureFixture") -> None:
-        """Test summary printing with time offset."""
-        detections = [(1.0, 0.5)]
 
-        print_summary(detections, 5.0, 100.0)  # Start at 100 seconds
-
-        captured = capsys.readouterr()
-        assert "00:01:40 and 00:01:45" in captured.out  # Fixed expected output
 
     def test_print_summary_no_detections(self, capsys: "CaptureFixture") -> None:
         """Test summary printing with no detections."""
-        print_summary([], 10.0, 0.0)
+        print_summary([], 10.0)
 
         captured = capsys.readouterr()
         assert "Detected 0 gongs" in captured.out
@@ -267,26 +260,11 @@ class TestOutputAndSummary:
         detections = [(1.5, 0.8), (3.2, 0.6)]
         save_results_to_csv(detections, "test_results", "csv_dir")
 
-        # Verify detections_to_dataframe was called with default start_offset
-        mock_detector.detections_to_dataframe.assert_called_once_with(detections, 0.0)
+        # Verify detections_to_dataframe was called without offset
+        mock_detector.detections_to_dataframe.assert_called_once_with(detections)
         mock_df.to_csv.assert_called_once_with("csv_dir/test_results.csv", index=False)
 
-    @patch("gong_detector.core.results_utils.YAMNetGongDetector")
-    def test_save_results_to_csv_with_offset(self, mock_detector_class: Mock) -> None:
-        """Test saving results to CSV with time offset."""
-        # Mock detector and dataframe
-        mock_detector = Mock()
-        mock_detector_class.return_value = mock_detector
 
-        mock_df = Mock()
-        mock_detector.detections_to_dataframe.return_value = mock_df
-
-        detections = [(1.5, 0.8), (3.2, 0.6)]
-        save_results_to_csv(detections, "test_results", "csv_dir", start_offset=3600.0)
-
-        # Verify detections_to_dataframe was called with offset
-        mock_detector.detections_to_dataframe.assert_called_once_with(detections, 3600.0)
-        mock_df.to_csv.assert_called_once_with("csv_dir/test_results.csv", index=False)
 
     @patch("gong_detector.core.results_utils.YAMNetGongDetector")
     def test_save_results_to_csv_adds_extension(
@@ -449,7 +427,7 @@ class TestMainIntegration:
         assert os.path.exists("csv_results/test_results.csv")
 
         # Test summary printing component
-        print_summary(detections, 10.0, 0.0)
+        print_summary(detections, 10.0)
 
 
 class TestErrorHandling:
