@@ -58,7 +58,10 @@ def print_summary(
 
 
 def save_results_to_csv(
-    detections: list[tuple[float, float]], csv_filename: str, csv_dir: str
+    detections: list[tuple[float, float]], 
+    csv_filename: str, 
+    csv_dir: str,
+    start_offset: float = 0.0
 ) -> None:
     """Save detection results to CSV file.
 
@@ -66,6 +69,7 @@ def save_results_to_csv(
         detections: List of detection tuples
         csv_filename: Name of the CSV file
         csv_dir: Directory to save CSV files
+        start_offset: Time offset in seconds to add to YouTube timestamps
     """
     if not csv_filename.endswith(".csv"):
         csv_filename += ".csv"
@@ -75,7 +79,7 @@ def save_results_to_csv(
 
     csv_path = os.path.join(csv_dir, csv_filename)
     detector = YAMNetGongDetector()
-    df = detector.detections_to_dataframe(detections)
+    df = detector.detections_to_dataframe(detections, start_offset)
     df.to_csv(csv_path, index=False)
     print(f"Results saved to: {csv_path}")
 

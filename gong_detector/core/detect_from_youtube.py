@@ -133,7 +133,8 @@ def main() -> None:
 
         # Save to CSV if requested
         if args.save_csv:
-            save_results_to_csv(detections, args.save_csv, csv_results_dir)
+            start_offset = args.start_time or 0
+            save_results_to_csv(detections, args.save_csv, csv_results_dir, start_offset)
 
         # Save positive samples if requested
         if args.save_positive_samples and detections:

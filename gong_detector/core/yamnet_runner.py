@@ -219,20 +219,35 @@ class YAMNetGongDetector:
         print("=" * 50)
 
     def detections_to_dataframe(
-        self, detections: list[tuple[float, float]]
+        self, detections: list[tuple[float, float]], start_offset: float = 0.0
     ) -> pd.DataFrame:
         """Convert detections to a pandas DataFrame.
 
         Args:
             detections: List of (timestamp, confidence) tuples
+            start_offset: Time offset in seconds to add to timestamps
 
         Returns:
-            DataFrame with timestamp_seconds and confidence columns
+            DataFrame with timestamp_seconds, youtube_timestamp, and confidence columns
         """
         if not detections:
-            return pd.DataFrame({"timestamp_seconds": [], "confidence": []})
+            return pd.DataFrame({
+                "timestamp_seconds": [], 
+                "youtube_timestamp": [], 
+                "confidence": []
+            })
 
         timestamps, confidences = zip(*detections)
-        return pd.DataFrame(
-            {"timestamp_seconds": timestamps, "confidence": confidences}
-        )
+        
+        # Calculate YouTube timestamps (detection time + offset)
+        youtube_timestamps = [ts + start_offset for ts in timestamps]
+        
+        # Format YouTube timestamps as HH:MM:SS
+        from .results_utils import format_time
+        formatted_timestamps = [format_time(ts) for ts in youtube_timestamps]
+        
+        return pd.DataFrame({
+            "timestamp_seconds": timestamps,
+            "youtube_timestamp": formatted_timestamps,
+            "confidence": confidences
+        })
