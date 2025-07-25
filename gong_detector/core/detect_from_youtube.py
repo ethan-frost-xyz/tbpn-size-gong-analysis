@@ -8,6 +8,7 @@ using YAMNet. Designed for testing on real podcast episodes.
 import argparse
 import glob
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -49,7 +50,7 @@ def download_and_trim_youtube_audio(
     output_path: str,
     start_time: Optional[int] = None,
     duration: Optional[int] = None,
-) -> str:
+) -> tuple[str, str]:
     """Download YouTube audio and optionally trim to specified segment.
 
     Args:
@@ -59,7 +60,7 @@ def download_and_trim_youtube_audio(
         duration: Duration in seconds (optional)
 
     Returns:
-        Path to the processed audio file
+        Tuple of (audio_path, video_title)
 
     Raises:
         RuntimeError: If download or conversion fails
@@ -69,19 +70,28 @@ def download_and_trim_youtube_audio(
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_audio = os.path.join(temp_dir, "temp_audio.%(ext)s")
 
-        # Download with yt-dlp
-        downloaded_file = _download_youtube_audio(url, temp_audio)
+        # Download with yt-dlp and get video info
+        downloaded_file, video_title = _download_youtube_audio(url, temp_audio)
 
         # Convert and trim with ffmpeg
         _convert_and_trim_audio(downloaded_file, output_path, start_time, duration)
 
         print(f"Audio saved to: {output_path}")
+        print(f"Video title: {video_title}")
 
-    return output_path
+    return output_path, video_title
 
 
-def _download_youtube_audio(url: str, output_template: str) -> str:
-    """Download audio from YouTube using yt-dlp."""
+def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
+    """Download audio from YouTube using yt-dlp and extract video title.
+    
+    Args:
+        url: YouTube URL to download
+        output_template: Template for output filename
+        
+    Returns:
+        Tuple of (downloaded_file_path, video_title)
+    """
     ydl_opts = {
         "format": "bestaudio/best",
         "extractaudio": True,
@@ -90,6 +100,11 @@ def _download_youtube_audio(url: str, output_template: str) -> str:
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        # Get video info first
+        info = ydl.extract_info(url, download=False)
+        video_title = info.get('title', 'Unknown Video')
+        
+        # Download the audio
         ydl.download([url])
 
     # Find the downloaded file
@@ -99,7 +114,7 @@ def _download_youtube_audio(url: str, output_template: str) -> str:
     if not downloaded_files:
         raise RuntimeError("Failed to download audio from YouTube")
 
-    return os.path.join(temp_dir, downloaded_files[0])
+    return os.path.join(temp_dir, downloaded_files[0]), video_title
 
 
 def _convert_and_trim_audio(
@@ -190,6 +205,31 @@ def setup_directories() -> tuple[str, str]:
     os.makedirs(csv_results_dir, exist_ok=True)
 
     return temp_audio_dir, csv_results_dir
+
+
+def sanitize_title_for_folder(title: str) -> str:
+    """Convert video title to safe folder name.
+    
+    Args:
+        title: Video title from YouTube
+        
+    Returns:
+        Sanitized folder name safe for filesystem
+    """
+    # Convert to lowercase
+    sanitized = title.lower()
+    # Remove commas
+    sanitized = sanitized.replace(',', '')
+    # Remove or replace problematic characters
+    sanitized = re.sub(r'[<>:"/\\|?*]', '_', sanitized)
+    # Replace multiple spaces/underscores with single underscore
+    sanitized = re.sub(r'[_\s]+', '_', sanitized)
+    # Remove leading/trailing underscores
+    sanitized = sanitized.strip('_')
+    # Limit length
+    if len(sanitized) > 100:
+        sanitized = sanitized[:100]
+    return sanitized
 
 
 def create_temp_audio_path(temp_dir: str) -> str:
@@ -377,7 +417,7 @@ def main() -> None:
     try:
         # Step 1: Download and process audio
         print("Step 1: Downloading and processing audio...")
-        download_and_trim_youtube_audio(
+        temp_audio, video_title = download_and_trim_youtube_audio(
             url=args.youtube_url,
             output_path=temp_audio,
             start_time=args.start_time,
@@ -395,7 +435,9 @@ def main() -> None:
 
         # Save positive samples if requested
         if args.save_positive_samples and detections:
-            positive_dir = Path("gong_detector/training/data/raw_samples/positive")
+            # Create folder based on video title
+            sanitized_title = sanitize_title_for_folder(video_title)
+            positive_dir = Path("gong_detector/training/data/raw_samples/positive") / sanitized_title
             print(f"\nSaving positive samples to: {positive_dir}")
             save_positive_samples(detections, temp_audio, positive_dir)
 
