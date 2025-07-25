@@ -1,3 +1,8 @@
+# Ignore all files in the legacy directory
+legacy/
+notes_self.txt
+.coverage
+
 # Python
 __pycache__/
 *.py[cod]

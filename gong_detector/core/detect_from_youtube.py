@@ -13,11 +13,13 @@ import sys
 import tempfile
 import time
 import uuid
+from pathlib import Path
 from typing import Optional
 
 import yt_dlp  # type: ignore
 
 from .yamnet_runner import YAMNetGongDetector
+from .audio_utils import extract_audio_slice
 
 
 def cleanup_old_temp_files(temp_dir: str, max_age_hours: int = 24) -> None:
@@ -225,6 +227,58 @@ def save_results_to_csv(
     print(f"Results saved to: {csv_path}")
 
 
+def save_positive_samples(
+    detections: list[tuple[float, float]], 
+    audio_path: str, 
+    positive_dir: Path
+) -> None:
+    """Save detected gong segments to positive samples folder.
+
+    Args:
+        detections: List of (timestamp, confidence) tuples
+        audio_path: Path to source audio file
+        positive_dir: Directory to save positive samples
+    """
+    if not detections:
+        print("No gong detections to save")
+        return
+
+    # Load audio waveform
+    detector = YAMNetGongDetector()
+    waveform, sample_rate = detector.load_and_preprocess_audio(audio_path)
+    
+    # Create positive directory if it doesn't exist
+    positive_dir.mkdir(parents=True, exist_ok=True)
+    
+    saved_count = 0
+    for i, (timestamp, confidence) in enumerate(detections):
+        try:
+            # Extract 3-second segment around detection
+            segment = extract_audio_slice(
+                waveform, 
+                timestamp, 
+                duration_before=1.0, 
+                duration_after=2.0,
+                sample_rate=sample_rate
+            )
+            
+            # Save segment with descriptive filename
+            filename = f"gong_{timestamp:.1f}s_conf_{confidence:.3f}_{i+1}.wav"
+            output_path = positive_dir / filename
+            
+            # Convert numpy array to WAV file
+            import soundfile as sf
+            sf.write(str(output_path), segment, sample_rate)
+            
+            saved_count += 1
+            print(f"✓ Saved: {filename}")
+            
+        except Exception as e:
+            print(f"✗ Failed to save segment {i+1}: {e}")
+    
+    print(f"\nSaved {saved_count} positive samples to: {positive_dir}")
+
+
 def process_audio_with_yamnet(
     temp_audio: str, threshold: float
 ) -> tuple[list[tuple[float, float]], float, float]:
@@ -278,6 +332,7 @@ Examples:
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID"
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --start_time 5680 --duration 20
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --threshold 0.3 --save_csv results.csv
+  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --save_positive_samples
         """,
     )
 
@@ -297,6 +352,11 @@ Examples:
         "--keep_audio",
         action="store_true",
         help="Keep temporary audio file for training data extraction",
+    )
+    parser.add_argument(
+        "--save_positive_samples",
+        action="store_true",
+        help="Save detected gong segments to training data folder for human review",
     )
 
     return parser
@@ -332,6 +392,12 @@ def main() -> None:
         # Save to CSV if requested
         if args.save_csv:
             save_results_to_csv(detections, args.save_csv, csv_results_dir)
+
+        # Save positive samples if requested
+        if args.save_positive_samples and detections:
+            positive_dir = Path("gong_detector/training/data/raw_samples/positive")
+            print(f"\nSaving positive samples to: {positive_dir}")
+            save_positive_samples(detections, temp_audio, positive_dir)
 
         # Print summary and max confidence
         start_offset = args.start_time or 0
