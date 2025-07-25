@@ -26,16 +26,16 @@ def get_audio_files(folder_path: Path) -> list[Path]:
     """
     audio_extensions = {".wav", ".mp3", ".m4a", ".flac"}
     audio_files = []
-    
+
     # If folder doesn't exist, return empty list
     if not folder_path.exists():
         return audio_files
-    
+
     # Recursively find all audio files
     for file_path in folder_path.rglob("*"):
         if file_path.is_file() and file_path.suffix.lower() in audio_extensions:
             audio_files.append(file_path)
-    
+
     return audio_files
 
 

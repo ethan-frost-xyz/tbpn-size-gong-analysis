@@ -1,12 +1,9 @@
 """Tests for video title organization functionality."""
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 if TYPE_CHECKING:
-    from _pytest.fixtures import FixtureRequest
+    pass
 
 from gong_detector.core.detect_from_youtube import sanitize_title_for_folder
 
@@ -71,4 +68,4 @@ class TestVideoTitleOrganization:
         result = sanitize_title_for_folder(title)
         assert result == "my_video_title_with_mixed_case"
         assert "," not in result
-        assert result.islower() 
+        assert result.islower()

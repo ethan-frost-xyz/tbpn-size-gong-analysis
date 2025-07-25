@@ -19,8 +19,8 @@ from typing import Optional
 
 import yt_dlp  # type: ignore
 
-from .yamnet_runner import YAMNetGongDetector
 from .audio_utils import extract_audio_slice
+from .yamnet_runner import YAMNetGongDetector
 
 
 def cleanup_old_temp_files(temp_dir: str, max_age_hours: int = 24) -> None:
@@ -84,11 +84,11 @@ def download_and_trim_youtube_audio(
 
 def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
     """Download audio from YouTube using yt-dlp and extract video title.
-    
+
     Args:
         url: YouTube URL to download
         output_template: Template for output filename
-        
+
     Returns:
         Tuple of (downloaded_file_path, video_title)
     """
@@ -102,8 +102,8 @@ def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # Get video info first
         info = ydl.extract_info(url, download=False)
-        video_title = info.get('title', 'Unknown Video')
-        
+        video_title = info.get("title", "Unknown Video")
+
         # Download the audio
         ydl.download([url])
 
@@ -209,23 +209,23 @@ def setup_directories() -> tuple[str, str]:
 
 def sanitize_title_for_folder(title: str) -> str:
     """Convert video title to safe folder name.
-    
+
     Args:
         title: Video title from YouTube
-        
+
     Returns:
         Sanitized folder name safe for filesystem
     """
     # Convert to lowercase
     sanitized = title.lower()
     # Remove commas
-    sanitized = sanitized.replace(',', '')
+    sanitized = sanitized.replace(",", "")
     # Remove or replace problematic characters
-    sanitized = re.sub(r'[<>:"/\\|?*]', '_', sanitized)
+    sanitized = re.sub(r'[<>:"/\\|?*]', "_", sanitized)
     # Replace multiple spaces/underscores with single underscore
-    sanitized = re.sub(r'[_\s]+', '_', sanitized)
+    sanitized = re.sub(r"[_\s]+", "_", sanitized)
     # Remove leading/trailing underscores
-    sanitized = sanitized.strip('_')
+    sanitized = sanitized.strip("_")
     # Limit length
     if len(sanitized) > 100:
         sanitized = sanitized[:100]
@@ -268,9 +268,7 @@ def save_results_to_csv(
 
 
 def save_positive_samples(
-    detections: list[tuple[float, float]], 
-    audio_path: str, 
-    positive_dir: Path
+    detections: list[tuple[float, float]], audio_path: str, positive_dir: Path
 ) -> None:
     """Save detected gong segments to positive samples folder.
 
@@ -286,36 +284,37 @@ def save_positive_samples(
     # Load audio waveform
     detector = YAMNetGongDetector()
     waveform, sample_rate = detector.load_and_preprocess_audio(audio_path)
-    
+
     # Create positive directory if it doesn't exist
     positive_dir.mkdir(parents=True, exist_ok=True)
-    
+
     saved_count = 0
     for i, (timestamp, confidence) in enumerate(detections):
         try:
             # Extract 3-second segment around detection
             segment = extract_audio_slice(
-                waveform, 
-                timestamp, 
-                duration_before=1.0, 
+                waveform,
+                timestamp,
+                duration_before=1.0,
                 duration_after=2.0,
-                sample_rate=sample_rate
+                sample_rate=sample_rate,
             )
-            
+
             # Save segment with descriptive filename
-            filename = f"gong_{timestamp:.1f}s_conf_{confidence:.3f}_{i+1}.wav"
+            filename = f"gong_{timestamp:.1f}s_conf_{confidence:.3f}_{i + 1}.wav"
             output_path = positive_dir / filename
-            
+
             # Convert numpy array to WAV file
             import soundfile as sf
+
             sf.write(str(output_path), segment, sample_rate)
-            
+
             saved_count += 1
             print(f"✓ Saved: {filename}")
-            
+
         except Exception as e:
-            print(f"✗ Failed to save segment {i+1}: {e}")
-    
+            print(f"✗ Failed to save segment {i + 1}: {e}")
+
     print(f"\nSaved {saved_count} positive samples to: {positive_dir}")
 
 
@@ -437,7 +436,10 @@ def main() -> None:
         if args.save_positive_samples and detections:
             # Create folder based on video title
             sanitized_title = sanitize_title_for_folder(video_title)
-            positive_dir = Path("gong_detector/training/data/raw_samples/positive") / sanitized_title
+            positive_dir = (
+                Path("gong_detector/training/data/raw_samples/positive")
+                / sanitized_title
+            )
             print(f"\nSaving positive samples to: {positive_dir}")
             save_positive_samples(detections, temp_audio, positive_dir)
 

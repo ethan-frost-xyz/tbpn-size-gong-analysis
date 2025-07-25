@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import numpy as np
-import pytest
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -26,38 +25,40 @@ class TestSavePositiveSamples:
         # Mock detector
         mock_detector = Mock()
         mock_detector_class.return_value = mock_detector
-        
+
         # Mock audio loading
         mock_waveform = np.random.random(16000).astype(np.float32)  # 1 second at 16kHz
         mock_detector.load_and_preprocess_audio.return_value = (mock_waveform, 16000)
-        
+
         # Test data
         detections = [(1.0, 0.8), (3.0, 0.7)]
         audio_path = "test_audio.wav"
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             positive_dir = Path(temp_dir) / "positive"
-            
+
             # Call function
             save_positive_samples(detections, audio_path, positive_dir)
-            
+
             # Verify calls
             mock_detector.load_and_preprocess_audio.assert_called_once_with(audio_path)
             assert mock_sf_write.call_count == 2  # Two detections
-            
+
             # Verify directory was created
             assert positive_dir.exists()
 
-    def test_save_positive_samples_no_detections(self, capsys: "CaptureFixture") -> None:
+    def test_save_positive_samples_no_detections(
+        self, capsys: "CaptureFixture"
+    ) -> None:
         """Test handling of empty detections list."""
         detections: list[tuple[float, float]] = []
         audio_path = "test_audio.wav"
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             positive_dir = Path(temp_dir) / "positive"
-            
+
             save_positive_samples(detections, audio_path, positive_dir)
-            
+
             captured = capsys.readouterr()
             assert "No gong detections to save" in captured.out
 
@@ -70,22 +71,22 @@ class TestSavePositiveSamples:
         # Mock detector
         mock_detector = Mock()
         mock_detector_class.return_value = mock_detector
-        
+
         # Mock audio loading
         mock_waveform = np.random.random(16000).astype(np.float32)
         mock_detector.load_and_preprocess_audio.return_value = (mock_waveform, 16000)
-        
+
         # Mock soundfile to raise error
         mock_sf_write.side_effect = Exception("Write failed")
-        
+
         detections = [(1.0, 0.8)]
         audio_path = "test_audio.wav"
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             positive_dir = Path(temp_dir) / "positive"
-            
+
             # Should not raise exception
             save_positive_samples(detections, audio_path, positive_dir)
-            
+
             # Verify error was handled gracefully
-            mock_sf_write.assert_called_once() 
+            mock_sf_write.assert_called_once()
