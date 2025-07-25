@@ -16,7 +16,7 @@ from core.yamnet_runner import YAMNetGongDetector
 
 
 def get_audio_files(folder_path: Path) -> list[Path]:
-    """Get all audio files from a folder.
+    """Get all audio files from a folder, including subdirectories.
 
     Args:
         folder_path: Path to folder containing audio files
@@ -25,11 +25,18 @@ def get_audio_files(folder_path: Path) -> list[Path]:
         List of audio file paths
     """
     audio_extensions = {".wav", ".mp3", ".m4a", ".flac"}
-    return [
-        file_path
-        for file_path in folder_path.iterdir()
-        if file_path.suffix.lower() in audio_extensions
-    ]
+    audio_files = []
+    
+    # If folder doesn't exist, return empty list
+    if not folder_path.exists():
+        return audio_files
+    
+    # Recursively find all audio files
+    for file_path in folder_path.rglob("*"):
+        if file_path.is_file() and file_path.suffix.lower() in audio_extensions:
+            audio_files.append(file_path)
+    
+    return audio_files
 
 
 def extract_embeddings_from_file(
