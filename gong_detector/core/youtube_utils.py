@@ -44,7 +44,7 @@ def download_and_trim_youtube_audio(
     output_path: str,
     start_time: Optional[int] = None,
     duration: Optional[int] = None,
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
     """Download YouTube audio and optionally trim to specified segment.
 
     Args:
@@ -54,7 +54,7 @@ def download_and_trim_youtube_audio(
         duration: Duration in seconds (optional)
 
     Returns:
-        Tuple of (audio_path, video_title)
+        Tuple of (audio_path, video_title, upload_date)
 
     Raises:
         RuntimeError: If download or conversion fails
@@ -65,7 +65,7 @@ def download_and_trim_youtube_audio(
         temp_audio = os.path.join(temp_dir, "temp_audio.%(ext)s")
 
         # Download with yt-dlp and get video info
-        downloaded_file, video_title = _download_youtube_audio(url, temp_audio)
+        downloaded_file, video_title, upload_date = _download_youtube_audio(url, temp_audio)
 
         # Convert and trim with ffmpeg
         _convert_and_trim_audio(downloaded_file, output_path, start_time, duration)
@@ -73,7 +73,7 @@ def download_and_trim_youtube_audio(
         print(f"Audio saved to: {output_path}")
         print(f"Video title: {video_title}")
 
-    return output_path, video_title
+    return output_path, video_title, upload_date
 
 
 def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
@@ -97,6 +97,7 @@ def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
         # Get video info first
         info = ydl.extract_info(url, download=False)
         video_title = info.get("title", "Unknown Video")
+        upload_date = info.get("upload_date", "")
 
         # Download the audio
         ydl.download([url])
@@ -108,7 +109,7 @@ def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
     if not downloaded_files:
         raise RuntimeError("Failed to download audio from YouTube")
 
-    return os.path.join(temp_dir, downloaded_files[0]), video_title
+    return os.path.join(temp_dir, downloaded_files[0]), video_title, upload_date
 
 
 def _convert_and_trim_audio(
@@ -155,6 +156,27 @@ def _convert_and_trim_audio(
     subprocess.run(cmd, check=True, capture_output=True)
 
 
+def create_folder_name_from_date(upload_date: str) -> str:
+    """Create folder name from YouTube upload date in format tbpn_MM_DD_YYYY.
+
+    Args:
+        upload_date: Upload date from YouTube (format: YYYYMMDD)
+
+    Returns:
+        Folder name in format tbpn_MM_DD_YYYY
+    """
+    if not upload_date or len(upload_date) != 8:
+        return "tbpn_unknown_date"
+    
+    try:
+        year = upload_date[:4]
+        month = upload_date[4:6]
+        day = upload_date[6:8]
+        return f"tbpn_{month}_{day}_{year}"
+    except (ValueError, IndexError):
+        return "tbpn_unknown_date"
+
+
 def sanitize_title_for_folder(title: str) -> str:
     """Convert video title to safe folder name.
 
@@ -170,8 +192,10 @@ def sanitize_title_for_folder(title: str) -> str:
     sanitized = sanitized.replace(",", "")
     # Remove or replace problematic characters
     sanitized = re.sub(r'[<>:"/\\|?*]', "_", sanitized)
-    # Replace multiple spaces/underscores with single underscore
-    sanitized = re.sub(r"[_\s]+", "_", sanitized)
+    # Replace spaces with underscores
+    sanitized = sanitized.replace(" ", "_")
+    # Replace multiple consecutive underscores with single underscore
+    sanitized = re.sub(r"_+", "_", sanitized)
     # Remove leading/trailing underscores
     sanitized = sanitized.strip("_")
     # Limit length
