@@ -295,6 +295,7 @@ class TestOutputFormatting:
 
         assert len(df) == 0
         assert "timestamp_seconds" in df.columns
+        assert "youtube_timestamp" in df.columns
         assert "confidence" in df.columns
 
     def test_detections_to_dataframe_with_data(self) -> None:
@@ -307,6 +308,19 @@ class TestOutputFormatting:
         assert len(df) == 3
         assert df["timestamp_seconds"].tolist() == [1.5, 3.2, 5.1]
         assert df["confidence"].tolist() == [0.8, 0.6, 0.7]
+        assert df["youtube_timestamp"].tolist() == ["00:00:01", "00:00:03", "00:00:05"]
+
+    def test_detections_to_dataframe_with_offset(self) -> None:
+        """Test converting detections to DataFrame with time offset."""
+        detector = YAMNetGongDetector()
+        detections = [(1.5, 0.8), (3.2, 0.6)]
+
+        df = detector.detections_to_dataframe(detections, start_offset=3600.0)  # 1 hour offset
+
+        assert len(df) == 2
+        assert df["timestamp_seconds"].tolist() == [1.5, 3.2]
+        assert df["confidence"].tolist() == [0.8, 0.6]
+        assert df["youtube_timestamp"].tolist() == ["01:00:01", "01:00:03"]
 
 
 class TestIntegration:

@@ -13,17 +13,21 @@ if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
 
 from gong_detector.core.detect_from_youtube import (
+    create_argument_parser,
+    process_audio_with_yamnet,
+)
+from gong_detector.core.youtube_utils import (
     _convert_and_trim_audio,
     _download_youtube_audio,
     cleanup_old_temp_files,
-    create_argument_parser,
     create_temp_audio_path,
     download_and_trim_youtube_audio,
+    setup_directories,
+)
+from gong_detector.core.results_utils import (
     format_time,
     print_summary,
-    process_audio_with_yamnet,
     save_results_to_csv,
-    setup_directories,
 )
 
 
@@ -130,8 +134,8 @@ class TestFileCleanup:
 class TestYouTubeDownloadAndTrim:
     """Tests for YouTube download and trimming."""
 
-    @patch("gong_detector.core.detect_from_youtube._download_youtube_audio")
-    @patch("gong_detector.core.detect_from_youtube._convert_and_trim_audio")
+    @patch("gong_detector.core.youtube_utils._download_youtube_audio")
+    @patch("gong_detector.core.youtube_utils._convert_and_trim_audio")
     def test_download_and_trim_youtube_audio_basic(
         self, mock_convert: Mock, mock_download: Mock
     ) -> None:
@@ -146,7 +150,7 @@ class TestYouTubeDownloadAndTrim:
         mock_download.assert_called_once()
         mock_convert.assert_called_once_with("temp_download.mp3", "output.wav", 10, 30)
 
-    @patch("gong_detector.core.detect_from_youtube.yt_dlp.YoutubeDL")
+    @patch("gong_detector.core.youtube_utils.yt_dlp.YoutubeDL")
     @patch("os.listdir")
     def test_download_youtube_audio_success(
         self, mock_listdir: Mock, mock_ydl_class: Mock
@@ -170,7 +174,7 @@ class TestYouTubeDownloadAndTrim:
                 ["https://youtube.com/watch?v=test"]
             )
 
-    @patch("gong_detector.core.detect_from_youtube.yt_dlp.YoutubeDL")
+    @patch("gong_detector.core.youtube_utils.yt_dlp.YoutubeDL")
     @patch("os.listdir")
     def test_download_youtube_audio_no_files(
         self, mock_listdir: Mock, mock_ydl_class: Mock
@@ -250,7 +254,7 @@ class TestOutputAndSummary:
         # Should not have confidence info
         assert "Average confidence" not in captured.out
 
-    @patch("gong_detector.core.detect_from_youtube.YAMNetGongDetector")
+    @patch("gong_detector.core.results_utils.YAMNetGongDetector")
     def test_save_results_to_csv(self, mock_detector_class: Mock) -> None:
         """Test saving results to CSV."""
         # Mock detector and dataframe
@@ -263,9 +267,28 @@ class TestOutputAndSummary:
         detections = [(1.5, 0.8), (3.2, 0.6)]
         save_results_to_csv(detections, "test_results", "csv_dir")
 
+        # Verify detections_to_dataframe was called with default start_offset
+        mock_detector.detections_to_dataframe.assert_called_once_with(detections, 0.0)
         mock_df.to_csv.assert_called_once_with("csv_dir/test_results.csv", index=False)
 
-    @patch("gong_detector.core.detect_from_youtube.YAMNetGongDetector")
+    @patch("gong_detector.core.results_utils.YAMNetGongDetector")
+    def test_save_results_to_csv_with_offset(self, mock_detector_class: Mock) -> None:
+        """Test saving results to CSV with time offset."""
+        # Mock detector and dataframe
+        mock_detector = Mock()
+        mock_detector_class.return_value = mock_detector
+
+        mock_df = Mock()
+        mock_detector.detections_to_dataframe.return_value = mock_df
+
+        detections = [(1.5, 0.8), (3.2, 0.6)]
+        save_results_to_csv(detections, "test_results", "csv_dir", start_offset=3600.0)
+
+        # Verify detections_to_dataframe was called with offset
+        mock_detector.detections_to_dataframe.assert_called_once_with(detections, 3600.0)
+        mock_df.to_csv.assert_called_once_with("csv_dir/test_results.csv", index=False)
+
+    @patch("gong_detector.core.results_utils.YAMNetGongDetector")
     def test_save_results_to_csv_adds_extension(
         self, mock_detector_class: Mock
     ) -> None:
@@ -376,10 +399,10 @@ class TestArgumentParser:
 class TestMainIntegration:
     """Integration tests for main functionality."""
 
-    @patch("gong_detector.core.detect_from_youtube.setup_directories")
-    @patch("gong_detector.core.detect_from_youtube.cleanup_old_temp_files")
-    @patch("gong_detector.core.detect_from_youtube.create_temp_audio_path")
-    @patch("gong_detector.core.detect_from_youtube.download_and_trim_youtube_audio")
+    @patch("gong_detector.core.youtube_utils.setup_directories")
+    @patch("gong_detector.core.youtube_utils.cleanup_old_temp_files")
+    @patch("gong_detector.core.youtube_utils.create_temp_audio_path")
+    @patch("gong_detector.core.youtube_utils.download_and_trim_youtube_audio")
     @patch("gong_detector.core.detect_from_youtube.process_audio_with_yamnet")
     @patch("os.path.exists")
     @patch("os.remove")
