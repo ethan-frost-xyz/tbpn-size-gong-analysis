@@ -135,14 +135,22 @@ def main() -> None:
     detector = YAMNetGongDetector()
     detector.load_model()
 
-    # Get audio files
+    # Get audio files (including subdirectories for positive samples)
     audio_extensions = {".wav", ".mp3", ".m4a", ".flac"}
-    positive_files = [
-        f for f in positive_dir.iterdir() if f.suffix.lower() in audio_extensions
-    ]
-    negative_files = [
-        f for f in negative_dir.iterdir() if f.suffix.lower() in audio_extensions
-    ]
+    
+    # For positive samples, search recursively through video folders
+    positive_files = []
+    if positive_dir.exists():
+        for file_path in positive_dir.rglob("*"):
+            if file_path.is_file() and file_path.suffix.lower() in audio_extensions:
+                positive_files.append(file_path)
+    
+    # For negative samples, search in the main directory
+    negative_files = []
+    if negative_dir.exists():
+        for file_path in negative_dir.iterdir():
+            if file_path.is_file() and file_path.suffix.lower() in audio_extensions:
+                negative_files.append(file_path)
 
     if not positive_files and not negative_files:
         print("No audio files found for testing!")
