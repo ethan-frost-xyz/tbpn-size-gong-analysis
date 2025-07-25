@@ -198,7 +198,7 @@ class YAMNetGongDetector:
         return 0.48  # Default YAMNet hop length
 
     def print_detections(self, detections: list[tuple[float, float]]) -> None:
-        """Print gong detections in a formatted table.
+        """Print gong detections in a formatted table with YouTube timestamps.
 
         Args:
             detections: List of (timestamp, confidence) tuples to display
@@ -207,25 +207,28 @@ class YAMNetGongDetector:
             print("No gong detections found.")
             return
 
-        print("\n" + "=" * 50)
+        # Import format_time here to avoid circular imports
+        from .results_utils import format_time
+
+        print("\n" + "=" * 70)
         print("GONG DETECTIONS")
-        print("=" * 50)
-        print(f"{'Timestamp (s)':<15} {'Confidence':<12}")
-        print("-" * 27)
+        print("=" * 70)
+        print(f"{'Timestamp (s)':<15} {'YouTube Time':<12} {'Confidence':<12}")
+        print("-" * 47)
 
         for timestamp, confidence in detections:
-            print(f"{timestamp:<15.2f} {confidence:<12.4f}")
+            youtube_time = format_time(timestamp)
+            print(f"{timestamp:<15.2f} {youtube_time:<12} {confidence:<12.4f}")
 
-        print("=" * 50)
+        print("=" * 70)
 
     def detections_to_dataframe(
-        self, detections: list[tuple[float, float]], start_offset: float = 0.0
+        self, detections: list[tuple[float, float]]
     ) -> pd.DataFrame:
         """Convert detections to a pandas DataFrame.
 
         Args:
             detections: List of (timestamp, confidence) tuples
-            start_offset: Time offset in seconds to add to timestamps
 
         Returns:
             DataFrame with timestamp_seconds, youtube_timestamp, and confidence columns
@@ -239,12 +242,9 @@ class YAMNetGongDetector:
 
         timestamps, confidences = zip(*detections)
         
-        # Calculate YouTube timestamps (detection time + offset)
-        youtube_timestamps = [ts + start_offset for ts in timestamps]
-        
         # Format YouTube timestamps as HH:MM:SS
         from .results_utils import format_time
-        formatted_timestamps = [format_time(ts) for ts in youtube_timestamps]
+        formatted_timestamps = [format_time(ts) for ts in timestamps]
         
         return pd.DataFrame({
             "timestamp_seconds": timestamps,
