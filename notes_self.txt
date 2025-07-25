@@ -1,2 +1,3 @@
 ## convert back to minutes, seconds, etc.
+    ## half working, not quite done
 ## add auto trim start and end of each episode automatically
