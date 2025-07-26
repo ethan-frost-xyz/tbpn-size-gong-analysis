@@ -31,6 +31,18 @@ def format_time(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 
+def format_time_for_filename(seconds: float) -> str:
+    """Format seconds as HH_MM_SS string for filenames.
+
+    Args:
+        seconds: Time in seconds
+
+    Returns:
+        Formatted time string in HH_MM_SS format (underscores instead of colons)
+    """
+    return format_time(seconds).replace(":", "_")
+
+
 def print_summary(
     detections: list[tuple[float, float, float]],
     total_duration: float,
@@ -114,7 +126,7 @@ def save_positive_samples(
             )
 
             # Save segment with descriptive filename (use display timestamp for filename)
-            filename = f"s_conf_{confidence:.3f}_gong_{display_timestamp:.1f}s_{i + 1}.wav"
+            filename = f"s_conf_{confidence:.3f}_at_{format_time_for_filename(display_timestamp)}_{i + 1}.wav"
             output_path = positive_dir / filename
 
             # Convert numpy array to WAV file
