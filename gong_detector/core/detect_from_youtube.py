@@ -24,7 +24,7 @@ from .youtube_utils import (
 
 def process_audio_with_yamnet(
     temp_audio: str, threshold: float
-) -> tuple[list[tuple[float, float]], float, float]:
+) -> tuple[list[tuple[float, float, float]], float, float]:
     """Process audio file with YAMNet detector.
 
     Args:
@@ -138,12 +138,9 @@ def main() -> None:
 
         # Save positive samples if requested
         if args.save_positive_samples and detections:
-            # Create folder based on upload date
+            # Create dated folder within positive samples directory
             folder_name = create_folder_name_from_date(upload_date)
-            positive_dir = (
-                Path("gong_detector/training/data/raw_samples/positive")
-                / folder_name
-            )
+            positive_dir = Path("gong_detector/training/data/raw_samples/positive") / folder_name
             print(f"\nSaving positive samples to: {positive_dir}")
             save_positive_samples(detections, temp_audio, positive_dir)
 

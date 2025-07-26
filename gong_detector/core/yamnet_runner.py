@@ -164,7 +164,7 @@ class YAMNetGongDetector:
         scores: np.ndarray,
         confidence_threshold: float = 0.5,
         audio_duration: Optional[float] = None,
-    ) -> list[tuple[float, float]]:
+    ) -> list[tuple[float, float, float]]:
         """Detect gong sounds based on YAMNet scores.
 
         Args:
@@ -173,18 +173,20 @@ class YAMNetGongDetector:
             audio_duration: Total audio duration in seconds (for validation)
 
         Returns:
-            List of (timestamp, confidence) tuples for detected gongs
+            List of (window_start, confidence, display_timestamp) tuples for detected gongs
         """
         print(f"Detecting gongs with confidence threshold: {confidence_threshold}")
 
         gong_scores = scores[:, self.gong_class_index]
         hop_length = self._calculate_hop_length(audio_duration, len(gong_scores))
+        window_duration = 0.96  # YAMNet window duration
 
-        detections: list[tuple[float, float]] = []
+        detections: list[tuple[float, float, float]] = []
         for i, confidence in enumerate(gong_scores):
             if confidence > confidence_threshold:
-                timestamp = i * hop_length
-                detections.append((timestamp, float(confidence)))
+                window_start = i * hop_length
+                display_timestamp = window_start + (window_duration / 2)  # Center of window
+                detections.append((window_start, float(confidence), display_timestamp))
 
         print(f"Found {len(detections)} gong detections above threshold")
         return detections
@@ -197,11 +199,11 @@ class YAMNetGongDetector:
             return audio_duration / num_predictions
         return 0.48  # Default YAMNet hop length
 
-    def print_detections(self, detections: list[tuple[float, float]]) -> None:
+    def print_detections(self, detections: list[tuple[float, float, float]]) -> None:
         """Print gong detections in a formatted table with YouTube timestamps.
 
         Args:
-            detections: List of (timestamp, confidence) tuples to display
+            detections: List of (window_start, confidence, display_timestamp) tuples to display
         """
         if not detections:
             print("No gong detections found.")
@@ -213,41 +215,41 @@ class YAMNetGongDetector:
         print("\n" + "=" * 70)
         print("GONG DETECTIONS")
         print("=" * 70)
-        print(f"{'Timestamp (s)':<15} {'YouTube Time':<12} {'Confidence':<12}")
+        print(f"{'Window Start':<15} {'YouTube Time':<12} {'Confidence':<12}")
         print("-" * 47)
 
-        for timestamp, confidence in detections:
-            youtube_time = format_time(timestamp)
-            print(f"{timestamp:<15.2f} {youtube_time:<12} {confidence:<12.4f}")
+        for window_start, confidence, display_timestamp in detections:
+            youtube_time = format_time(display_timestamp)
+            print(f"{window_start:<15.2f} {youtube_time:<12} {confidence:<12.4f}")
 
         print("=" * 70)
 
     def detections_to_dataframe(
-        self, detections: list[tuple[float, float]]
+        self, detections: list[tuple[float, float, float]]
     ) -> pd.DataFrame:
         """Convert detections to a pandas DataFrame.
 
         Args:
-            detections: List of (timestamp, confidence) tuples
+            detections: List of (window_start, confidence, display_timestamp) tuples
 
         Returns:
-            DataFrame with timestamp_seconds, youtube_timestamp, and confidence columns
+            DataFrame with window_start_seconds, youtube_timestamp, and confidence columns
         """
         if not detections:
             return pd.DataFrame({
-                "timestamp_seconds": [], 
+                "window_start_seconds": [], 
                 "youtube_timestamp": [], 
                 "confidence": []
             })
 
-        timestamps, confidences = zip(*detections)
+        window_starts, confidences, display_timestamps = zip(*detections)
         
         # Format YouTube timestamps as HH:MM:SS
         from .results_utils import format_time
-        formatted_timestamps = [format_time(ts) for ts in timestamps]
+        formatted_timestamps = [format_time(ts) for ts in display_timestamps]
         
         return pd.DataFrame({
-            "timestamp_seconds": timestamps,
+            "window_start_seconds": window_starts,
             "youtube_timestamp": formatted_timestamps,
             "confidence": confidences
         })

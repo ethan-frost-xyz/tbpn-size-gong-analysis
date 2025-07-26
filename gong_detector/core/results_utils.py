@@ -32,13 +32,13 @@ def format_time(seconds: float) -> str:
 
 
 def print_summary(
-    detections: list[tuple[float, float]],
+    detections: list[tuple[float, float, float]],
     total_duration: float,
 ) -> None:
     """Print detection summary.
 
     Args:
-        detections: List of (timestamp, confidence) tuples
+        detections: List of (window_start, confidence, display_timestamp) tuples
         total_duration: Total audio duration in seconds
     """
     count = len(detections)
@@ -56,14 +56,14 @@ def print_summary(
 
 
 def save_results_to_csv(
-    detections: list[tuple[float, float]], 
+    detections: list[tuple[float, float, float]], 
     csv_filename: str, 
     csv_dir: str
 ) -> None:
     """Save detection results to CSV file.
 
     Args:
-        detections: List of detection tuples
+        detections: List of (window_start, confidence, display_timestamp) tuples
         csv_filename: Name of the CSV file
         csv_dir: Directory to save CSV files
     """
@@ -81,12 +81,12 @@ def save_results_to_csv(
 
 
 def save_positive_samples(
-    detections: list[tuple[float, float]], audio_path: str, positive_dir: Path
+    detections: list[tuple[float, float, float]], audio_path: str, positive_dir: Path
 ) -> None:
     """Save detected gong segments to positive samples folder.
 
     Args:
-        detections: List of (timestamp, confidence) tuples
+        detections: List of (window_start, confidence, display_timestamp) tuples
         audio_path: Path to source audio file
         positive_dir: Directory to save positive samples
     """
@@ -102,19 +102,19 @@ def save_positive_samples(
     positive_dir.mkdir(parents=True, exist_ok=True)
 
     saved_count = 0
-    for i, (timestamp, confidence) in enumerate(detections):
+    for i, (window_start, confidence, display_timestamp) in enumerate(detections):
         try:
-            # Extract 3-second segment around detection
+            # Extract 3-second segment around detection (use display timestamp for center)
             segment = extract_audio_slice(
                 waveform,
-                timestamp,
+                display_timestamp,
                 duration_before=1.0,
                 duration_after=2.0,
                 sample_rate=sample_rate,
             )
 
-            # Save segment with descriptive filename
-            filename = f"gong_{timestamp:.1f}s_conf_{confidence:.3f}_{i + 1}.wav"
+            # Save segment with descriptive filename (use display timestamp for filename)
+            filename = f"gong_{display_timestamp:.1f}s_conf_{confidence:.3f}_{i + 1}.wav"
             output_path = positive_dir / filename
 
             # Convert numpy array to WAV file
