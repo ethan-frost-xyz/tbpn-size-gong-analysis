@@ -1,7 +1,6 @@
 # Ignore all files in the legacy directory
 notes_self.txt
 .coverage
-/gong_detector/tbpn_youtube_links.txt
 
 
 # Python
