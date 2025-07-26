@@ -140,7 +140,10 @@ def main() -> None:
         if args.save_positive_samples and detections:
             # Create dated folder within positive samples directory
             folder_name = create_folder_name_from_date(upload_date)
-            positive_dir = Path("../training/data/raw_samples/positive") / folder_name
+            # Use absolute path resolution to find the existing positive samples directory
+            project_root = Path(__file__).parent.parent.parent
+            positive_base_dir = project_root / "gong_detector" / "training" / "data" / "raw_samples" / "positive"
+            positive_dir = positive_base_dir / folder_name
             print(f"\nSaving positive samples to: {positive_dir}")
             save_positive_samples(detections, temp_audio, positive_dir)
 

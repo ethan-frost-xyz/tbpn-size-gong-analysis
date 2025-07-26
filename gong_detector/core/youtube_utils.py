@@ -157,24 +157,24 @@ def _convert_and_trim_audio(
 
 
 def create_folder_name_from_date(upload_date: str) -> str:
-    """Create folder name from YouTube upload date in format MM/DD/YYYY.
+    """Create folder name from YouTube upload date in format tbpn_mm_dd_yyyy.
 
     Args:
         upload_date: Upload date from YouTube (format: YYYYMMDD)
 
     Returns:
-        Folder name in format MM/DD/YYYY
+        Folder name in format tbpn_mm_dd_yyyy
     """
     if not upload_date or len(upload_date) != 8:
-        return "unknown_date"
+        return "tbpn_unknown_date"
     
     try:
         year = upload_date[:4]
         month = upload_date[4:6]
         day = upload_date[6:8]
-        return f"{month}/{day}/{year}"
+        return f"tbpn_{month}_{day}_{year}"
     except (ValueError, IndexError):
-        return "unknown_date"
+        return "tbpn_unknown_date"
 
 
 def sanitize_title_for_folder(title: str) -> str:
