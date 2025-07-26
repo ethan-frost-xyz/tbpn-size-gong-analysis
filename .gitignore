@@ -1,4 +1,6 @@
-
+# Ignore all files in the legacy directory
+notes_self.txt
+.coverage
 
 # Python
 __pycache__/
