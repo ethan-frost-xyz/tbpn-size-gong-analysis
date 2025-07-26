@@ -114,7 +114,7 @@ def save_positive_samples(
             )
 
             # Save segment with descriptive filename (use display timestamp for filename)
-            filename = f"gong_{display_timestamp:.1f}s_conf_{confidence:.3f}_{i + 1}.wav"
+            filename = f"s_conf_{confidence:.3f}_gong_{display_timestamp:.1f}s_{i + 1}.wav"
             output_path = positive_dir / filename
 
             # Convert numpy array to WAV file
