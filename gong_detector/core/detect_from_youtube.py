@@ -9,6 +9,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from typing import Dict, Any, List, Optional, Tuple
 
 from .results_utils import format_time, print_summary, save_positive_samples, save_results_to_csv
 from .yamnet_runner import YAMNetGongDetector
@@ -103,6 +104,104 @@ Examples:
     )
 
     return parser
+
+
+def detect_from_youtube_comprehensive(
+    youtube_url: str,
+    threshold: float = 0.4,
+    start_time: Optional[int] = None,
+    duration: Optional[int] = None,
+    save_positive_samples: bool = False,
+    keep_audio: bool = False
+) -> Dict[str, Any]:
+    """Run YouTube gong detection and return comprehensive metadata.
+    
+    This function provides a programmatic interface for bulk processing,
+    returning structured data instead of just printing results.
+    
+    Args:
+        youtube_url: YouTube URL to process
+        threshold: Confidence threshold for detection
+        start_time: Start time in seconds (optional)
+        duration: Duration in seconds (optional)
+        save_positive_samples: Whether to save detected segments
+        keep_audio: Whether to keep temporary audio file
+        
+    Returns:
+        Dictionary containing all detection metadata:
+        - video_url: Original YouTube URL
+        - video_title: Video title
+        - upload_date: Upload date (YYYYMMDD format)
+        - video_duration: Total video duration in seconds
+        - max_confidence: Maximum confidence score in video
+        - threshold: Detection threshold used
+        - detections: List of detection tuples
+        - detection_count: Number of detections found
+        - success: Whether processing was successful
+        - error_message: Error message if failed
+    """
+    # Setup directories
+    temp_audio_dir, csv_results_dir = setup_directories()
+    cleanup_old_temp_files(temp_audio_dir)
+    
+    # Create temporary audio file path
+    temp_audio = create_temp_audio_path(temp_audio_dir)
+    
+    try:
+        # Step 1: Download and process audio
+        temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
+            url=youtube_url,
+            output_path=temp_audio,
+            start_time=start_time,
+            duration=duration,
+        )
+        
+        # Step 2-4: Process with YAMNet
+        detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
+            temp_audio, threshold
+        )
+        
+        # Save positive samples if requested
+        if save_positive_samples and detections:
+            # Create dated folder within positive samples directory
+            folder_name = create_folder_name_from_date(upload_date)
+            project_root = Path(__file__).parent.parent.parent
+            positive_base_dir = project_root / "gong_detector" / "training" / "data" / "raw_samples" / "positive"
+            positive_dir = positive_base_dir / folder_name
+            save_positive_samples(detections, temp_audio, positive_dir)
+        
+        # Return comprehensive metadata
+        return {
+            "video_url": youtube_url,
+            "video_title": video_title,
+            "upload_date": upload_date,
+            "video_duration": total_duration,
+            "max_confidence": max_gong_confidence,
+            "threshold": threshold,
+            "detections": detections,
+            "detection_count": len(detections),
+            "success": True,
+            "error_message": ""
+        }
+        
+    except Exception as e:
+        return {
+            "video_url": youtube_url,
+            "video_title": "",
+            "upload_date": "",
+            "video_duration": 0.0,
+            "max_confidence": 0.0,
+            "threshold": threshold,
+            "detections": [],
+            "detection_count": 0,
+            "success": False,
+            "error_message": str(e)
+        }
+        
+    finally:
+        # Clean up temporary file
+        if not keep_audio and os.path.exists(temp_audio):
+            os.remove(temp_audio)
 
 
 def main() -> None:

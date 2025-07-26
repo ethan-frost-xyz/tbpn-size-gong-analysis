@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Bulk YouTube gong detection script.
+"""Bulk YouTube gong detection script with comprehensive CSV output.
 
-Processes multiple YouTube URLs from tbpn_youtube_links.txt using the existing
-detect_from_youtube.py functionality. Maintains exact formatting and storage patterns.
+Processes multiple YouTube URLs from tbpn_youtube_links.txt and generates
+a comprehensive CSV file containing all detection metadata for analysis.
 """
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 from typing import List
+
+from gong_detector.core.detect_from_youtube import detect_from_youtube_comprehensive
+from gong_detector.core.comprehensive_csv import ComprehensiveCSVManager
 
 
 def read_youtube_links(file_path: str) -> List[str]:
@@ -48,14 +50,21 @@ def read_youtube_links(file_path: str) -> List[str]:
     return urls
 
 
-def process_single_url(url: str, threshold: float, save_csv: bool, keep_audio: bool) -> bool:
-    """Process a single YouTube URL using existing detect_from_youtube.py.
+def process_single_url(
+    url: str, 
+    threshold: float, 
+    save_positive_samples: bool, 
+    keep_audio: bool,
+    csv_manager: ComprehensiveCSVManager
+) -> bool:
+    """Process a single YouTube URL and add results to CSV manager.
 
     Args:
         url: YouTube URL to process
         threshold: Confidence threshold for detection
-        save_csv: Whether to save CSV results
+        save_positive_samples: Whether to save detected segments
         keep_audio: Whether to keep temporary audio files
+        csv_manager: CSV manager to collect results
 
     Returns:
         True if successful, False if failed
@@ -64,44 +73,59 @@ def process_single_url(url: str, threshold: float, save_csv: bool, keep_audio: b
     print(f"Processing: {url}")
     print(f"{'='*60}")
     
-    # Build command with same parameters as individual processing
-    cmd = [
-        sys.executable, "-m", "gong_detector.core.detect_from_youtube",
-        url,
-        "--threshold", str(threshold),
-        "--save_positive_samples"
-    ]
-    
-    if save_csv:
-        cmd.extend(["--save_csv", "bulk_results.csv"])
-    
-    if keep_audio:
-        cmd.append("--keep_audio")
-    
     try:
-        # Run the existing detection script
-        result = subprocess.run(cmd, check=True, capture_output=False)
-        print(f"✓ Successfully processed: {url}")
-        return True
+        # Use the comprehensive detection function
+        result = detect_from_youtube_comprehensive(
+            youtube_url=url,
+            threshold=threshold,
+            save_positive_samples=save_positive_samples,
+            keep_audio=keep_audio
+        )
         
-    except subprocess.CalledProcessError as e:
-        print(f"✗ Failed to process {url}: {e}")
-        return False
+        if result["success"]:
+            print(f"\nStep 1: Downloaded and processed audio")
+            print(f"Step 2-4: YAMNet detection complete")
+            print(f"\nDetected {result['detection_count']} gongs:")
+            
+            # Print individual detections
+            for i, (window_start, confidence, display_timestamp) in enumerate(result["detections"]):
+                from gong_detector.core.results_utils import format_time
+                youtube_time = format_time(display_timestamp)
+                print(f"  {youtube_time} - Confidence: {confidence:.3f}")
+            
+            # Add to CSV manager
+            csv_manager.add_video_detections(
+                video_url=result["video_url"],
+                video_title=result["video_title"],
+                upload_date=result["upload_date"],
+                video_duration=result["video_duration"],
+                max_confidence=result["max_confidence"],
+                threshold=result["threshold"],
+                detections=result["detections"]
+            )
+            
+            print(f"✓ Successfully processed: {url}")
+            return True
+        else:
+            print(f"✗ Failed to process {url}: {result['error_message']}")
+            return False
+            
     except Exception as e:
         print(f"✗ Unexpected error processing {url}: {e}")
         return False
 
 
 def main() -> None:
-    """Run bulk YouTube gong detection."""
+    """Run bulk YouTube gong detection with comprehensive CSV output."""
     parser = argparse.ArgumentParser(
-        description="Bulk process YouTube URLs for gong detection",
+        description="Bulk process YouTube URLs for gong detection with comprehensive CSV output",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python bulk_process.py
   python bulk_process.py --threshold 0.5
-  python bulk_process.py --save_csv --keep_audio
+  python bulk_process.py --save_positive_samples --keep_audio
+  python bulk_process.py --run_name "tbpn_batch_1"
         """
     )
     
@@ -112,9 +136,9 @@ Examples:
         help="Confidence threshold for gong detection (default: 0.4)"
     )
     parser.add_argument(
-        "--save_csv",
+        "--save_positive_samples",
         action="store_true",
-        help="Save results to CSV file for each video"
+        help="Save detected gong segments to training data folder"
     )
     parser.add_argument(
         "--keep_audio",
@@ -125,6 +149,11 @@ Examples:
         "--links_file",
         default=None,
         help="Path to file containing YouTube URLs (default: tbpn_youtube_links.txt in script directory)"
+    )
+    parser.add_argument(
+        "--run_name",
+        default=None,
+        help="Optional name for this bulk run (used in CSV filename)"
     )
     
     args = parser.parse_args()
@@ -149,6 +178,9 @@ Examples:
         print(f"Error: {e}")
         sys.exit(1)
     
+    # Initialize comprehensive CSV manager
+    csv_manager = ComprehensiveCSVManager()
+    
     # Process each URL
     successful = 0
     failed = 0
@@ -156,12 +188,36 @@ Examples:
     for i, url in enumerate(urls, 1):
         print(f"\nProgress: {i}/{len(urls)}")
         
-        if process_single_url(url, args.threshold, args.save_csv, args.keep_audio):
+        if process_single_url(url, args.threshold, args.save_positive_samples, args.keep_audio, csv_manager):
             successful += 1
         else:
             failed += 1
     
-    # Print summary
+    # Generate comprehensive CSV
+    try:
+        if csv_manager.detection_records:
+            csv_path = csv_manager.save_comprehensive_csv(args.run_name)
+            
+            # Get and display summary statistics
+            stats = csv_manager.get_summary_stats()
+            
+            print(f"\n{'='*60}")
+            print("COMPREHENSIVE CSV GENERATED")
+            print(f"{'='*60}")
+            print(f"CSV saved to: {csv_path}")
+            print(f"Total detections: {stats['total_detections']}")
+            print(f"Videos processed: {stats['unique_videos']}")
+            print(f"Average confidence: {stats['average_confidence']}")
+            print(f"Confidence range: {stats['min_confidence']} - {stats['max_confidence']}")
+        else:
+            print(f"\n{'='*60}")
+            print("NO DETECTIONS FOUND")
+            print(f"{'='*60}")
+            print("No CSV file generated (no gongs detected)")
+    except Exception as e:
+        print(f"Error generating comprehensive CSV: {e}")
+    
+    # Print final summary
     print(f"\n{'='*60}")
     print("BULK PROCESSING COMPLETE")
     print(f"{'='*60}")

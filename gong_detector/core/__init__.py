@@ -18,7 +18,9 @@ from .audio_utils import (
     is_silent,
     normalize_waveform,
 )
+from .comprehensive_csv import ComprehensiveCSVManager, DetectionRecord
 from .convert_audio import convert_youtube_audio, get_audio_info, validate_audio_file
+from .detect_from_youtube import detect_from_youtube_comprehensive
 from .results_utils import format_time, print_summary, save_positive_samples, save_results_to_csv
 from .yamnet_runner import YAMNetGongDetector
 from .youtube_utils import (
@@ -36,6 +38,10 @@ __version__ = "1.0.0"
 __all__ = [
     # Main detector class
     "YAMNetGongDetector",
+    # Comprehensive detection and CSV functionality
+    "detect_from_youtube_comprehensive",
+    "ComprehensiveCSVManager",
+    "DetectionRecord",
     # Audio conversion functions
     "convert_youtube_audio",
     "validate_audio_file",
