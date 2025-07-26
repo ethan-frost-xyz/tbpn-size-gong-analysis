@@ -8,13 +8,12 @@ a comprehensive CSV file containing all detection metadata for analysis.
 import argparse
 import sys
 from pathlib import Path
-from typing import List
 
-from gong_detector.core.detect_from_youtube import detect_from_youtube_comprehensive
 from gong_detector.core.comprehensive_csv import ComprehensiveCSVManager
+from gong_detector.core.detect_from_youtube import detect_from_youtube_comprehensive
 
 
-def read_youtube_links(file_path: str) -> List[str]:
+def read_youtube_links(file_path: str) -> list[str]:
     """Read YouTube URLs from text file.
 
     Args:
@@ -28,34 +27,40 @@ def read_youtube_links(file_path: str) -> List[str]:
         ValueError: If no valid URLs found
     """
     urls = []
-    
-    with open(file_path, 'r', encoding='utf-8') as f:
+
+    with open(file_path, encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
             # Skip empty lines and comments
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
             # Skip lines that are just instructions
-            if line.startswith('Here is all the tbpn videos') or line.startswith('python -m'):
+            if line.startswith("Here is all the tbpn videos") or line.startswith(
+                "python -m"
+            ):
                 continue
             # Check if line looks like a YouTube URL
-            if 'youtube.com/watch' in line or 'youtu.be/' in line:
+            if "youtube.com/watch" in line or "youtu.be/" in line:
                 urls.append(line)
-            elif line and not line.startswith('http'):  # Skip non-URL lines that aren't empty
-                print(f"Warning: Line {line_num} doesn't look like a YouTube URL: {line}")
-    
+            elif line and not line.startswith(
+                "http"
+            ):  # Skip non-URL lines that aren't empty
+                print(
+                    f"Warning: Line {line_num} doesn't look like a YouTube URL: {line}"
+                )
+
     if not urls:
         raise ValueError("No valid YouTube URLs found in file")
-    
+
     return urls
 
 
 def process_single_url(
-    url: str, 
-    threshold: float, 
-    save_positive_samples: bool, 
+    url: str,
+    threshold: float,
+    save_positive_samples: bool,
     keep_audio: bool,
-    csv_manager: ComprehensiveCSVManager
+    csv_manager: ComprehensiveCSVManager,
 ) -> bool:
     """Process a single YouTube URL and add results to CSV manager.
 
@@ -69,30 +74,33 @@ def process_single_url(
     Returns:
         True if successful, False if failed
     """
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Processing: {url}")
-    print(f"{'='*60}")
-    
+    print(f"{'=' * 60}")
+
     try:
         # Use the comprehensive detection function
         result = detect_from_youtube_comprehensive(
             youtube_url=url,
             threshold=threshold,
             save_positive_samples=save_positive_samples,
-            keep_audio=keep_audio
+            keep_audio=keep_audio,
         )
-        
+
         if result["success"]:
-            print(f"\nStep 1: Downloaded and processed audio")
-            print(f"Step 2-4: YAMNet detection complete")
+            print("\nStep 1: Downloaded and processed audio")
+            print("Step 2-4: YAMNet detection complete")
             print(f"\nDetected {result['detection_count']} gongs:")
-            
+
             # Print individual detections
-            for i, (window_start, confidence, display_timestamp) in enumerate(result["detections"]):
+            for _i, (_window_start, confidence, display_timestamp) in enumerate(
+                result["detections"]
+            ):
                 from gong_detector.core.results_utils import format_time
+
                 youtube_time = format_time(display_timestamp)
                 print(f"  {youtube_time} - Confidence: {confidence:.3f}")
-            
+
             # Add to CSV manager
             csv_manager.add_video_detections(
                 video_url=result["video_url"],
@@ -101,15 +109,15 @@ def process_single_url(
                 video_duration=result["video_duration"],
                 max_confidence=result["max_confidence"],
                 threshold=result["threshold"],
-                detections=result["detections"]
+                detections=result["detections"],
             )
-            
+
             print(f"✓ Successfully processed: {url}")
             return True
         else:
             print(f"✗ Failed to process {url}: {result['error_message']}")
             return False
-            
+
     except Exception as e:
         print(f"✗ Unexpected error processing {url}: {e}")
         return False
@@ -126,38 +134,38 @@ Examples:
   python bulk_process.py --threshold 0.5
   python bulk_process.py --save_positive_samples --keep_audio
   python bulk_process.py --run_name "tbpn_batch_1"
-        """
+        """,
     )
-    
+
     parser.add_argument(
         "--threshold",
         type=float,
         default=0.4,
-        help="Confidence threshold for gong detection (default: 0.4)"
+        help="Confidence threshold for gong detection (default: 0.4)",
     )
     parser.add_argument(
         "--save_positive_samples",
         action="store_true",
-        help="Save detected gong segments to training data folder"
+        help="Save detected gong segments to training data folder",
     )
     parser.add_argument(
         "--keep_audio",
         action="store_true",
-        help="Keep temporary audio files for training data extraction"
+        help="Keep temporary audio files for training data extraction",
     )
     parser.add_argument(
         "--links_file",
         default=None,
-        help="Path to file containing YouTube URLs (default: tbpn_youtube_links.txt in script directory)"
+        help="Path to file containing YouTube URLs (default: tbpn_youtube_links.txt in script directory)",
     )
     parser.add_argument(
         "--run_name",
         default=None,
-        help="Optional name for this bulk run (used in CSV filename)"
+        help="Optional name for this bulk run (used in CSV filename)",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Determine links file path
     if args.links_file is None:
         # Default to tbpn_youtube_links.txt in the same directory as this script
@@ -165,7 +173,7 @@ Examples:
         links_file = script_dir / "tbpn_youtube_links.txt"
     else:
         links_file = args.links_file
-    
+
     # Read URLs from file
     try:
         urls = read_youtube_links(str(links_file))
@@ -177,60 +185,70 @@ Examples:
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
-    
+
     # Initialize comprehensive CSV manager
     csv_manager = ComprehensiveCSVManager()
-    
+
     # Process each URL
     successful = 0
     failed = 0
-    
+
     for i, url in enumerate(urls, 1):
         print(f"\nProgress: {i}/{len(urls)}")
-        
-        if process_single_url(url, args.threshold, args.save_positive_samples, args.keep_audio, csv_manager):
+
+        if process_single_url(
+            url,
+            args.threshold,
+            args.save_positive_samples,
+            args.keep_audio,
+            csv_manager,
+        ):
             successful += 1
         else:
             failed += 1
-    
+
     # Generate comprehensive CSV
     try:
         if csv_manager.detection_records:
             csv_path = csv_manager.save_comprehensive_csv(args.run_name)
-            
+
             # Get and display summary statistics
             stats = csv_manager.get_summary_stats()
-            
-            print(f"\n{'='*60}")
+
+            print(f"\n{'=' * 60}")
             print("COMPREHENSIVE CSV GENERATED")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             print(f"CSV saved to: {csv_path}")
             print(f"Total detections: {stats['total_detections']}")
             print(f"Videos processed: {stats['unique_videos']}")
             print(f"Average confidence: {stats['average_confidence']}")
-            print(f"Confidence range: {stats['min_confidence']} - {stats['max_confidence']}")
+            print(
+                f"Confidence range: {stats['min_confidence']} - {stats['max_confidence']}"
+            )
         else:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print("NO DETECTIONS FOUND")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             print("No CSV file generated (no gongs detected)")
     except Exception as e:
         print(f"Error generating comprehensive CSV: {e}")
-    
+
     # Print final summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("BULK PROCESSING COMPLETE")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Total URLs: {len(urls)}")
     print(f"Successful: {successful}")
     print(f"Failed: {failed}")
-    
+
     if failed > 0:
-        print(f"\nNote: {failed} URLs failed to process. Check the output above for details.")
+        print(
+            f"\nNote: {failed} URLs failed to process. Check the output above for details."
+        )
         sys.exit(1)
     else:
         print("\nAll URLs processed successfully!")
 
 
 if __name__ == "__main__":
-    main() 
+    main()

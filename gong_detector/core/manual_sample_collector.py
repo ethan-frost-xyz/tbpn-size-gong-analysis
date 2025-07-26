@@ -12,11 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
-    from _pytest.fixtures import FixtureRequest
-    from _pytest.logging import LogCaptureFixture
-    from _pytest.monkeypatch import MonkeyPatch
-    from pytest_mock.plugin import MockerFixture
+    pass
 
 from .results_utils import save_positive_samples
 from .youtube_utils import (
@@ -27,13 +23,15 @@ from .youtube_utils import (
 )
 
 
-def create_manual_detection(timestamp: float, confidence: float = 1.0) -> list[tuple[float, float, float]]:
+def create_manual_detection(
+    timestamp: float, confidence: float = 1.0
+) -> list[tuple[float, float, float]]:
     """Create a single manual detection tuple for the save_positive_samples function.
-    
+
     Args:
         timestamp: Timestamp in seconds where the gong occurs
         confidence: Confidence value (default 1.0 for manual detections)
-        
+
     Returns:
         List containing a single detection tuple (window_start, confidence, display_timestamp)
     """
@@ -43,7 +41,7 @@ def create_manual_detection(timestamp: float, confidence: float = 1.0) -> list[t
 
 def create_argument_parser() -> argparse.ArgumentParser:
     """Create and configure argument parser.
-    
+
     Returns:
         Configured argument parser
     """
@@ -56,16 +54,18 @@ Examples:
   python -m gong_detector.core.manual_sample_collector "https://youtube.com/watch?v=VIDEO_ID" 360 --confidence 0.8
         """,
     )
-    
+
     parser.add_argument("youtube_url", help="YouTube URL to process")
-    parser.add_argument("timestamp", type=float, help="Timestamp in seconds where gong occurs")
+    parser.add_argument(
+        "timestamp", type=float, help="Timestamp in seconds where gong occurs"
+    )
     parser.add_argument(
         "--confidence",
         type=float,
         default=1.0,
         help="Confidence value for manual detection (default: 1.0)",
     )
-    
+
     return parser
 
 
@@ -73,46 +73,49 @@ def main() -> None:
     """Run manual sample collection."""
     parser = create_argument_parser()
     args = parser.parse_args()
-    
+
     # Setup directories
     temp_audio_dir, _ = setup_directories()
     cleanup_old_temp_files(temp_audio_dir)
-    
+
     # Create temporary audio file path
     temp_audio = create_temp_audio_path(temp_audio_dir)
-    
+
     try:
         # Step 1: Download and process audio
-        print(f"Step 1: Downloading audio from YouTube...")
+        print("Step 1: Downloading audio from YouTube...")
         temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
             url=args.youtube_url,
             output_path=temp_audio,
         )
-        
+
         # Step 2: Create manual detection
         print(f"Step 2: Creating manual detection at {args.timestamp}s...")
         manual_detection = create_manual_detection(args.timestamp, args.confidence)
-        
+
         # Step 3: Save sample using existing function
-        print(f"Step 3: Extracting and saving audio segment...")
-        
+        print("Step 3: Extracting and saving audio segment...")
+
         # Determine output directory based on video title
         from .youtube_utils import sanitize_title_for_folder
+
         safe_title = sanitize_title_for_folder(video_title)
-        positive_dir = Path("gong_detector/training/data/raw_samples/positive") / safe_title
-        
+        positive_dir = (
+            Path("gong_detector/training/data/raw_samples/positive") / safe_title
+        )
+
         # Use existing save_positive_samples function
         save_positive_samples(manual_detection, temp_audio, positive_dir)
-        
-        print(f"\n✓ Manual sample collected successfully!")
+
+        print("\n✓ Manual sample collected successfully!")
         print(f"  Video: {video_title}")
         print(f"  Timestamp: {args.timestamp}s")
         print(f"  Saved to: {positive_dir}")
-        
+
     except Exception as e:
         print(f"✗ Error: {e}")
         sys.exit(1)
-    
+
     finally:
         # Clean up temporary audio file
         try:
@@ -124,4 +127,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()

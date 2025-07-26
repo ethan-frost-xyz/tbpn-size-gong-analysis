@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import numpy as np
+    pass
 
 from .audio_utils import extract_audio_slice
 from .yamnet_runner import YAMNetGongDetector
@@ -68,9 +68,7 @@ def print_summary(
 
 
 def save_results_to_csv(
-    detections: list[tuple[float, float, float]], 
-    csv_filename: str, 
-    csv_dir: str
+    detections: list[tuple[float, float, float]], csv_filename: str, csv_dir: str
 ) -> None:
     """Save detection results to CSV file.
 
@@ -114,7 +112,7 @@ def save_positive_samples(
     positive_dir.mkdir(parents=True, exist_ok=True)
 
     saved_count = 0
-    for i, (window_start, confidence, display_timestamp) in enumerate(detections):
+    for i, (_window_start, confidence, display_timestamp) in enumerate(detections):
         try:
             # Extract 3-second segment around detection (use display timestamp for center)
             segment = extract_audio_slice(
@@ -140,4 +138,4 @@ def save_positive_samples(
         except Exception as e:
             print(f"✗ Failed to save segment {i + 1}: {e}")
 
-    print(f"\nSaved {saved_count} positive samples to: {positive_dir}") 
+    print(f"\nSaved {saved_count} positive samples to: {positive_dir}")

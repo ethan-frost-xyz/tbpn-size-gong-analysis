@@ -185,7 +185,9 @@ class YAMNetGongDetector:
         for i, confidence in enumerate(gong_scores):
             if confidence > confidence_threshold:
                 window_start = i * hop_length
-                display_timestamp = window_start + (window_duration / 2)  # Center of window
+                display_timestamp = window_start + (
+                    window_duration / 2
+                )  # Center of window
                 detections.append((window_start, float(confidence), display_timestamp))
 
         print(f"Found {len(detections)} gong detections above threshold")
@@ -236,20 +238,21 @@ class YAMNetGongDetector:
             DataFrame with window_start_seconds, youtube_timestamp, and confidence columns
         """
         if not detections:
-            return pd.DataFrame({
-                "window_start_seconds": [], 
-                "youtube_timestamp": [], 
-                "confidence": []
-            })
+            return pd.DataFrame(
+                {"window_start_seconds": [], "youtube_timestamp": [], "confidence": []}
+            )
 
         window_starts, confidences, display_timestamps = zip(*detections)
-        
+
         # Format YouTube timestamps as HH:MM:SS
         from .results_utils import format_time
+
         formatted_timestamps = [format_time(ts) for ts in display_timestamps]
-        
-        return pd.DataFrame({
-            "window_start_seconds": window_starts,
-            "youtube_timestamp": formatted_timestamps,
-            "confidence": confidences
-        })
+
+        return pd.DataFrame(
+            {
+                "window_start_seconds": window_starts,
+                "youtube_timestamp": formatted_timestamps,
+                "confidence": confidences,
+            }
+        )

@@ -65,7 +65,9 @@ def download_and_trim_youtube_audio(
         temp_audio = os.path.join(temp_dir, "temp_audio.%(ext)s")
 
         # Download with yt-dlp and get video info
-        downloaded_file, video_title, upload_date = _download_youtube_audio(url, temp_audio)
+        downloaded_file, video_title, upload_date = _download_youtube_audio(
+            url, temp_audio
+        )
 
         # Convert and trim with ffmpeg
         _convert_and_trim_audio(downloaded_file, output_path, start_time, duration)
@@ -119,13 +121,13 @@ def _convert_and_trim_audio(
     duration: Optional[int] = None,
 ) -> None:
     """Convert audio to WAV format and optionally trim it.
-    
+
     Args:
         input_file: Input audio file path
         output_path: Output WAV file path
         start_time: Start time in seconds (optional)
         duration: Duration in seconds (optional)
-        
+
     Raises:
         subprocess.CalledProcessError: If ffmpeg conversion fails
     """
@@ -167,7 +169,7 @@ def create_folder_name_from_date(upload_date: str) -> str:
     """
     if not upload_date or len(upload_date) != 8:
         return "tbpn_unknown_date"
-    
+
     try:
         year = upload_date[:4]
         month = upload_date[4:6]
@@ -228,4 +230,4 @@ def setup_directories() -> tuple[str, str]:
     os.makedirs(temp_audio_dir, exist_ok=True)
     os.makedirs(csv_results_dir, exist_ok=True)
 
-    return temp_audio_dir, csv_results_dir 
+    return temp_audio_dir, csv_results_dir

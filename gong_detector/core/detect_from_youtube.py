@@ -9,16 +9,19 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any, Optional
 
-from .results_utils import format_time, print_summary, save_positive_samples, save_results_to_csv
+from .results_utils import (
+    print_summary,
+    save_positive_samples,
+    save_results_to_csv,
+)
 from .yamnet_runner import YAMNetGongDetector
 from .youtube_utils import (
     cleanup_old_temp_files,
     create_folder_name_from_date,
     create_temp_audio_path,
     download_and_trim_youtube_audio,
-    sanitize_title_for_folder,
     setup_directories,
 )
 
@@ -112,13 +115,13 @@ def detect_from_youtube_comprehensive(
     start_time: Optional[int] = None,
     duration: Optional[int] = None,
     save_positive_samples: bool = False,
-    keep_audio: bool = False
-) -> Dict[str, Any]:
+    keep_audio: bool = False,
+) -> dict[str, Any]:
     """Run YouTube gong detection and return comprehensive metadata.
-    
+
     This function provides a programmatic interface for bulk processing,
     returning structured data instead of just printing results.
-    
+
     Args:
         youtube_url: YouTube URL to process
         threshold: Confidence threshold for detection
@@ -126,7 +129,7 @@ def detect_from_youtube_comprehensive(
         duration: Duration in seconds (optional)
         save_positive_samples: Whether to save detected segments
         keep_audio: Whether to keep temporary audio file
-        
+
     Returns:
         Dictionary containing all detection metadata:
         - video_url: Original YouTube URL
@@ -143,10 +146,10 @@ def detect_from_youtube_comprehensive(
     # Setup directories
     temp_audio_dir, csv_results_dir = setup_directories()
     cleanup_old_temp_files(temp_audio_dir)
-    
+
     # Create temporary audio file path
     temp_audio = create_temp_audio_path(temp_audio_dir)
-    
+
     try:
         # Step 1: Download and process audio
         temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
@@ -155,21 +158,28 @@ def detect_from_youtube_comprehensive(
             start_time=start_time,
             duration=duration,
         )
-        
+
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
             temp_audio, threshold
         )
-        
+
         # Save positive samples if requested
         if save_positive_samples and detections:
             # Create dated folder within positive samples directory
             folder_name = create_folder_name_from_date(upload_date)
             project_root = Path(__file__).parent.parent.parent
-            positive_base_dir = project_root / "gong_detector" / "training" / "data" / "raw_samples" / "positive"
+            positive_base_dir = (
+                project_root
+                / "gong_detector"
+                / "training"
+                / "data"
+                / "raw_samples"
+                / "positive"
+            )
             positive_dir = positive_base_dir / folder_name
             save_positive_samples(detections, temp_audio, positive_dir)
-        
+
         # Return comprehensive metadata
         return {
             "video_url": youtube_url,
@@ -181,9 +191,9 @@ def detect_from_youtube_comprehensive(
             "detections": detections,
             "detection_count": len(detections),
             "success": True,
-            "error_message": ""
+            "error_message": "",
         }
-        
+
     except Exception as e:
         return {
             "video_url": youtube_url,
@@ -195,9 +205,9 @@ def detect_from_youtube_comprehensive(
             "detections": [],
             "detection_count": 0,
             "success": False,
-            "error_message": str(e)
+            "error_message": str(e),
         }
-        
+
     finally:
         # Clean up temporary file
         if not keep_audio and os.path.exists(temp_audio):
@@ -241,7 +251,14 @@ def main() -> None:
             folder_name = create_folder_name_from_date(upload_date)
             # Use absolute path resolution to find the existing positive samples directory
             project_root = Path(__file__).parent.parent.parent
-            positive_base_dir = project_root / "gong_detector" / "training" / "data" / "raw_samples" / "positive"
+            positive_base_dir = (
+                project_root
+                / "gong_detector"
+                / "training"
+                / "data"
+                / "raw_samples"
+                / "positive"
+            )
             positive_dir = positive_base_dir / folder_name
             print(f"\nSaving positive samples to: {positive_dir}")
             save_positive_samples(detections, temp_audio, positive_dir)
