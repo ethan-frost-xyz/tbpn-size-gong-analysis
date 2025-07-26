@@ -2,7 +2,8 @@
 notes_self.txt
 .coverage
 /gong_detector/tbpn_youtube_links.txt
-/gong_detector/tbpn_june_2025.txt
+tbpn_ytlinks/
+tbpn_ytlinks/*
 
 
 # Python
