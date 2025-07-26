@@ -8,8 +8,12 @@ detect_from_youtube.py functionality. Maintains exact formatting and storage pat
 import argparse
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 from typing import List
+
+# Suppress urllib3 OpenSSL warning
+warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.1.1+.*")
 
 
 def read_youtube_links(file_path: str) -> List[str]:
