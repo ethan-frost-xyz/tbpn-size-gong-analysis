@@ -108,8 +108,8 @@ def save_positive_samples(
             segment = extract_audio_slice(
                 waveform,
                 display_timestamp,
-                duration_before=1.0,
-                duration_after=2.0,
+                duration_before=0.75,
+                duration_after=2.25,
                 sample_rate=sample_rate,
             )
 
