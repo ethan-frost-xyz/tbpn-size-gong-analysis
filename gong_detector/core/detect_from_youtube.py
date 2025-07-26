@@ -8,7 +8,11 @@ using YAMNet. Designed for testing on real podcast episodes.
 import argparse
 import os
 import sys
+import warnings
 from pathlib import Path
+
+# Suppress urllib3 OpenSSL warning
+warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL 1.1.1+.*")
 
 from .results_utils import format_time, print_summary, save_positive_samples, save_results_to_csv
 from .yamnet_runner import YAMNetGongDetector
