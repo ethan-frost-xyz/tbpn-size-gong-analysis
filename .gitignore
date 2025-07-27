@@ -2,6 +2,7 @@
 notes_self.txt
 .coverage
 /gong_detector/tbpn_youtube_links.txt
+gong_detector/core/tbpn_youtube_links.txt
 tbpn_ytlinks/
 tbpn_ytlinks/*
 
