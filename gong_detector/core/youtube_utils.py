@@ -159,22 +159,39 @@ def _convert_and_trim_audio(
 
 
 def create_folder_name_from_date(upload_date: str) -> str:
-    """Create folder name from YouTube upload date in format tbpn_mm_dd_yyyy.
+    """Create folder name from YouTube upload date in format tbpn_dayname_month_dayordinal.
 
     Args:
         upload_date: Upload date from YouTube (format: YYYYMMDD)
 
     Returns:
-        Folder name in format tbpn_mm_dd_yyyy
+        Folder name in format tbpn_monday_june_23rd
     """
     if not upload_date or len(upload_date) != 8:
         return "tbpn_unknown_date"
 
     try:
-        year = upload_date[:4]
-        month = upload_date[4:6]
-        day = upload_date[6:8]
-        return f"tbpn_{month}_{day}_{year}"
+        from datetime import datetime
+        
+        year = int(upload_date[:4])
+        month = int(upload_date[4:6])
+        day = int(upload_date[6:8])
+        
+        # Create datetime object
+        date_obj = datetime(year, month, day)
+        
+        # Get day name and month name
+        day_name = date_obj.strftime("%A").lower()  # monday, tuesday, etc.
+        month_name = date_obj.strftime("%B").lower()  # january, february, etc.
+        
+        # Get ordinal suffix for day
+        if 10 <= day <= 20:  # Special case for 11th, 12th, 13th
+            suffix = "th"
+        else:
+            suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
+            
+        return f"tbpn_{day_name}_{month_name}_{day}{suffix}"
+        
     except (ValueError, IndexError):
         return "tbpn_unknown_date"
 

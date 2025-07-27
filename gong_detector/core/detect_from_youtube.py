@@ -125,7 +125,7 @@ def detect_from_youtube_comprehensive(
     max_threshold: Optional[float] = None,
     start_time: Optional[int] = None,
     duration: Optional[int] = None,
-    save_positive_samples: bool = False,
+    should_save_positive_samples: bool = False,
     keep_audio: bool = False,
 ) -> dict[str, Any]:
     """Run YouTube gong detection and return comprehensive metadata.
@@ -139,7 +139,7 @@ def detect_from_youtube_comprehensive(
         max_threshold: Maximum confidence threshold for detection (optional)
         start_time: Start time in seconds (optional)
         duration: Duration in seconds (optional)
-        save_positive_samples: Whether to save detected segments
+        should_save_positive_samples: Whether to save detected segments
         keep_audio: Whether to keep temporary audio file
 
     Returns:
@@ -178,11 +178,8 @@ def detect_from_youtube_comprehensive(
         )
 
         # Save positive samples if requested
-        if save_positive_samples and detections:
-            # Determine output directory based on video title (same as manual_sample_collector)
-            from .youtube_utils import sanitize_title_for_folder
-            
-            safe_title = sanitize_title_for_folder(video_title)
+        if should_save_positive_samples and detections:
+            # Use date-based folder naming for consistency
             project_root = Path(__file__).parent.parent.parent
             positive_base_dir = (
                 project_root
@@ -192,8 +189,7 @@ def detect_from_youtube_comprehensive(
                 / "raw_samples"
                 / "positive"
             )
-            positive_dir = positive_base_dir / safe_title
-            save_positive_samples(detections, temp_audio, positive_dir)
+            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date)
 
         # Return comprehensive metadata
         return {
@@ -264,11 +260,7 @@ def main() -> None:
 
         # Save positive samples if requested
         if args.save_positive_samples and detections:
-            # Determine output directory based on video title (same as manual_sample_collector)
-            from .youtube_utils import sanitize_title_for_folder
-            
-            safe_title = sanitize_title_for_folder(video_title)
-            # Use absolute path resolution to find the existing positive samples directory
+            # Use date-based folder naming for consistency
             project_root = Path(__file__).parent.parent.parent
             positive_base_dir = (
                 project_root
@@ -278,9 +270,8 @@ def main() -> None:
                 / "raw_samples"
                 / "positive"
             )
-            positive_dir = positive_base_dir / safe_title
-            print(f"\nSaving positive samples to: {positive_dir}")
-            save_positive_samples(detections, temp_audio, positive_dir)
+            print(f"\nSaving positive samples using date-based folder naming...")
+            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date)
 
         # Print summary and max confidence
         print_summary(detections, total_duration)

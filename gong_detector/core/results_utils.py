@@ -91,25 +91,38 @@ def save_results_to_csv(
 
 
 def save_positive_samples(
-    detections: list[tuple[float, float, float]], audio_path: str, positive_dir: Path
+    detections: list[tuple[float, float, float]], 
+    audio_path: str, 
+    positive_dir: Path, 
+    upload_date: str = ""
 ) -> None:
     """Save detected gong segments to positive samples folder.
 
     Args:
         detections: List of (window_start, confidence, display_timestamp) tuples
         audio_path: Path to source audio file
-        positive_dir: Directory to save positive samples
+        positive_dir: Base directory for positive samples (will create date-based subfolder)
+        upload_date: YouTube upload date (YYYYMMDD format) for proper folder naming
     """
     if not detections:
         print("No gong detections to save")
         return
+
+    # Create date-based folder name if upload_date is provided
+    if upload_date:
+        from .youtube_utils import create_folder_name_from_date
+        folder_name = create_folder_name_from_date(upload_date)
+        final_positive_dir = positive_dir / folder_name
+    else:
+        # Fallback to using the passed directory directly (for backwards compatibility)
+        final_positive_dir = positive_dir
 
     # Load audio waveform
     detector = YAMNetGongDetector()
     waveform, sample_rate = detector.load_and_preprocess_audio(audio_path)
 
     # Create positive directory if it doesn't exist
-    positive_dir.mkdir(parents=True, exist_ok=True)
+    final_positive_dir.mkdir(parents=True, exist_ok=True)
 
     saved_count = 0
     for i, (_window_start, confidence, display_timestamp) in enumerate(detections):
@@ -125,7 +138,7 @@ def save_positive_samples(
 
             # Save segment with descriptive filename (use display timestamp for filename)
             filename = f"at_{format_time_for_filename(display_timestamp)}_s_conf_{confidence:.3f}_{i + 1}.wav"
-            output_path = positive_dir / filename
+            output_path = final_positive_dir / filename
 
             # Convert numpy array to WAV file
             import soundfile as sf
@@ -138,4 +151,4 @@ def save_positive_samples(
         except Exception as e:
             print(f"✗ Failed to save segment {i + 1}: {e}")
 
-    print(f"\nSaved {saved_count} positive samples to: {positive_dir}")
+    print(f"\nSaved {saved_count} positive samples to: {final_positive_dir}")

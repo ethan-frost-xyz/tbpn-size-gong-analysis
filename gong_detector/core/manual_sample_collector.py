@@ -71,21 +71,24 @@ def process_single_sample(youtube_url: str, timestamp: float, confidence: float 
         # Step 3: Save sample using existing function
         print("Step 3: Extracting and saving audio segment...")
 
-        # Determine output directory based on video title
-        from .youtube_utils import sanitize_title_for_folder
+        # Use date-based folder naming for consistency
+        positive_base_dir = Path("gong_detector/training/data/raw_samples/positive")
 
-        safe_title = sanitize_title_for_folder(video_title)
-        positive_dir = (
-            Path("gong_detector/training/data/raw_samples/positive") / safe_title
-        )
+        # Use existing save_positive_samples function with date-based naming
+        save_positive_samples(manual_detection, temp_audio, positive_base_dir, upload_date)
 
-        # Use existing save_positive_samples function
-        save_positive_samples(manual_detection, temp_audio, positive_dir)
+        # Show the actual folder that was created
+        if upload_date:
+            from .youtube_utils import create_folder_name_from_date
+            folder_name = create_folder_name_from_date(upload_date)
+            final_dir = positive_base_dir / folder_name
+        else:
+            final_dir = positive_base_dir
 
         print("\n✓ Manual sample collected successfully!")
         print(f"  Video: {video_title}")
         print(f"  Timestamp: {timestamp}s")
-        print(f"  Saved to: {positive_dir}")
+        print(f"  Saved to: {final_dir}")
         return True
 
     except Exception as e:
