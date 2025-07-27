@@ -21,6 +21,7 @@ from .audio_utils import (
 from .comprehensive_csv import ComprehensiveCSVManager, DetectionRecord
 from .convert_audio import convert_youtube_audio, get_audio_info, validate_audio_file
 from .detect_from_youtube import detect_from_youtube_comprehensive
+from .negative_sample_collector import collect_negative_samples
 from .results_utils import (
     format_time,
     print_summary,
@@ -74,6 +75,8 @@ __all__ = [
     # Results utilities
     "save_positive_samples",
     "save_results_to_csv",
+    # Negative sample collection
+    "collect_negative_samples",
     # Constants
     "SILENCE_FLOOR_DBFS",
     "DEFAULT_SAMPLE_RATE",
