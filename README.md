@@ -135,6 +135,22 @@ Command-line interface for end-to-end YouTube audio analysis:
 - CSV export functionality for analysis results
 - Progress reporting and summary statistics
 
+### Manual Sample Collection (manual_sample_collector.py)
+
+Interactive tool for collecting training samples at specific timestamps:
+
+- Runs in a continuous loop asking for YouTube links and timestamps
+- Extract single audio segments from YouTube videos at precise timestamps
+- Perfect for collecting samples that YAMNet missed or for manual verification
+- Integrates with existing training data pipeline
+- Automatic cleanup and error handling
+
+**Use Cases:**
+- Collecting missed gong detections for training data
+- Manual verification of YAMNet results
+- Creating high-quality labeled datasets
+- Human-in-the-loop training data curation
+
 ## Usage Examples
 
 ### Basic Detection
@@ -152,6 +168,22 @@ python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VI
 # Save results to CSV
 python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VIDEO_ID" --save_csv results.csv
 ```
+
+### Manual Sample Collection
+
+```bash
+# Start interactive collection
+python -m gong_detector.core.manual_sample_collector
+```
+
+**Interactive workflow:**
+1. Enter YouTube link and timestamp: `https://youtube.com/watch?v=VIDEO_ID 120`
+2. Downloads the full YouTube video audio
+3. Extracts a 3-second segment centered on your specified timestamp
+4. Saves the sample in `gong_detector/training/data/raw_samples/positive/[video_title]/`
+5. Uses the same naming convention as YAMNet-detected samples
+6. Automatically cleans up temporary files
+7. Asks if you want to process another sample (y/n)
 
 ### Programmatic Usage
 
@@ -217,6 +249,51 @@ df.to_csv("detections.csv", index=False)
 - `convert_youtube_audio(url, output_path)`: Download and convert YouTube audio
 - `validate_audio_file(path)`: Verify file format compatibility
 - `get_audio_info(path)`: Extract metadata using ffprobe
+
+**Manual Sample Collection:**
+
+- `process_single_sample(youtube_url, timestamp, confidence)`: Process single YouTube sample
+- `create_manual_detection(timestamp, confidence)`: Create detection tuple for manual samples
+- `save_positive_samples(detections, audio_path, output_dir)`: Extract and save audio segments
+
+## Training Data Collection
+
+### Human-in-the-Loop Workflow
+
+For building high-quality training datasets, use this workflow:
+
+1. **Automatic Detection**: Use `detect_from_youtube` with `--save_positive_samples` to collect YAMNet-detected samples
+2. **Manual Collection**: Use `manual_sample_collector` to interactively collect samples that YAMNet missed
+3. **Review and Clean**: Manually review all collected samples in the training data folders
+4. **Train Model**: Run the training pipeline on cleaned data
+
+### Training Data Organization
+
+```
+gong_detector/training/data/
+├── raw_samples/
+│   ├── positive/           # Gong samples organized by video
+│   │   ├── [video_title_1]/
+│   │   │   ├── gong_1.5s_conf_0.850_1.wav
+│   │   │   └── gong_360.2s_conf_1.000_1.wav  # Manual sample
+│   │   └── [video_title_2]/
+│   └── negative/           # Non-gong samples for training
+├── processed/              # Processed embeddings and labels
+└── models/                 # Trained model checkpoints
+```
+
+### Sample Collection Commands
+
+```bash
+# Collect YAMNet-detected samples
+python -m gong_detector.core.detect_from_youtube "YOUR_URL" --save_positive_samples
+
+# Start interactive manual sample collection
+python -m gong_detector.core.manual_sample_collector
+
+# Bulk process multiple videos
+python gong_detector/bulk_process.py --save_positive_samples
+```
 
 ## Testing
 

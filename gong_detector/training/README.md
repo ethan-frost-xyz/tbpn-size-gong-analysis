@@ -30,18 +30,17 @@ python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VI
 For collecting samples that YAMNet missed or for manual verification:
 
 ```bash
-# Extract single sample at specific timestamp (in seconds)
-python -m gong_detector.core.manual_sample_collector "https://youtube.com/watch?v=VIDEO_ID" 120
-
-# With custom confidence value
-python -m gong_detector.core.manual_sample_collector "https://youtube.com/watch?v=VIDEO_ID" 360 --confidence 0.8
+# Start interactive collection
+python -m gong_detector.core.manual_sample_collector
 ```
 
 This tool:
+- Runs in interactive loop asking for YouTube links and timestamps
 - Downloads the full YouTube video
 - Extracts a 3-second segment around your specified timestamp
 - Saves it in the same format as YAMNet-detected samples
 - Organizes samples by video title in `gong_detector/training/data/raw_samples/positive/`
+- Asks if you want to continue after each sample
 
 ## Collecting Training Samples
 
@@ -80,7 +79,7 @@ python -m gong_detector.core.detect_from_youtube "YOUR_YOUTUBE_URL" --start_time
 ### Human-in-the-Loop Workflow
 
 1. **Collect YAMNet samples**: Use `detect_from_youtube` with `--save_positive_samples`
-2. **Collect manual samples**: Use `manual_sample_collector` for missed detections
+2. **Collect manual samples**: Use `manual_sample_collector` for interactive collection of missed detections
 3. **Review and clean**: Manually review samples in training data folders
 4. **Train model**: Run training pipeline on cleaned data
 5. **Evaluate**: Test model performance on validation data
@@ -150,7 +149,7 @@ This CSV is perfect for:
 ## Complete Workflow
 
 1. **Collect YAMNet samples**: Use `detect_from_youtube` with `--save_positive_samples`
-2. **Collect manual samples**: Use `manual_sample_collector` for missed detections
+2. **Collect manual samples**: Use `manual_sample_collector` for interactive collection of missed detections
 3. **Generate comprehensive CSV**: Use `bulk_process.py` for systematic data collection
 4. **Analyze detection patterns**: Review CSV data for insights and edge cases
 5. **Review and clean**: Manually review samples in training data folders
