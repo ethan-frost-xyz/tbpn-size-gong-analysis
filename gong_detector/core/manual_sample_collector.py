@@ -6,7 +6,6 @@ at a specified timestamp for manual review and labeling. It leverages
 existing core utilities and the save_positive_samples function.
 """
 
-import argparse
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -39,41 +38,17 @@ def create_manual_detection(
     return [(timestamp, confidence, timestamp)]
 
 
-def create_argument_parser() -> argparse.ArgumentParser:
-    """Create and configure argument parser.
-
+def process_single_sample(youtube_url: str, timestamp: float, confidence: float = 1.0) -> bool:
+    """Process a single YouTube video sample.
+    
+    Args:
+        youtube_url: YouTube URL to process
+        timestamp: Timestamp in seconds where gong occurs
+        confidence: Confidence value for manual detection
+        
     Returns:
-        Configured argument parser
+        True if successful, False if error occurred
     """
-    parser = argparse.ArgumentParser(
-        description="Extract a single audio segment from YouTube video for manual review",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python -m gong_detector.core.manual_sample_collector "https://youtube.com/watch?v=VIDEO_ID" 120
-  python -m gong_detector.core.manual_sample_collector "https://youtube.com/watch?v=VIDEO_ID" 360 --confidence 0.8
-        """,
-    )
-
-    parser.add_argument("youtube_url", help="YouTube URL to process")
-    parser.add_argument(
-        "timestamp", type=float, help="Timestamp in seconds where gong occurs"
-    )
-    parser.add_argument(
-        "--confidence",
-        type=float,
-        default=1.0,
-        help="Confidence value for manual detection (default: 1.0)",
-    )
-
-    return parser
-
-
-def main() -> None:
-    """Run manual sample collection."""
-    parser = create_argument_parser()
-    args = parser.parse_args()
-
     # Setup directories
     temp_audio_dir, _ = setup_directories()
     cleanup_old_temp_files(temp_audio_dir)
@@ -85,13 +60,13 @@ def main() -> None:
         # Step 1: Download and process audio
         print("Step 1: Downloading audio from YouTube...")
         temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
-            url=args.youtube_url,
+            url=youtube_url,
             output_path=temp_audio,
         )
 
         # Step 2: Create manual detection
-        print(f"Step 2: Creating manual detection at {args.timestamp}s...")
-        manual_detection = create_manual_detection(args.timestamp, args.confidence)
+        print(f"Step 2: Creating manual detection at {timestamp}s...")
+        manual_detection = create_manual_detection(timestamp, confidence)
 
         # Step 3: Save sample using existing function
         print("Step 3: Extracting and saving audio segment...")
@@ -109,12 +84,13 @@ def main() -> None:
 
         print("\n✓ Manual sample collected successfully!")
         print(f"  Video: {video_title}")
-        print(f"  Timestamp: {args.timestamp}s")
+        print(f"  Timestamp: {timestamp}s")
         print(f"  Saved to: {positive_dir}")
+        return True
 
     except Exception as e:
         print(f"✗ Error: {e}")
-        sys.exit(1)
+        return False
 
     finally:
         # Clean up temporary audio file
@@ -124,6 +100,70 @@ def main() -> None:
                 print(f"Cleaned up temporary file: {temp_audio}")
         except Exception as e:
             print(f"Warning: Could not clean up temporary file: {e}")
+
+
+def main() -> None:
+    """Run interactive manual sample collection."""
+    print("🎵 Manual Sample Collector")
+    print("Enter YouTube link and timestamp (e.g., 'https://youtube.com/watch?v=ABC123 120')")
+    print("Type 'quit' to exit\n")
+
+    while True:
+        try:
+            # Get user input
+            user_input = input("Enter link and seconds: ").strip()
+            
+            if user_input.lower() in ['quit', 'exit', 'q']:
+                print("Goodbye!")
+                break
+            
+            # Parse input
+            parts = user_input.split()
+            if len(parts) < 2:
+                print("❌ Please provide both link and timestamp")
+                continue
+                
+            youtube_url = parts[0]
+            try:
+                timestamp = float(parts[1])
+            except ValueError:
+                print("❌ Invalid timestamp. Please enter a number.")
+                continue
+            
+            # Process the sample
+            success = process_single_sample(youtube_url, timestamp)
+            
+            if success:
+                # Ask if user wants to continue
+                while True:
+                    continue_input = input("\nProcess another sample? (y/n): ").strip().lower()
+                    if continue_input in ['y', 'yes']:
+                        print()  # Add spacing
+                        break
+                    elif continue_input in ['n', 'no']:
+                        print("Goodbye!")
+                        return
+                    else:
+                        print("Please enter 'y' or 'n'")
+            else:
+                # On error, ask if user wants to try again
+                while True:
+                    retry_input = input("\nTry again? (y/n): ").strip().lower()
+                    if retry_input in ['y', 'yes']:
+                        print()  # Add spacing
+                        break
+                    elif retry_input in ['n', 'no']:
+                        print("Goodbye!")
+                        return
+                    else:
+                        print("Please enter 'y' or 'n'")
+                        
+        except KeyboardInterrupt:
+            print("\n\nGoodbye!")
+            break
+        except Exception as e:
+            print(f"❌ Unexpected error: {e}")
+            continue
 
 
 if __name__ == "__main__":
