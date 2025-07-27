@@ -65,6 +65,7 @@ def download_and_trim_youtube_audio(
     output_path: str,
     start_time: Optional[int] = None,
     duration: Optional[int] = None,
+    yt_dlp_options: Optional[dict] = None,
 ) -> tuple[str, str, str]:
     """Download YouTube audio and optionally trim to specified segment.
 
@@ -87,7 +88,7 @@ def download_and_trim_youtube_audio(
 
         # Download with yt-dlp and get video info
         downloaded_file, video_title, upload_date = _download_youtube_audio(
-            url, temp_audio
+            url, temp_audio, yt_dlp_options
         )
 
         # Convert and trim with ffmpeg
@@ -99,12 +100,13 @@ def download_and_trim_youtube_audio(
     return output_path, video_title, upload_date
 
 
-def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str, str]:
+def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Optional[dict] = None) -> tuple[str, str, str]:
     """Download audio from YouTube using yt-dlp and extract video title.
 
     Args:
         url: YouTube URL to download
         output_template: Template for output filename
+        yt_dlp_options: Additional yt-dlp options to merge
 
     Returns:
         Tuple of (downloaded_file_path, video_title, upload_date)
@@ -125,6 +127,10 @@ def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str, s
     else:
         print("No cookies file found. If you encounter bot detection, create a cookies.txt file.")
         print("See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
+    
+    # Merge additional yt-dlp options
+    if yt_dlp_options:
+        ydl_opts.update(yt_dlp_options)
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
