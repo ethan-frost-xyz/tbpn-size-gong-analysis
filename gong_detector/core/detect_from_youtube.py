@@ -19,7 +19,6 @@ from .results_utils import (
 from .yamnet_runner import YAMNetGongDetector
 from .youtube_utils import (
     cleanup_old_temp_files,
-    create_folder_name_from_date,
     create_temp_audio_path,
     download_and_trim_youtube_audio,
     setup_directories,
@@ -166,8 +165,10 @@ def detect_from_youtube_comprehensive(
 
         # Save positive samples if requested
         if save_positive_samples and detections:
-            # Create dated folder within positive samples directory
-            folder_name = create_folder_name_from_date(upload_date)
+            # Determine output directory based on video title (same as manual_sample_collector)
+            from .youtube_utils import sanitize_title_for_folder
+            
+            safe_title = sanitize_title_for_folder(video_title)
             project_root = Path(__file__).parent.parent.parent
             positive_base_dir = (
                 project_root
@@ -177,7 +178,7 @@ def detect_from_youtube_comprehensive(
                 / "raw_samples"
                 / "positive"
             )
-            positive_dir = positive_base_dir / folder_name
+            positive_dir = positive_base_dir / safe_title
             save_positive_samples(detections, temp_audio, positive_dir)
 
         # Return comprehensive metadata
@@ -247,8 +248,10 @@ def main() -> None:
 
         # Save positive samples if requested
         if args.save_positive_samples and detections:
-            # Create dated folder within positive samples directory
-            folder_name = create_folder_name_from_date(upload_date)
+            # Determine output directory based on video title (same as manual_sample_collector)
+            from .youtube_utils import sanitize_title_for_folder
+            
+            safe_title = sanitize_title_for_folder(video_title)
             # Use absolute path resolution to find the existing positive samples directory
             project_root = Path(__file__).parent.parent.parent
             positive_base_dir = (
@@ -259,7 +262,7 @@ def main() -> None:
                 / "raw_samples"
                 / "positive"
             )
-            positive_dir = positive_base_dir / folder_name
+            positive_dir = positive_base_dir / safe_title
             print(f"\nSaving positive samples to: {positive_dir}")
             save_positive_samples(detections, temp_audio, positive_dir)
 
