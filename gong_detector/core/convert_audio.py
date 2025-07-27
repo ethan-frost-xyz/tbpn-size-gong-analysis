@@ -71,6 +71,16 @@ def _download_audio(url: str) -> str:
         "outtmpl": "temp_%(title)s.%(ext)s",
         "quiet": True,  # Reduce yt-dlp output noise
     }
+    
+    # Add cookies if available
+    from .youtube_utils import get_cookies_path
+    cookies_path = get_cookies_path()
+    if cookies_path:
+        print(f"Using cookies from: {cookies_path}")
+        ydl_opts["cookiefile"] = cookies_path
+    else:
+        print("No cookies file found. If you encounter bot detection, create a cookies.txt file.")
+        print("See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -91,6 +101,11 @@ def _download_audio(url: str) -> str:
             return filename
 
     except Exception as e:
+        if "Sign in to confirm you're not a bot" in str(e):
+            print("\nBot detection detected! To fix this:")
+            print("1. Create a cookies.txt file with your YouTube cookies")
+            print("2. Place it in the project root or your home directory")
+            print("3. See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
         if isinstance(e, RuntimeError):
             raise
         raise RuntimeError(f"YouTube download failed: {e}") from e

@@ -17,6 +17,27 @@ from typing import Optional
 import yt_dlp  # type: ignore
 
 
+def get_cookies_path() -> Optional[str]:
+    """Get path to cookies file if it exists.
+    
+    Returns:
+        Path to cookies file or None if not found
+    """
+    # Common cookie file locations
+    cookie_paths = [
+        "cookies.txt",
+        "youtube_cookies.txt", 
+        os.path.expanduser("~/cookies.txt"),
+        os.path.expanduser("~/youtube_cookies.txt"),
+    ]
+    
+    for path in cookie_paths:
+        if os.path.exists(path):
+            return path
+    
+    return None
+
+
 def cleanup_old_temp_files(temp_dir: str, max_age_hours: int = 24) -> None:
     """Clean up old temporary audio files.
 
@@ -78,7 +99,7 @@ def download_and_trim_youtube_audio(
     return output_path, video_title, upload_date
 
 
-def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
+def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str, str]:
     """Download audio from YouTube using yt-dlp and extract video title.
 
     Args:
@@ -86,32 +107,54 @@ def _download_youtube_audio(url: str, output_template: str) -> tuple[str, str]:
         output_template: Template for output filename
 
     Returns:
-        Tuple of (downloaded_file_path, video_title)
+        Tuple of (downloaded_file_path, video_title, upload_date)
     """
     ydl_opts = {
         "format": "bestaudio/best",
         "extractaudio": True,
         "audioformat": "mp3",
         "outtmpl": output_template,
+        "quiet": True,  # Reduce output noise
     }
+    
+    # Add cookies if available
+    cookies_path = get_cookies_path()
+    if cookies_path:
+        print(f"Using cookies from: {cookies_path}")
+        ydl_opts["cookiefile"] = cookies_path
+    else:
+        print("No cookies file found. If you encounter bot detection, create a cookies.txt file.")
+        print("See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        # Get video info first
-        info = ydl.extract_info(url, download=False)
-        video_title = info.get("title", "Unknown Video")
-        upload_date = info.get("upload_date", "")
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Get video info first
+            info = ydl.extract_info(url, download=False)
+            if info is None:
+                raise RuntimeError("Failed to extract video information")
+                
+            video_title = info.get("title", "Unknown Video")
+            upload_date = info.get("upload_date", "")
 
-        # Download the audio
-        ydl.download([url])
+            # Download the audio
+            ydl.download([url])
 
-    # Find the downloaded file
-    temp_dir = os.path.dirname(output_template)
-    downloaded_files = [f for f in os.listdir(temp_dir) if f.startswith("temp_audio")]
+        # Find the downloaded file
+        temp_dir = os.path.dirname(output_template)
+        downloaded_files = [f for f in os.listdir(temp_dir) if f.startswith("temp_audio")]
 
-    if not downloaded_files:
-        raise RuntimeError("Failed to download audio from YouTube")
+        if not downloaded_files:
+            raise RuntimeError("Failed to download audio from YouTube")
 
-    return os.path.join(temp_dir, downloaded_files[0]), video_title, upload_date
+        return os.path.join(temp_dir, downloaded_files[0]), video_title, upload_date
+        
+    except Exception as e:
+        if "Sign in to confirm you're not a bot" in str(e):
+            print("\nBot detection detected! To fix this:")
+            print("1. Create a cookies.txt file with your YouTube cookies")
+            print("2. Place it in the project root or your home directory")
+            print("3. See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
+        raise RuntimeError(f"YouTube download failed: {e}") from e
 
 
 def _convert_and_trim_audio(
