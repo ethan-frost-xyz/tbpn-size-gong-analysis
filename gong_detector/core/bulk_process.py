@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from .detect_from_youtube import detect_from_youtube_comprehensive
+from .negative_sample_collector import collect_negative_samples
 
 
 def read_youtube_links(file_path: Path) -> list[str]:
@@ -57,6 +58,7 @@ Examples:
   python -m gong_detector.core.bulk_process --threshold 0.5
   python -m gong_detector.core.bulk_process --threshold 0.3 --max_threshold 0.8
   python -m gong_detector.core.bulk_process --save_positive_samples
+  python -m gong_detector.core.bulk_process --collect_negative_samples --sample_count 10
         """,
     )
 
@@ -81,6 +83,17 @@ Examples:
         "--keep_audio",
         action="store_true", 
         help="Keep temporary audio files",
+    )
+    parser.add_argument(
+        "--collect_negative_samples",
+        action="store_true",
+        help="Collect negative samples instead of detecting gongs",
+    )
+    parser.add_argument(
+        "--sample_count",
+        type=int,
+        default=5,
+        help="Number of negative samples to collect per video (default: 5)",
     )
 
     args = parser.parse_args()
@@ -109,16 +122,28 @@ Examples:
         print(f"Processing {i}/{len(urls)}: {url}")
         print(f"{'='*60}")
 
-        result = detect_from_youtube_comprehensive(
-            youtube_url=url,
-            threshold=args.threshold,
-            max_threshold=args.max_threshold,
-            should_save_positive_samples=args.save_positive_samples,
-            keep_audio=args.keep_audio,
-        )
+        if args.collect_negative_samples:
+            result = collect_negative_samples(
+                youtube_url=url,
+                num_samples=args.sample_count,
+                threshold=args.threshold,
+                max_threshold=args.max_threshold,
+                keep_audio=args.keep_audio,
+            )
+        else:
+            result = detect_from_youtube_comprehensive(
+                youtube_url=url,
+                threshold=args.threshold,
+                max_threshold=args.max_threshold,
+                should_save_positive_samples=args.save_positive_samples,
+                keep_audio=args.keep_audio,
+            )
 
         if result["success"]:
-            print(f"✓ Detected {result['detection_count']} gongs")
+            if args.collect_negative_samples:
+                print(f"✓ Collected {result['sample_count']} negative samples")
+            else:
+                print(f"✓ Detected {result['detection_count']} gongs")
             successful += 1
         else:
             print(f"✗ Failed: {result['error_message']}")
