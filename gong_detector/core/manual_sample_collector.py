@@ -106,14 +106,14 @@ def main() -> None:
     """Run interactive manual sample collection."""
     print("🎵 Manual Sample Collector")
     print("Enter YouTube link and timestamp (e.g., 'https://youtube.com/watch?v=ABC123 120')")
-    print("Type 'quit' to exit\n")
+    print("Type 'n' to exit\n")
 
     while True:
         try:
             # Get user input
-            user_input = input("Enter link and seconds: ").strip()
+            user_input = input("Enter link and seconds (type 'n' to close): ").strip()
             
-            if user_input.lower() in ['quit', 'exit', 'q']:
+            if user_input.lower() in ['quit', 'exit', 'q', 'n', 'no']:
                 print("Goodbye!")
                 break
             
@@ -134,29 +134,9 @@ def main() -> None:
             success = process_single_sample(youtube_url, timestamp)
             
             if success:
-                # Ask if user wants to continue
-                while True:
-                    continue_input = input("\nProcess another sample? (y/n): ").strip().lower()
-                    if continue_input in ['y', 'yes']:
-                        print()  # Add spacing
-                        break
-                    elif continue_input in ['n', 'no']:
-                        print("Goodbye!")
-                        return
-                    else:
-                        print("Please enter 'y' or 'n'")
+                print()  # Add spacing for next iteration
             else:
-                # On error, ask if user wants to try again
-                while True:
-                    retry_input = input("\nTry again? (y/n): ").strip().lower()
-                    if retry_input in ['y', 'yes']:
-                        print()  # Add spacing
-                        break
-                    elif retry_input in ['n', 'no']:
-                        print("Goodbye!")
-                        return
-                    else:
-                        print("Please enter 'y' or 'n'")
+                print()  # Add spacing for next iteration
                         
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
