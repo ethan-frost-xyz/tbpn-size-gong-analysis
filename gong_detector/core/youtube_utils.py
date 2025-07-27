@@ -207,6 +207,46 @@ def _convert_and_trim_audio(
     subprocess.run(cmd, check=True, capture_output=True)
 
 
+def create_folder_name_from_title(video_title: str) -> str:
+    """Create folder name from video title date information.
+
+    Args:
+        video_title: Video title from YouTube (e.g., "TBPN | Monday, July 7th")
+
+    Returns:
+        Folder name in format tbpn_monday_july_7th
+    """
+    if not video_title:
+        return "tbpn_unknown_date"
+
+    try:
+        # Look for patterns like "TBPN | Monday, July 7th" or "Monday, July 7th"
+        import re
+
+        # Pattern to match day, month, and day number
+        # Matches: "Monday, July 7th", "Tuesday, August 15th", etc.
+        pattern = r'(\w+),\s+(\w+)\s+(\d+)(?:st|nd|rd|th)?'
+        match = re.search(pattern, video_title)
+
+        if match:
+            day_name = match.group(1).lower()  # monday, tuesday, etc.
+            month_name = match.group(2).lower()  # july, august, etc.
+            day_num = int(match.group(3))
+
+            # Get ordinal suffix for day
+            if 10 <= day_num <= 20:  # Special case for 11th, 12th, 13th
+                suffix = "th"
+            else:
+                suffix = {1: "st", 2: "nd", 3: "rd"}.get(day_num % 10, "th")
+
+            return f"tbpn_{day_name}_{month_name}_{day_num}{suffix}"
+
+        return "tbpn_unknown_date"
+
+    except (ValueError, IndexError):
+        return "tbpn_unknown_date"
+
+
 def create_folder_name_from_date(upload_date: str) -> str:
     """Create folder name from YouTube upload date in format tbpn_dayname_month_dayordinal.
 

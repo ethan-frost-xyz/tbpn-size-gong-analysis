@@ -94,7 +94,8 @@ def save_positive_samples(
     detections: list[tuple[float, float, float]],
     audio_path: str,
     positive_dir: Path,
-    upload_date: str = ""
+    upload_date: str = "",
+    video_title: str = ""
 ) -> None:
     """Save detected gong segments to positive samples folder.
 
@@ -103,13 +104,18 @@ def save_positive_samples(
         audio_path: Path to source audio file
         positive_dir: Base directory for positive samples (will create date-based subfolder)
         upload_date: YouTube upload date (YYYYMMDD format) for proper folder naming
+        video_title: Video title from YouTube for date-based folder naming
     """
     if not detections:
         print("No gong detections to save")
         return
 
-    # Create date-based folder name if upload_date is provided
-    if upload_date:
+    # Create date-based folder name using video title if available, otherwise use upload_date
+    if video_title:
+        from .youtube_utils import create_folder_name_from_title
+        folder_name = create_folder_name_from_title(video_title)
+        final_positive_dir = positive_dir / folder_name
+    elif upload_date:
         from .youtube_utils import create_folder_name_from_date
         folder_name = create_folder_name_from_date(upload_date)
         final_positive_dir = positive_dir / folder_name

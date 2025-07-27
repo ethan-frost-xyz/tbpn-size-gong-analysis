@@ -32,6 +32,7 @@ from .yamnet_runner import YAMNetGongDetector
 from .youtube_utils import (
     cleanup_old_temp_files,
     create_folder_name_from_date,
+    create_folder_name_from_title,
     create_temp_audio_path,
     download_and_trim_youtube_audio,
     sanitize_title_for_folder,
@@ -69,6 +70,7 @@ __all__ = [
     # YouTube utilities
     "cleanup_old_temp_files",
     "create_folder_name_from_date",
+    "create_folder_name_from_title",
     "create_temp_audio_path",
     "sanitize_title_for_folder",
     "setup_directories",

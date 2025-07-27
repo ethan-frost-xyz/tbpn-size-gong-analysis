@@ -189,7 +189,7 @@ def detect_from_youtube_comprehensive(
                 / "raw_samples"
                 / "positive"
             )
-            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date)
+            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date, video_title)
 
         # Return comprehensive metadata
         return {
@@ -271,7 +271,7 @@ def main() -> None:
                 / "positive"
             )
             print("\nSaving positive samples using date-based folder naming...")
-            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date)
+            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date, video_title)
 
         # Print summary and max confidence
         print_summary(detections, total_duration)

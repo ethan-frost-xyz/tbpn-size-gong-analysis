@@ -195,7 +195,11 @@ def collect_negative_samples(
         negative_base_dir.mkdir(parents=True, exist_ok=True)
 
         # Use date-based folder naming if available
-        if upload_date:
+        if video_title:
+            from .youtube_utils import create_folder_name_from_title
+            folder_name = create_folder_name_from_title(video_title)
+            sample_dir = negative_base_dir / folder_name
+        elif upload_date:
             from .youtube_utils import create_folder_name_from_date
             folder_name = create_folder_name_from_date(upload_date)
             sample_dir = negative_base_dir / folder_name
