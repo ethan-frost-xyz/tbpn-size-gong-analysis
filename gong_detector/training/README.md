@@ -42,6 +42,37 @@ This tool:
 - Organizes samples by video title in `gong_detector/training/data/raw_samples/positive/`
 - Asks if you want to continue after each sample
 
+### Negative Sample Collection
+
+For collecting non-gong audio segments for training data:
+
+```bash
+# Collect 5 negative samples from a single video
+python -m gong_detector.core.negative_sample_collector "https://www.youtube.com/watch?v=VIDEO_ID"
+
+# Collect 10 negative samples with custom threshold
+python -m gong_detector.core.negative_sample_collector "https://www.youtube.com/watch?v=VIDEO_ID" --num_samples 10 --threshold 0.3
+
+# Bulk processing - collect from all videos in tbpn_youtube_links.txt
+python -m gong_detector.core.bulk_process --collect_negative_samples --sample_count 10
+```
+
+This tool:
+- **Automatically detects gongs** using YAMNet to avoid them
+- **Finds safe regions** far from detected gongs
+- **Extracts random segments** from safe regions
+- **Saves samples** to `gong_detector/training/data/raw_samples/negative/`
+- **Uses same organization** as positive samples (date-based folders)
+- **Configurable sample count** per video
+- **Works with bulk processing** for multiple videos
+
+**Output:**
+- `negative_at_HH_MM_SS_s_01.wav`
+- `negative_at_HH_MM_SS_s_02.wav`
+- etc.
+
+Each sample contains 3 seconds of audio (0.75s before + 2.25s after the selected timestamp), matching the positive sample format.
+
 ## Collecting Training Samples
 
 ### YouTube Detection with Sample Collection
@@ -150,8 +181,9 @@ This CSV is perfect for:
 
 1. **Collect YAMNet samples**: Use `detect_from_youtube` with `--save_positive_samples`
 2. **Collect manual samples**: Use `manual_sample_collector` for interactive collection of missed detections
-3. **Generate comprehensive CSV**: Use `bulk_process.py` for systematic data collection
-4. **Analyze detection patterns**: Review CSV data for insights and edge cases
-5. **Review and clean**: Manually review samples in training data folders
-6. **Train model**: Run training pipeline on cleaned data
-7. **Evaluate**: Test model performance on validation data
+3. **Collect negative samples**: Use `negative_sample_collector` or `bulk_process --collect_negative_samples`
+4. **Generate comprehensive CSV**: Use `bulk_process.py` for systematic data collection
+5. **Analyze detection patterns**: Review CSV data for insights and edge cases
+6. **Review and clean**: Manually review samples in training data folders
+7. **Train model**: Run training pipeline on cleaned data
+8. **Evaluate**: Test model performance on validation data

@@ -102,4 +102,13 @@ data/
 # Legacy code and notes
 legacy/
 .cursorrules
-notes_self.txt 
+notes_self.txt
+
+# YouTube cookie files (contains sensitive authentication data)
+cookies.txt
+youtube_cookies.txt
+*.cookies
+
+# Helper scripts (temporary development files)
+export_cookies.py
+test_cookies.py 
