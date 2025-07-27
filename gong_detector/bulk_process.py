@@ -8,6 +8,7 @@ a comprehensive CSV file containing all detection metadata for analysis.
 import argparse
 import sys
 from pathlib import Path
+from typing import Optional
 
 from gong_detector.core.comprehensive_csv import ComprehensiveCSVManager
 from gong_detector.core.detect_from_youtube import detect_from_youtube_comprehensive
