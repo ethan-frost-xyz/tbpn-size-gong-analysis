@@ -58,6 +58,7 @@ def read_youtube_links(file_path: str) -> list[str]:
 def process_single_url(
     url: str,
     threshold: float,
+    max_threshold: Optional[float],
     save_positive_samples: bool,
     keep_audio: bool,
     csv_manager: ComprehensiveCSVManager,
@@ -67,6 +68,7 @@ def process_single_url(
     Args:
         url: YouTube URL to process
         threshold: Confidence threshold for detection
+        max_threshold: Maximum confidence threshold for detection (optional)
         save_positive_samples: Whether to save detected segments
         keep_audio: Whether to keep temporary audio files
         csv_manager: CSV manager to collect results
@@ -83,6 +85,7 @@ def process_single_url(
         result = detect_from_youtube_comprehensive(
             youtube_url=url,
             threshold=threshold,
+            max_threshold=max_threshold,
             save_positive_samples=save_positive_samples,
             keep_audio=keep_audio,
         )
@@ -109,6 +112,7 @@ def process_single_url(
                 video_duration=result["video_duration"],
                 max_confidence=result["max_confidence"],
                 threshold=result["threshold"],
+                max_threshold=result["max_threshold"],
                 detections=result["detections"],
             )
 
@@ -132,6 +136,7 @@ def main() -> None:
 Examples:
   python bulk_process.py
   python bulk_process.py --threshold 0.5
+  python bulk_process.py --threshold 0.3 --max_threshold 0.8
   python bulk_process.py --save_positive_samples --keep_audio
   python bulk_process.py --run_name "tbpn_batch_1"
         """,
@@ -142,6 +147,12 @@ Examples:
         type=float,
         default=0.4,
         help="Confidence threshold for gong detection (default: 0.4)",
+    )
+    parser.add_argument(
+        "--max_threshold",
+        type=float,
+        default=None,
+        help="Maximum confidence threshold for gong detection (optional)",
     )
     parser.add_argument(
         "--save_positive_samples",
@@ -199,6 +210,7 @@ Examples:
         if process_single_url(
             url,
             args.threshold,
+            args.max_threshold,
             args.save_positive_samples,
             args.keep_audio,
             csv_manager,

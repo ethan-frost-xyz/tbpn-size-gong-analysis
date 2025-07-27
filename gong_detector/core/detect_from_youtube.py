@@ -26,13 +26,14 @@ from .youtube_utils import (
 
 
 def process_audio_with_yamnet(
-    temp_audio: str, threshold: float
+    temp_audio: str, threshold: float, max_threshold: Optional[float] = None
 ) -> tuple[list[tuple[float, float, float]], float, float]:
     """Process audio file with YAMNet detector.
 
     Args:
         temp_audio: Path to temporary audio file
         threshold: Confidence threshold for detection
+        max_threshold: Maximum confidence threshold for detection (optional)
 
     Returns:
         Tuple of (detections, total_duration, max_gong_confidence)
@@ -53,7 +54,10 @@ def process_audio_with_yamnet(
     # Detect gongs with duration validation
     total_duration = len(waveform) / sample_rate
     detections = detector.detect_gongs(
-        scores=scores, confidence_threshold=threshold, audio_duration=total_duration
+        scores=scores, 
+        confidence_threshold=threshold, 
+        max_confidence_threshold=max_threshold,
+        audio_duration=total_duration
     )
 
     # Print results using detector's formatted output
@@ -78,6 +82,7 @@ Examples:
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID"
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --start_time 5680 --duration 20
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --threshold 0.3 --save_csv results.csv
+  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --threshold 0.3 --max_threshold 0.8
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --save_positive_samples
         """,
     )
@@ -92,6 +97,12 @@ Examples:
         type=float,
         default=0.4,
         help="Confidence threshold for gong detection (default: 0.4)",
+    )
+    parser.add_argument(
+        "--max_threshold",
+        type=float,
+        default=None,
+        help="Maximum confidence threshold for gong detection (optional)",
     )
     parser.add_argument("--save_csv", help="Save results to CSV file (optional)")
     parser.add_argument(
@@ -111,6 +122,7 @@ Examples:
 def detect_from_youtube_comprehensive(
     youtube_url: str,
     threshold: float = 0.4,
+    max_threshold: Optional[float] = None,
     start_time: Optional[int] = None,
     duration: Optional[int] = None,
     save_positive_samples: bool = False,
@@ -124,6 +136,7 @@ def detect_from_youtube_comprehensive(
     Args:
         youtube_url: YouTube URL to process
         threshold: Confidence threshold for detection
+        max_threshold: Maximum confidence threshold for detection (optional)
         start_time: Start time in seconds (optional)
         duration: Duration in seconds (optional)
         save_positive_samples: Whether to save detected segments
@@ -137,6 +150,7 @@ def detect_from_youtube_comprehensive(
         - video_duration: Total video duration in seconds
         - max_confidence: Maximum confidence score in video
         - threshold: Detection threshold used
+        - max_threshold: Maximum threshold used (if any)
         - detections: List of detection tuples
         - detection_count: Number of detections found
         - success: Whether processing was successful
@@ -160,7 +174,7 @@ def detect_from_youtube_comprehensive(
 
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, threshold
+            temp_audio, threshold, max_threshold
         )
 
         # Save positive samples if requested
@@ -189,6 +203,7 @@ def detect_from_youtube_comprehensive(
             "video_duration": total_duration,
             "max_confidence": max_gong_confidence,
             "threshold": threshold,
+            "max_threshold": max_threshold,
             "detections": detections,
             "detection_count": len(detections),
             "success": True,
@@ -203,6 +218,7 @@ def detect_from_youtube_comprehensive(
             "video_duration": 0.0,
             "max_confidence": 0.0,
             "threshold": threshold,
+            "max_threshold": max_threshold,
             "detections": [],
             "detection_count": 0,
             "success": False,
@@ -239,7 +255,7 @@ def main() -> None:
 
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, args.threshold
+            temp_audio, args.threshold, args.max_threshold
         )
 
         # Save to CSV if requested

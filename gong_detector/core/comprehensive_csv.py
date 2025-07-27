@@ -38,6 +38,7 @@ class DetectionRecord:
 
     # Processing context
     detection_threshold: str  # Formatted to 3 decimal places
+    max_threshold: str  # Formatted to 3 decimal places (empty if not used)
     processing_date: str  # ISO format YYYY-MM-DD
     processing_time: str  # ISO format HH:MM:SS
 
@@ -72,6 +73,7 @@ class ComprehensiveCSVManager:
         video_duration: float,
         max_confidence: float,
         threshold: float,
+        max_threshold: Optional[float],
         detections: list[tuple[float, float, float]],
     ) -> None:
         """Add all detections from a single video to the comprehensive record.
@@ -83,6 +85,7 @@ class ComprehensiveCSVManager:
             video_duration: Total video duration in seconds
             max_confidence: Maximum confidence score in the video
             threshold: Detection threshold used
+            max_threshold: Maximum threshold used (if any)
             detections: List of (window_start, confidence, display_timestamp) tuples
         """
         # Format upload date for human readability
@@ -108,6 +111,7 @@ class ComprehensiveCSVManager:
                 confidence=f"{confidence:.3f}",
                 video_max_confidence=f"{max_confidence:.3f}",
                 detection_threshold=f"{threshold:.3f}",
+                max_threshold=f"{max_threshold:.3f}" if max_threshold is not None else "",
                 processing_date=processing_date,
                 processing_time=processing_time,
             )

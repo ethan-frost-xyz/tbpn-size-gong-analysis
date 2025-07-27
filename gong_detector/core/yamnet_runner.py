@@ -163,6 +163,7 @@ class YAMNetGongDetector:
         self,
         scores: np.ndarray,
         confidence_threshold: float = 0.5,
+        max_confidence_threshold: Optional[float] = None,
         audio_duration: Optional[float] = None,
     ) -> list[tuple[float, float, float]]:
         """Detect gong sounds based on YAMNet scores.
@@ -170,12 +171,16 @@ class YAMNetGongDetector:
         Args:
             scores: YAMNet prediction scores array
             confidence_threshold: Minimum confidence for gong detection
+            max_confidence_threshold: Maximum confidence for gong detection (optional)
             audio_duration: Total audio duration in seconds (for validation)
 
         Returns:
             List of (window_start, confidence, display_timestamp) tuples for detected gongs
         """
-        print(f"Detecting gongs with confidence threshold: {confidence_threshold}")
+        if max_confidence_threshold is not None:
+            print(f"Detecting gongs with confidence range: {confidence_threshold} - {max_confidence_threshold}")
+        else:
+            print(f"Detecting gongs with confidence threshold: {confidence_threshold}")
 
         gong_scores = scores[:, self.gong_class_index]
         hop_length = self._calculate_hop_length(audio_duration, len(gong_scores))
@@ -183,14 +188,20 @@ class YAMNetGongDetector:
 
         detections: list[tuple[float, float, float]] = []
         for i, confidence in enumerate(gong_scores):
-            if confidence > confidence_threshold:
-                window_start = i * hop_length
-                display_timestamp = window_start + (
-                    window_duration / 2
-                )  # Center of window
-                detections.append((window_start, float(confidence), display_timestamp))
+            # Check minimum threshold
+            if confidence <= confidence_threshold:
+                continue
+            # Check maximum threshold if specified
+            if max_confidence_threshold is not None and confidence >= max_confidence_threshold:
+                continue
+                
+            window_start = i * hop_length
+            display_timestamp = window_start + (
+                window_duration / 2
+            )  # Center of window
+            detections.append((window_start, float(confidence), display_timestamp))
 
-        print(f"Found {len(detections)} gong detections above threshold")
+        print(f"Found {len(detections)} gong detections in threshold range")
         return detections
 
     def _calculate_hop_length(
