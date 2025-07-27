@@ -71,7 +71,7 @@ def _download_audio(url: str) -> str:
         "outtmpl": "temp_%(title)s.%(ext)s",
         "quiet": True,  # Reduce yt-dlp output noise
     }
-    
+
     # Add cookies if available
     from .youtube_utils import get_cookies_path
     cookies_path = get_cookies_path()

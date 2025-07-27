@@ -6,7 +6,6 @@ at a specified timestamp for manual review and labeling. It leverages
 existing core utilities and the save_positive_samples function.
 """
 
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -40,12 +39,12 @@ def create_manual_detection(
 
 def process_single_sample(youtube_url: str, timestamp: float, confidence: float = 1.0) -> bool:
     """Process a single YouTube video sample.
-    
+
     Args:
         youtube_url: YouTube URL to process
         timestamp: Timestamp in seconds where gong occurs
         confidence: Confidence value for manual detection
-        
+
     Returns:
         True if successful, False if error occurred
     """
@@ -115,32 +114,32 @@ def main() -> None:
         try:
             # Get user input
             user_input = input("Enter link and seconds (type 'n' to close): ").strip()
-            
+
             if user_input.lower() in ['quit', 'exit', 'q', 'n', 'no']:
                 print("Goodbye!")
                 break
-            
+
             # Parse input
             parts = user_input.split()
             if len(parts) < 2:
                 print("❌ Please provide both link and timestamp")
                 continue
-                
+
             youtube_url = parts[0]
             try:
                 timestamp = float(parts[1])
             except ValueError:
                 print("❌ Invalid timestamp. Please enter a number.")
                 continue
-            
+
             # Process the sample
             success = process_single_sample(youtube_url, timestamp)
-            
+
             if success:
                 print()  # Add spacing for next iteration
             else:
                 print()  # Add spacing for next iteration
-                        
+
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
             break

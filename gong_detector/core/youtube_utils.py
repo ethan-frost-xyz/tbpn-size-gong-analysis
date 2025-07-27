@@ -19,22 +19,22 @@ import yt_dlp  # type: ignore
 
 def get_cookies_path() -> Optional[str]:
     """Get path to cookies file if it exists.
-    
+
     Returns:
         Path to cookies file or None if not found
     """
     # Common cookie file locations
     cookie_paths = [
         "cookies.txt",
-        "youtube_cookies.txt", 
+        "youtube_cookies.txt",
         os.path.expanduser("~/cookies.txt"),
         os.path.expanduser("~/youtube_cookies.txt"),
     ]
-    
+
     for path in cookie_paths:
         if os.path.exists(path):
             return path
-    
+
     return None
 
 
@@ -118,7 +118,7 @@ def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Opti
         "outtmpl": output_template,
         "quiet": True,  # Reduce output noise
     }
-    
+
     # Add cookies if available
     cookies_path = get_cookies_path()
     if cookies_path:
@@ -127,7 +127,7 @@ def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Opti
     else:
         print("No cookies file found. If you encounter bot detection, create a cookies.txt file.")
         print("See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
-    
+
     # Merge additional yt-dlp options
     if yt_dlp_options:
         ydl_opts.update(yt_dlp_options)
@@ -138,7 +138,7 @@ def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Opti
             info = ydl.extract_info(url, download=False)
             if info is None:
                 raise RuntimeError("Failed to extract video information")
-                
+
             video_title = info.get("title", "Unknown Video")
             upload_date = info.get("upload_date", "")
 
@@ -153,7 +153,7 @@ def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Opti
             raise RuntimeError("Failed to download audio from YouTube")
 
         return os.path.join(temp_dir, downloaded_files[0]), video_title, upload_date
-        
+
     except Exception as e:
         if "Sign in to confirm you're not a bot" in str(e):
             print("\nBot detection detected! To fix this:")
@@ -221,26 +221,26 @@ def create_folder_name_from_date(upload_date: str) -> str:
 
     try:
         from datetime import datetime
-        
+
         year = int(upload_date[:4])
         month = int(upload_date[4:6])
         day = int(upload_date[6:8])
-        
+
         # Create datetime object
         date_obj = datetime(year, month, day)
-        
+
         # Get day name and month name
         day_name = date_obj.strftime("%A").lower()  # monday, tuesday, etc.
         month_name = date_obj.strftime("%B").lower()  # january, february, etc.
-        
+
         # Get ordinal suffix for day
         if 10 <= day <= 20:  # Special case for 11th, 12th, 13th
             suffix = "th"
         else:
             suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
-            
+
         return f"tbpn_{day_name}_{month_name}_{day}{suffix}"
-        
+
     except (ValueError, IndexError):
         return "tbpn_unknown_date"
 

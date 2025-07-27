@@ -54,8 +54,8 @@ def process_audio_with_yamnet(
     # Detect gongs with duration validation
     total_duration = len(waveform) / sample_rate
     detections = detector.detect_gongs(
-        scores=scores, 
-        confidence_threshold=threshold, 
+        scores=scores,
+        confidence_threshold=threshold,
         max_confidence_threshold=max_threshold,
         audio_duration=total_duration
     )
@@ -270,7 +270,7 @@ def main() -> None:
                 / "raw_samples"
                 / "positive"
             )
-            print(f"\nSaving positive samples using date-based folder naming...")
+            print("\nSaving positive samples using date-based folder naming...")
             save_positive_samples(detections, temp_audio, positive_base_dir, upload_date)
 
         # Print summary and max confidence

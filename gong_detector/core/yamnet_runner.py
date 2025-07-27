@@ -194,7 +194,7 @@ class YAMNetGongDetector:
             # Check maximum threshold if specified
             if max_confidence_threshold is not None and confidence >= max_confidence_threshold:
                 continue
-                
+
             window_start = i * hop_length
             display_timestamp = window_start + (
                 window_duration / 2

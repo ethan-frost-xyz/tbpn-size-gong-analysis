@@ -91,9 +91,9 @@ def save_results_to_csv(
 
 
 def save_positive_samples(
-    detections: list[tuple[float, float, float]], 
-    audio_path: str, 
-    positive_dir: Path, 
+    detections: list[tuple[float, float, float]],
+    audio_path: str,
+    positive_dir: Path,
     upload_date: str = ""
 ) -> None:
     """Save detected gong segments to positive samples folder.

@@ -8,7 +8,6 @@ Creates no files by default - only when explicitly requested.
 import argparse
 import sys
 from pathlib import Path
-from typing import Optional
 
 from .detect_from_youtube import detect_from_youtube_comprehensive
 from .negative_sample_collector import collect_negative_samples
@@ -28,7 +27,7 @@ def read_youtube_links(file_path: Path) -> list[str]:
         ValueError: If no valid URLs found
     """
     urls = []
-    
+
     with open(file_path, encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
@@ -40,10 +39,10 @@ def read_youtube_links(file_path: Path) -> list[str]:
                 urls.append(line)
             elif line and not line.startswith("http"):
                 print(f"Warning: Line {line_num} doesn't look like a YouTube URL: {line}")
-    
+
     if not urls:
         raise ValueError("No valid YouTube URLs found in file")
-    
+
     return urls
 
 
@@ -81,7 +80,7 @@ Examples:
     )
     parser.add_argument(
         "--keep_audio",
-        action="store_true", 
+        action="store_true",
         help="Keep temporary audio files",
     )
     parser.add_argument(
@@ -151,7 +150,7 @@ Examples:
 
     # Print final summary
     print(f"\n{'='*60}")
-    print("BULK PROCESSING COMPLETE")  
+    print("BULK PROCESSING COMPLETE")
     print(f"{'='*60}")
     print(f"Total URLs: {len(urls)}")
     print(f"Successful: {successful}")
@@ -162,4 +161,4 @@ Examples:
 
 
 if __name__ == "__main__":
-    main() 
+    main()
