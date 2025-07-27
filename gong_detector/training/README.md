@@ -105,10 +105,10 @@ The bulk processing script now generates a comprehensive CSV file containing all
 
 ```bash
 # Basic bulk processing with comprehensive CSV
-python gong_detector/bulk_process.py
+python gong_detector/core/bulk_process.py
 
 # With custom settings and run name
-python gong_detector/bulk_process.py --threshold 0.5 --save_positive_samples --run_name "tbpn_batch_1"
+python gong_detector/core/bulk_process.py --threshold 0.5 --save_positive_samples --run_name "tbpn_batch_1"
 ```
 
 **CSV Output Features:**
