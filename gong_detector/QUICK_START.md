@@ -77,64 +77,6 @@ python gong_detector/bulk_process.py --keep_audio
 4. Much faster collection of training data
 5. Then run training pipeline
 
-## **Example Output:**
-
-```text
-Step 1: Downloading and processing audio...
-Step 2: Loading YAMNet model...
-Step 3: Processing audio...
-Step 4: Running gong detection...
-
-Detected 3 gongs:
-  00:00:15.2 - Confidence: 0.850
-  00:00:32.1 - Confidence: 0.720
-  00:01:05.8 - Confidence: 0.680
-
-Saving positive samples to: gong_detector/training/data/raw_samples/positive
-✓ Saved: gong_15.2s_conf_0.850_1.wav
-✓ Saved: gong_32.1s_conf_0.720_2.wav
-✓ Saved: gong_65.8s_conf_0.680_3.wav
-
-Saved 3 positive samples to: gong_detector/training/data/raw_samples/positive
-
-## **Bulk Processing Example:**
-
-```text
-Found 8 YouTube URLs to process
-
-Progress: 1/8
-============================================================
-Processing: https://www.youtube.com/watch?v=oo9qWcWRQvw
-============================================================
-Step 1: Downloading and processing audio...
-Step 2: Loading YAMNet model...
-Step 3: Processing audio...
-Step 4: Running gong detection...
-
-Detected 2 gongs:
-  00:00:15.2 - Confidence: 0.850
-  00:00:32.1 - Confidence: 0.720
-
-Saving positive samples to: gong_detector/training/data/raw_samples/positive/tbpn_07_11_2025
-✓ Saved: s_conf_0.850_at_00_15_12_1.wav
-✓ Saved: s_conf_0.720_at_00_32_01_2.wav
-
-✓ Successfully processed: https://www.youtube.com/watch?v=oo9qWcWRQvw
-
-Progress: 2/8
-...
-
-============================================================
-BULK PROCESSING COMPLETE
-============================================================
-Total URLs: 8
-Successful: 8
-Failed: 0
-
-All URLs processed successfully!
-```
-
-
 # Quick Start: Spectrogram Comparison
 
 ## **Script is Ready!**
