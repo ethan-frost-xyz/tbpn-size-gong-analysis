@@ -64,8 +64,8 @@ Examples:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.8,
-        help="Confidence threshold for gong detection (default: 0.8)",
+        default=0.925,
+        help="Confidence threshold for gong detection (default: 0.925)",
     )
     parser.add_argument(
         "--max_threshold",
@@ -98,6 +98,12 @@ Examples:
         "--version_one",
         action="store_true",
         help="Use the trained classifier for enhanced gong detection",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=2000,
+        help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
     )
 
     args = parser.parse_args()
@@ -142,6 +148,7 @@ Examples:
                 should_save_positive_samples=args.save_positive_samples,
                 keep_audio=args.keep_audio,
                 use_version_one=args.version_one,
+                batch_size=args.batch_size,
             )
 
         if result["success"]:

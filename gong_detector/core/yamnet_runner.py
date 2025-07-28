@@ -18,12 +18,16 @@ import tensorflow_hub as hub  # type: ignore
 class YAMNetGongDetector:
     """YAMNet-based gong sound detector for audio analysis."""
 
-    def __init__(self, use_trained_classifier: bool = False) -> None:
+    def __init__(self, use_trained_classifier: bool = False, batch_size: int = 1000) -> None:
         """Initialize the YAMNet gong detector.
         
         Args:
             use_trained_classifier: Whether to use the trained classifier for enhanced detection
+            batch_size: Batch size for classifier predictions (larger = faster but more memory)
         """
+        # Configure TensorFlow for optimal CPU usage
+        self._configure_tensorflow()
+        
         self.model: Optional[hub.KerasLayer] = None
         self.class_names: Optional[list[str]] = None
         self.gong_class_index: int = 172  # YAMNet class index for "gong"
@@ -33,6 +37,28 @@ class YAMNetGongDetector:
         self.use_trained_classifier: bool = use_trained_classifier
         self.trained_classifier: Optional[object] = None
         self.classifier_config: Optional[dict] = None
+        self.batch_size: int = batch_size
+
+    def _configure_tensorflow(self) -> None:
+        """Configure TensorFlow for optimal CPU performance."""
+        # Enable multi-threading
+        tf.config.threading.set_inter_op_parallelism_threads(8)  # Use 8 threads for inter-op
+        tf.config.threading.set_intra_op_parallelism_threads(4)  # Use 4 threads for intra-op
+        
+        # Enable memory growth to prevent memory issues
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            try:
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+            except RuntimeError as e:
+                print(f"GPU memory growth setting failed: {e}")
+        
+        # Enable mixed precision for faster computation (if supported)
+        try:
+            tf.keras.mixed_precision.set_global_policy('mixed_float16')
+        except:
+            pass  # Mixed precision not available, continue with default
 
     def load_model(self) -> None:
         """Load the YAMNet model from TensorFlow Hub."""
@@ -195,8 +221,12 @@ class YAMNetGongDetector:
         print("Running YAMNet inference...")
 
         try:
+            # Use float32 for optimal performance on CPU
             waveform_tensor = tf.constant(waveform, dtype=tf.float32)
-            scores, embeddings, spectrogram = self.model(waveform_tensor)
+            
+            # Run inference with optimized settings
+            with tf.device('/CPU:0'):  # Explicitly use CPU for better control
+                scores, embeddings, spectrogram = self.model(waveform_tensor)
 
             print(f"Inference complete. Generated {scores.shape[0]} predictions")
             print("Each prediction covers ~0.96 seconds of audio")
@@ -280,34 +310,72 @@ class YAMNetGongDetector:
         hop_length = self._calculate_hop_length(audio_duration, len(embeddings))
         window_duration = 0.96  # YAMNet window duration
 
+        print(f"Processing {len(embeddings)} embeddings in batches of {self.batch_size}...")
+        
         detections: list[tuple[float, float, float]] = []
         
-        for i, embedding in enumerate(embeddings):
-            # Reshape embedding for classifier prediction
-            embedding_reshaped = embedding.reshape(1, -1)
+        # Process embeddings in batches for better performance
+        for batch_start in range(0, len(embeddings), self.batch_size):
+            batch_end = min(batch_start + self.batch_size, len(embeddings))
+            batch_embeddings = embeddings[batch_start:batch_end]
             
-            # Get prediction and confidence
-            prediction = self.trained_classifier.predict(embedding_reshaped)[0]
-            probabilities = self.trained_classifier.predict_proba(embedding_reshaped)[0]
-            confidence = probabilities[1]  # Probability for positive class (gong = 1)
+            # Reshape all embeddings in batch for classifier prediction
+            batch_embeddings_reshaped = batch_embeddings.reshape(-1, batch_embeddings.shape[1])
             
-            # Only consider positive predictions (gong = 1)
-            if prediction != 1:
-                continue
+            # Get predictions and confidences for entire batch
+            predictions = self.trained_classifier.predict(batch_embeddings_reshaped)
+            probabilities = self.trained_classifier.predict_proba(batch_embeddings_reshaped)
+            confidences = probabilities[:, 1]  # Probability for positive class (gong = 1)
+            
+            # Process each prediction in the batch
+            for i, (prediction, confidence) in enumerate(zip(predictions, confidences)):
+                global_index = batch_start + i
                 
-            # Check minimum threshold
-            if confidence <= confidence_threshold:
-                continue
-            # Check maximum threshold if specified
-            if max_confidence_threshold is not None and confidence >= max_confidence_threshold:
-                continue
+                # Only consider positive predictions (gong = 1)
+                if prediction != 1:
+                    continue
+                    
+                # Check minimum threshold
+                if confidence <= confidence_threshold:
+                    continue
+                # Check maximum threshold if specified
+                if max_confidence_threshold is not None and confidence >= max_confidence_threshold:
+                    continue
 
-            window_start = i * hop_length
-            display_timestamp = window_start + (window_duration / 2)  # Center of window
-            detections.append((window_start, float(confidence), display_timestamp))
+                window_start = global_index * hop_length
+                display_timestamp = window_start + (window_duration / 2)  # Center of window
+                detections.append((window_start, float(confidence), display_timestamp))
 
         print(f"Found {len(detections)} gong detections with trained classifier")
         return detections
+
+    def set_batch_size(self, batch_size: int) -> None:
+        """Set the batch size for classifier predictions.
+        
+        Args:
+            batch_size: New batch size (larger = faster but more memory)
+        """
+        self.batch_size = batch_size
+        print(f"Batch size set to {batch_size}")
+
+    def get_performance_info(self) -> dict:
+        """Get information about current performance configuration.
+        
+        Returns:
+            Dictionary with performance settings
+        """
+        return {
+            "batch_size": self.batch_size,
+            "use_trained_classifier": self.use_trained_classifier,
+            "tensorflow_threads": {
+                "inter_op": tf.config.threading.get_inter_op_parallelism_threads(),
+                "intra_op": tf.config.threading.get_intra_op_parallelism_threads()
+            },
+            "available_devices": {
+                "cpu": len(tf.config.list_physical_devices('CPU')),
+                "gpu": len(tf.config.list_physical_devices('GPU'))
+            }
+        }
 
     def _calculate_hop_length(
         self, audio_duration: Optional[float], num_predictions: int

@@ -26,7 +26,7 @@ from .youtube_utils import (
 
 
 def process_audio_with_yamnet(
-    temp_audio: str, threshold: float, max_threshold: Optional[float] = None, use_version_one: bool = False
+    temp_audio: str, threshold: float, max_threshold: Optional[float] = None, use_version_one: bool = False, batch_size: int = 1000
 ) -> tuple[list[tuple[float, float, float]], float, float]:
     """Process audio file with YAMNet detector.
 
@@ -35,17 +35,22 @@ def process_audio_with_yamnet(
         threshold: Confidence threshold for detection
         max_threshold: Maximum confidence threshold for detection (optional)
         use_version_one: Whether to use the trained classifier for enhanced detection
+        batch_size: Batch size for classifier predictions (larger = faster but more memory)
 
     Returns:
         Tuple of (detections, total_duration, max_gong_confidence)
     """
-    # Initialize YAMNet detector
+    # Initialize YAMNet detector with optimized settings
     print("\nStep 2: Loading YAMNet model...")
-    detector = YAMNetGongDetector(use_trained_classifier=use_version_one)
+    detector = YAMNetGongDetector(use_trained_classifier=use_version_one, batch_size=batch_size)
     detector.load_model()
     
     if use_version_one:
         detector.load_trained_classifier()
+        # Print performance configuration
+        perf_info = detector.get_performance_info()
+        print(f"✓ Performance optimized: {perf_info['tensorflow_threads']['inter_op']} inter-op threads, {perf_info['tensorflow_threads']['intra_op']} intra-op threads")
+        print(f"✓ Batch processing: {perf_info['batch_size']} embeddings per batch")
 
     # Process audio
     print("\nStep 3: Processing audio...")
@@ -133,6 +138,12 @@ Examples:
         action="store_true",
         help="Save detected gong segments to training data folder for human review",
     )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=2000,
+        help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
+    )
 
     return parser
 
@@ -146,6 +157,7 @@ def detect_from_youtube_comprehensive(
     should_save_positive_samples: bool = False,
     keep_audio: bool = False,
     use_version_one: bool = False,
+    batch_size: int = 2000,
 ) -> dict[str, Any]:
     """Run YouTube gong detection and return comprehensive metadata.
 
@@ -194,7 +206,7 @@ def detect_from_youtube_comprehensive(
 
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, threshold, max_threshold, use_version_one
+            temp_audio, threshold, max_threshold, use_version_one, batch_size
         )
 
         # Save positive samples if requested
@@ -271,7 +283,7 @@ def main() -> None:
 
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, args.threshold, args.max_threshold, args.use_version_one
+            temp_audio, args.threshold, args.max_threshold, args.use_version_one, args.batch_size
         )
 
         # Save to CSV if requested
