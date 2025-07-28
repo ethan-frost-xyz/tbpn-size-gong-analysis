@@ -1,6 +1,6 @@
 """Extract YAMNet embeddings from training audio samples.
 
-This script processes all audio files in the raw_samples folders,
+This script processes all audio files in the validated_samples folders,
 extracts YAMNet embeddings, and saves them for training.
 """
 
@@ -11,8 +11,8 @@ import numpy as np
 import pandas as pd
 
 # Add core module to path
-sys.path.append(str(Path(__file__).parent.parent.parent / "core"))
-from core.yamnet_runner import YAMNetGongDetector
+sys.path.append(str(Path(__file__).parent.parent.parent))
+from gong_detector.core.yamnet_runner import YAMNetGongDetector
 
 
 def get_audio_files(folder_path: Path) -> list[Path]:
@@ -76,8 +76,8 @@ def main() -> None:
     # Setup paths
     script_dir = Path(__file__).parent
     data_dir = script_dir.parent / "data"
-    positive_dir = data_dir / "raw_samples" / "positive"
-    negative_dir = data_dir / "raw_samples" / "negative"
+    positive_dir = data_dir / "validated_samples" / "positive"
+    negative_dir = data_dir / "validated_samples" / "negative"
     processed_dir = data_dir / "processed"
 
     # Create processed directory if it doesn't exist
@@ -117,7 +117,7 @@ def main() -> None:
     # Convert to arrays
     if not all_embeddings:
         print(
-            "No embeddings extracted! Please add audio files to the raw_samples folders."
+            "No embeddings extracted! Please add audio files to the validated_samples folders."
         )
         return
 
