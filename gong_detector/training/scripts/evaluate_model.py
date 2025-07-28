@@ -12,8 +12,8 @@ from pathlib import Path
 import numpy as np
 
 # Add core module to path
-sys.path.append(str(Path(__file__).parent.parent.parent / "core"))
-from core.yamnet_runner import YAMNetGongDetector
+sys.path.append(str(Path(__file__).parent.parent.parent))
+from gong_detector.core.yamnet_runner import YAMNetGongDetector
 
 
 def load_trained_model(models_dir: Path) -> tuple[object, dict]:
@@ -121,8 +121,8 @@ def main() -> None:
     script_dir = Path(__file__).parent
     data_dir = script_dir.parent / "data"
     models_dir = data_dir / "models"
-    positive_dir = data_dir / "raw_samples" / "positive"
-    negative_dir = data_dir / "raw_samples" / "negative"
+    positive_dir = data_dir / "validated_samples" / "positive"
+    negative_dir = data_dir / "validated_samples" / "negative"
 
     # Load trained model
     try:
