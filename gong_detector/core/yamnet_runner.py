@@ -281,6 +281,7 @@ class YAMNetGongDetector:
         window_duration = 0.96  # YAMNet window duration
 
         detections: list[tuple[float, float, float]] = []
+        
         for i, embedding in enumerate(embeddings):
             # Reshape embedding for classifier prediction
             embedding_reshaped = embedding.reshape(1, -1)

@@ -108,8 +108,8 @@ Examples:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.4,
-        help="Confidence threshold for gong detection (default: 0.4)",
+        default=0.8,
+        help="Confidence threshold for gong detection (default: 0.8)",
     )
     parser.add_argument(
         "--max_threshold",
