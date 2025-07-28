@@ -1,6 +1,7 @@
 # TBPN Size Gong Analysis
 
-A AED system using YAMNet and a custom head to identify size gong sounds in TBPN episodes.
+A AED system using a trained YAMNet classifier to identify size gong sounds in TBPN episodes.
+
 
 ## Quick Start
 
@@ -49,11 +50,8 @@ python -m gong_detector.core.bulk_process --version_one
 ### **Trained Classifier Integration**
 - **99.3% accuracy** on validation data
 - **Conservative thresholds** (0.925 default) for high precision
-- **Batch processing** (5000 embeddings per batch) for 5-10x speedup
-- **Multi-threading** (8 inter-op + 4 intra-op threads) for CPU optimization
 
 ### **Performance Optimizations**
-- **Memory efficient** for 16GB+ systems
 - **Real-time monitoring** of resource usage
 - **Configurable batch sizes** for different hardware
 - **Automatic cleanup** of temporary files
