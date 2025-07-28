@@ -1,26 +1,6 @@
-# YAMNet Gong Detection
+# TBPN Size Gong Analysis
 
-A comprehensive audio event detection system using YAMNet to identify gong sounds in podcast episodes. This project provides both a learning tutorial and production-ready tools for audio analysis.
-
-## Overview
-
-This system demonstrates how to build a modular audio processing pipeline from scratch, combining machine learning with practical audio engineering. The project includes complete implementations of audio preprocessing, YAMNet model integration, batch processing capabilities, and export functionality.
-
-## Features
-
-- **Audio Processing**: Loading, preprocessing, and analyzing audio files with proper normalization
-- **Machine Learning**: Pre-trained YAMNet model integration for audio event classification  
-- **Modular Design**: Clean, reusable components with clear separation of concerns
-- **Batch Processing**: Efficient handling of multiple audio files with progress tracking
-- **YouTube Integration**: Direct audio extraction and processing from YouTube URLs
-- **Export Capabilities**: Generate audio snippets and analysis reports in multiple formats
-
-## Prerequisites
-
-- Python 3.9 or higher (Python 3.12 recommended)
-- Basic understanding of Python programming
-- Familiarity with command line tools
-- macOS or Linux (for ffmpeg support)
+A comprehensive audio event detection system using YAMNet to identify gong sounds in podcast episodes. Features a trained classifier with 99.3% accuracy and optimized batch processing.
 
 ## Quick Start
 
@@ -28,394 +8,157 @@ This system demonstrates how to build a modular audio processing pipeline from s
 # Install dependencies
 pip install -r requirements.txt
 
-# Basic gong detection on an audio file
-python -m gong_detector.core.detect_from_youtube --help
-
-# Convert and analyze YouTube audio
+# Basic detection
 python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VIDEO_ID"
-```
 
-## Installation
+# Enhanced detection with trained classifier
+python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VIDEO_ID" --use_version_one
 
-### Standard Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/tbpn-size-gong-analysis.git
-cd tbpn-size-gong-analysis
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install system dependencies (macOS)
-brew install ffmpeg
-
-# Install system dependencies (Ubuntu/Debian)
-sudo apt-get install ffmpeg
-```
-
-### Development Installation
-
-```bash
-# Install with development dependencies
-pip install -e ".[dev]"
-
-# Run tests to verify installation
-pytest tests/ -v
-
-# Run linting
-ruff check gong_detector/
+# Bulk processing
+python -m gong_detector.core.bulk_process --version_one
 ```
 
 ## Project Structure
 
-```text
-tbpn-size-gong-analysis/
-├── gong_detector/           # Main package
-│   ├── core/               # Core functionality
-│   │   ├── yamnet_runner.py    # YAMNet model integration
-│   │   ├── audio_utils.py      # Audio processing utilities
-│   │   ├── convert_audio.py    # Audio format conversion
-│   │   └── detect_from_youtube.py  # YouTube detection script
-│   ├── training/           # Training data and scripts
-│   └── requirements.txt    # Package dependencies
-├── tests/                  # Test suite
-├── legacy/                 # Archived code and examples
-├── pyproject.toml         # Project configuration
-└── README.md              # This file
-```
+### **Core Detection (`gong_detector/core/`)**
+- `yamnet_runner.py` - YAMNet model integration with trained classifier support
+- `detect_from_youtube.py` - Single video detection with optimized batch processing  
+- `bulk_process.py` - Multi-video processing with performance optimizations
+- `manual_sample_collector.py` - Interactive training sample collection
+- `negative_sample_collector.py` - Non-gong sample collection for training
+- `models/` - Trained classifier files (classifier.pkl, config.json)
+- `tbpn_youtube_links.txt` - YouTube URLs for bulk processing
 
-## Core Components
+### **Training Pipeline (`gong_detector/training/`)**
+- `scripts/extract_embeddings.py` - Extract YAMNet features from audio samples
+- `scripts/train_classifier.py` - Train Random Forest on embeddings  
+- `scripts/evaluate_model.py` - Evaluate trained model performance
+- `data/validated_samples/` - Curated training data (positive/negative)
+- `data/processed/` - Processed embeddings and labels
+- `data/models/` - Trained model checkpoints
 
-### YAMNet Integration (yamnet_runner.py)
+### **Supporting Modules**
+- `audio_utils.py` - Audio processing utilities (dBFS, slicing, normalization)
+- `youtube_utils.py` - YouTube download and audio conversion
+- `results_utils.py` - CSV export and result formatting
+- `comprehensive_csv.py` - Rich metadata CSV generation
+- `convert_audio.py` - Audio format conversion utilities
 
-Provides the main `YAMNetGongDetector` class for audio event detection:
+## Key Features
 
-- Loading pre-trained YAMNet model from TensorFlow Hub
-- Audio preprocessing (mono conversion, 16kHz resampling, normalization)
-- Inference execution and confidence score extraction
-- Detection post-processing with configurable thresholds
+### **Trained Classifier Integration**
+- **99.3% accuracy** on validation data
+- **Conservative thresholds** (0.925 default) for high precision
+- **Batch processing** (5000 embeddings per batch) for 5-10x speedup
+- **Multi-threading** (8 inter-op + 4 intra-op threads) for CPU optimization
 
-```python
-from gong_detector.core import YAMNetGongDetector
+### **Performance Optimizations**
+- **Memory efficient** for 16GB+ systems
+- **Real-time monitoring** of resource usage
+- **Configurable batch sizes** for different hardware
+- **Automatic cleanup** of temporary files
 
-detector = YAMNetGongDetector()
-detector.load_model()
-waveform, sample_rate = detector.load_and_preprocess_audio("audio.wav")
-scores, embeddings, spectrogram = detector.run_inference(waveform)
-detections = detector.detect_gongs(scores, confidence_threshold=0.5)
-```
+### **Training Data Workflow**
+- **Automatic collection** with `--save_positive_samples`
+- **Interactive manual collection** for missed detections
+- **Negative sample collection** for balanced training data
+- **Seamless integration** with training pipeline
 
-### Audio Utilities (audio_utils.py)
+## Core Commands
 
-Essential audio processing functions for level analysis and manipulation:
-
-- **dBFS Calculations**: Peak and RMS level measurements
-- **Audio Slicing**: Extract segments around specific timestamps  
-- **Normalization**: Amplitude adjustment and silence detection
-- **Statistics**: Comprehensive audio file analysis
-
-Key functions include `compute_peak_dbfs()`, `extract_audio_slice()`, and `analyze_audio_slice_levels()`.
-
-### Audio Conversion (convert_audio.py)
-
-Handles format conversion and YouTube audio extraction:
-
-- **YouTube Downloads**: Using yt-dlp for reliable video processing
-- **Format Conversion**: FFmpeg integration for audio format handling
-- **Validation**: File format verification and metadata extraction
-- **Error Handling**: Robust processing with detailed error reporting
-
-### YouTube Detection (detect_from_youtube.py)
-
-Command-line interface for end-to-end YouTube audio analysis:
-
-- Direct URL processing with optional time segment selection
-- Temporary file management with automatic cleanup
-- CSV export functionality for analysis results
-- Progress reporting and summary statistics
-
-### Manual Sample Collection (manual_sample_collector.py)
-
-Interactive tool for collecting training samples at specific timestamps:
-
-- Runs in a continuous loop asking for YouTube links and timestamps
-- Extract single audio segments from YouTube videos at precise timestamps
-- Perfect for collecting samples that YAMNet missed or for manual verification
-- Integrates with existing training data pipeline
-- Automatic cleanup and error handling
-
-**Use Cases:**
-- Collecting missed gong detections for training data
-- Manual verification of YAMNet results
-- Creating high-quality labeled datasets
-- Human-in-the-loop training data curation
-
-## Usage Examples
-
-### Basic Detection
-
+### **Detection**
 ```bash
-# Analyze entire video
-python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VIDEO_ID"
+# Basic YAMNet detection
+python -m gong_detector.core.detect_from_youtube "URL"
 
-# Analyze specific time segment
-python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VIDEO_ID" --start_time 300 --duration 60
+# Enhanced with trained classifier
+python -m gong_detector.core.detect_from_youtube "URL" --use_version_one
 
-# Adjust detection sensitivity
-python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VIDEO_ID" --threshold 0.3
+# Custom threshold
+python -m gong_detector.core.detect_from_youtube "URL" --threshold 0.95
 
-# Save results to CSV
-python -m gong_detector.core.detect_from_youtube "https://youtube.com/watch?v=VIDEO_ID" --save_csv results.csv
+# Time segment
+python -m gong_detector.core.detect_from_youtube "URL" --start_time 300 --duration 60
 ```
 
-### Manual Sample Collection
-
+### **Bulk Processing**
 ```bash
-# Start interactive collection
-python -m gong_detector.core.manual_sample_collector
+# Process all URLs in tbpn_youtube_links.txt
+python -m gong_detector.core.bulk_process --version_one
+
+# Custom settings
+python -m gong_detector.core.bulk_process --version_one --threshold 0.95 --batch_size 10000
 ```
 
-**Interactive workflow:**
-1. Enter YouTube link and timestamp: `https://youtube.com/watch?v=VIDEO_ID 120`
-2. Downloads the full YouTube video audio
-3. Extracts a 3-second segment centered on your specified timestamp
-4. Saves the sample in `gong_detector/training/data/raw_samples/positive/[video_title]/`
-5. Uses the same naming convention as YAMNet-detected samples
-6. Automatically cleans up temporary files
-7. Asks if you want to process another sample (y/n)
-
-### Programmatic Usage
-
-```python
-from gong_detector.core import YAMNetGongDetector, convert_youtube_audio
-
-# Convert audio file
-audio_path = convert_youtube_audio("https://youtube.com/watch?v=VIDEO_ID", "audio.wav")
-
-# Initialize detector
-detector = YAMNetGongDetector()
-detector.load_model()
-
-# Process audio
-waveform, sample_rate = detector.load_and_preprocess_audio(audio_path)
-scores, _, _ = detector.run_inference(waveform)
-
-# Extract detections
-detections = detector.detect_gongs(scores, confidence_threshold=0.4)
-detector.print_detections(detections)
-
-# Convert to DataFrame for analysis
-df = detector.detections_to_dataframe(detections)
-df.to_csv("detections.csv", index=False)
-```
-
-## API Reference
-
-### YAMNetGongDetector Class
-
-**Methods:**
-
-- `load_model()`: Initialize YAMNet from TensorFlow Hub
-- `load_and_preprocess_audio(path)`: Load and prepare audio for analysis
-- `run_inference(waveform)`: Execute model inference
-- `detect_gongs(scores, threshold)`: Extract gong detections from scores
-- `print_detections(detections)`: Display results in formatted table
-- `detections_to_dataframe(detections)`: Convert results to pandas DataFrame
-
-**Key Concepts:**
-
-- **YAMNet**: Pre-trained neural network for 521 audio event classes
-- **Gong Class Index**: Class 172 in the YAMNet taxonomy (metallic percussion instruments)
-- **Confidence Threshold**: Minimum score for positive detection (typically 0.3-0.7)
-- **Hop Length**: Time resolution between predictions (approximately 0.48 seconds)
-
-### Audio Utility Functions
-
-**Level Analysis:**
-
-- `compute_peak_dbfs(waveform)`: Peak amplitude in dBFS
-- `compute_rms_dbfs(waveform)`: RMS amplitude in dBFS  
-- `compute_audio_levels(waveform)`: Combined peak and RMS analysis
-
-**Audio Manipulation:**
-
-- `extract_audio_slice(waveform, timestamp, before, after)`: Extract time segment
-- `normalize_waveform(waveform, target_dbfs)`: Amplitude normalization
-- `is_silent(waveform, threshold)`: Silence detection
-
-**Conversion Functions:**
-
-- `convert_youtube_audio(url, output_path)`: Download and convert YouTube audio
-- `validate_audio_file(path)`: Verify file format compatibility
-- `get_audio_info(path)`: Extract metadata using ffprobe
-
-**Manual Sample Collection:**
-
-- `process_single_sample(youtube_url, timestamp, confidence)`: Process single YouTube sample
-- `create_manual_detection(timestamp, confidence)`: Create detection tuple for manual samples
-- `save_positive_samples(detections, audio_path, output_dir)`: Extract and save audio segments
-
-## Training Data Collection
-
-### Human-in-the-Loop Workflow
-
-For building high-quality training datasets, use this workflow:
-
-1. **Automatic Detection**: Use `detect_from_youtube` with `--save_positive_samples` to collect YAMNet-detected samples
-2. **Manual Collection**: Use `manual_sample_collector` to interactively collect samples that YAMNet missed
-3. **Review and Clean**: Manually review all collected samples in the training data folders
-4. **Train Model**: Run the training pipeline on cleaned data
-
-### Training Data Organization
-
-```
-gong_detector/training/data/
-├── raw_samples/
-│   ├── positive/           # Gong samples organized by video
-│   │   ├── [video_title_1]/
-│   │   │   ├── gong_1.5s_conf_0.850_1.wav
-│   │   │   └── gong_360.2s_conf_1.000_1.wav  # Manual sample
-│   │   └── [video_title_2]/
-│   └── negative/           # Non-gong samples for training
-├── processed/              # Processed embeddings and labels
-└── models/                 # Trained model checkpoints
-```
-
-### Sample Collection Commands
-
+### **Training Data Collection**
 ```bash
-# Collect YAMNet-detected samples
-python -m gong_detector.core.detect_from_youtube "YOUR_URL" --save_positive_samples
+# Collect positive samples
+python -m gong_detector.core.detect_from_youtube "URL" --save_positive_samples
 
-# Start interactive manual sample collection
+# Interactive manual collection
 python -m gong_detector.core.manual_sample_collector
 
-# Bulk process multiple videos
-python gong_detector/bulk_process.py --save_positive_samples
+# Collect negative samples
+python -m gong_detector.core.negative_sample_collector "URL"
 ```
 
-## Testing
-
-The project includes comprehensive test coverage using pytest:
-
+### **Training Pipeline**
 ```bash
-# Run all tests
-pytest tests/ -v
+# Extract embeddings from validated samples
+python gong_detector/training/scripts/extract_embeddings.py
 
-# Run with coverage reporting
-pytest tests/ --cov=gong_detector --cov-report=html
+# Train classifier
+python gong_detector/training/scripts/train_classifier.py
 
-# Run specific test modules
-pytest tests/test_yamnet_runner.py -v
-pytest tests/test_audio_utils.py -v
+# Evaluate model
+python gong_detector/training/scripts/evaluate_model.py
 ```
 
-## Troubleshooting
+## Technical Architecture
 
-### Common Issues
+### **YAMNet Integration**
+- **Pre-trained model** from TensorFlow Hub
+- **521 audio classes** with gong at index 172
+- **0.48s temporal resolution** for precise detection
+- **16kHz mono input** with automatic preprocessing
 
-**TensorFlow Import Errors:**
+### **Trained Classifier**
+- **Random Forest** on YAMNet embeddings
+- **1024 features** per audio segment
+- **Binary classification** (gong vs non-gong)
+- **Confidence scoring** for threshold-based filtering
 
-```bash
-# Install compatible TensorFlow version
-pip install tensorflow>=2.15.0
-pip install tensorflow-hub>=0.14.0
-```
-
-**FFmpeg Not Found:**
-
-```bash
-# macOS installation
-brew install ffmpeg
-
-# Ubuntu/Debian installation  
-sudo apt-get install ffmpeg
-
-# Verify installation
-ffmpeg -version
-```
-
-**SSL Certificate Issues (macOS):**
-
-```bash
-# Install certificates for Python
-/Applications/Python\ 3.12/Install\ Certificates.command
-```
-
-**Audio File Processing:**
-
-- Ensure files are in supported formats (WAV, MP3, M4A, FLAC)
-- Check file permissions and verify paths are correct
-- Validate audio files are not corrupted using ffprobe
-
-### Debug Mode
-
-Enable detailed logging by adding debug prints:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
-# Or add manual debug output
-print(f"Audio shape: {waveform.shape}")  
-print(f"Sample rate: {sample_rate}Hz")
-print(f"Detection count: {len(detections)}")
-```
+### **Audio Processing Pipeline**
+- **YouTube download** via yt-dlp
+- **FFmpeg conversion** to 16kHz WAV
+- **TensorFlow preprocessing** (normalization, resampling)
+- **Batch inference** with optimized threading
 
 ## Development
 
-### Code Style
+### **Code Quality**
+- **Type annotations** on all functions
+- **PEP 257 docstrings** for documentation
+- **Ruff linting** for code style
+- **Pytest testing** for reliability
 
-This project follows strict code quality standards:
+### **Performance Monitoring**
+```python
+# Get performance configuration
+detector = YAMNetGongDetector()
+perf_info = detector.get_performance_info()
+print(f"Threads: {perf_info['tensorflow_threads']}")
+print(f"Batch size: {perf_info['batch_size']}")
+```
 
-- **Type Annotations**: All functions include proper type hints
-- **Docstrings**: Complete PEP 257 compliant documentation
-- **Linting**: Ruff for code style enforcement
-- **Testing**: Comprehensive pytest coverage
+## Dependencies
 
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality  
-4. Ensure all tests pass and linting is clean
-5. Submit a pull request
-
-### Architecture Decisions
-
-- **Simplicity First**: Code prioritizes readability over complex abstractions
-- **Modular Design**: Clear separation between audio processing, ML inference, and I/O
-- **Error Handling**: Graceful degradation with informative error messages
-- **Performance**: Efficient batch processing for multiple files
-
-## Technical Background
-
-### YAMNet Model Details
-
-YAMNet is a pre-trained audio event classifier developed by Google Research. Key characteristics:
-
-- **Architecture**: MobileNet-based convolutional neural network
-- **Training Data**: AudioSet dataset with 521 sound classes
-- **Input Format**: 16kHz mono audio with variable length support
-- **Output**: Per-frame predictions with 0.48 second temporal resolution
-- **Gong Classification**: Class 172 represents metallic percussion instruments
-
-### Audio Processing Pipeline
-
-1. **Loading**: TensorFlow audio decoder for WAV files
-2. **Resampling**: Signal processing to 16kHz using TensorFlow operations
-3. **Normalization**: Amplitude scaling to [-1, 1] range
-4. **Inference**: Model execution on preprocessed waveform
-5. **Post-processing**: Confidence thresholding and temporal filtering
+- **TensorFlow 2.19+** for YAMNet model
+- **scikit-learn** for Random Forest classifier
+- **yt-dlp** for YouTube downloads
+- **FFmpeg** for audio processing
+- **pandas/numpy** for data handling
 
 ## License
 
-This project is available under the MIT License. See LICENSE file for details.
-
-## References
-
-- [YAMNet Paper](https://arxiv.org/abs/1609.09430) - Original model architecture and training details
-- [TensorFlow Hub YAMNet](https://tfhub.dev/google/yamnet/1) - Pre-trained model repository
-- [AudioSet](https://research.google.com/audioset/) - Training dataset information
-- [FFmpeg Documentation](https://ffmpeg.org/documentation.html) - Audio processing reference
+MIT License - see LICENSE file for details.
