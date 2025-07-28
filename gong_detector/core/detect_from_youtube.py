@@ -26,7 +26,7 @@ from .youtube_utils import (
 
 
 def process_audio_with_yamnet(
-    temp_audio: str, threshold: float, max_threshold: Optional[float] = None
+    temp_audio: str, threshold: float, max_threshold: Optional[float] = None, use_version_one: bool = False
 ) -> tuple[list[tuple[float, float, float]], float, float]:
     """Process audio file with YAMNet detector.
 
@@ -34,14 +34,18 @@ def process_audio_with_yamnet(
         temp_audio: Path to temporary audio file
         threshold: Confidence threshold for detection
         max_threshold: Maximum confidence threshold for detection (optional)
+        use_version_one: Whether to use the trained classifier for enhanced detection
 
     Returns:
         Tuple of (detections, total_duration, max_gong_confidence)
     """
     # Initialize YAMNet detector
     print("\nStep 2: Loading YAMNet model...")
-    detector = YAMNetGongDetector()
+    detector = YAMNetGongDetector(use_trained_classifier=use_version_one)
     detector.load_model()
+    
+    if use_version_one:
+        detector.load_trained_classifier()
 
     # Process audio
     print("\nStep 3: Processing audio...")
@@ -49,16 +53,25 @@ def process_audio_with_yamnet(
 
     # Run inference
     print("\nStep 4: Running gong detection...")
-    scores, _, _ = detector.run_inference(waveform)
+    scores, embeddings, _ = detector.run_inference(waveform)
 
     # Detect gongs with duration validation
     total_duration = len(waveform) / sample_rate
-    detections = detector.detect_gongs(
-        scores=scores,
-        confidence_threshold=threshold,
-        max_confidence_threshold=max_threshold,
-        audio_duration=total_duration
-    )
+    
+    if use_version_one:
+        detections = detector.detect_gongs_with_classifier(
+            embeddings=embeddings,
+            confidence_threshold=threshold,
+            max_confidence_threshold=max_threshold,
+            audio_duration=total_duration
+        )
+    else:
+        detections = detector.detect_gongs(
+            scores=scores,
+            confidence_threshold=threshold,
+            max_confidence_threshold=max_threshold,
+            audio_duration=total_duration
+        )
 
     # Print results using detector's formatted output
     detector.print_detections(detections)
@@ -104,6 +117,11 @@ Examples:
         default=None,
         help="Maximum confidence threshold for gong detection (optional)",
     )
+    parser.add_argument(
+        "--use_version_one",
+        action="store_true",
+        help="Use the trained classifier for enhanced gong detection",
+    )
     parser.add_argument("--save_csv", help="Save results to CSV file (optional)")
     parser.add_argument(
         "--keep_audio",
@@ -127,6 +145,7 @@ def detect_from_youtube_comprehensive(
     duration: Optional[int] = None,
     should_save_positive_samples: bool = False,
     keep_audio: bool = False,
+    use_version_one: bool = False,
 ) -> dict[str, Any]:
     """Run YouTube gong detection and return comprehensive metadata.
 
@@ -141,6 +160,7 @@ def detect_from_youtube_comprehensive(
         duration: Duration in seconds (optional)
         should_save_positive_samples: Whether to save detected segments
         keep_audio: Whether to keep temporary audio file
+        use_version_one: Whether to use the trained classifier for enhanced detection
 
     Returns:
         Dictionary containing all detection metadata:
@@ -174,7 +194,7 @@ def detect_from_youtube_comprehensive(
 
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, threshold, max_threshold
+            temp_audio, threshold, max_threshold, use_version_one
         )
 
         # Save positive samples if requested
@@ -251,7 +271,7 @@ def main() -> None:
 
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, args.threshold, args.max_threshold
+            temp_audio, args.threshold, args.max_threshold, args.use_version_one
         )
 
         # Save to CSV if requested

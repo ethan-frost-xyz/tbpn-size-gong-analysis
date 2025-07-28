@@ -94,6 +94,11 @@ Examples:
         default=5,
         help="Number of negative samples to collect per video (default: 5)",
     )
+    parser.add_argument(
+        "--version_one",
+        action="store_true",
+        help="Use the trained classifier for enhanced gong detection",
+    )
 
     args = parser.parse_args()
 
@@ -136,6 +141,7 @@ Examples:
                 max_threshold=args.max_threshold,
                 should_save_positive_samples=args.save_positive_samples,
                 keep_audio=args.keep_audio,
+                use_version_one=args.version_one,
             )
 
         if result["success"]:

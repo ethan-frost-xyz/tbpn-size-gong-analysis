@@ -5,6 +5,8 @@ processing audio, and running inference to detect gong sounds.
 """
 
 import os
+import pickle
+from pathlib import Path
 from typing import Optional
 
 import numpy as np  # type: ignore
@@ -16,12 +18,21 @@ import tensorflow_hub as hub  # type: ignore
 class YAMNetGongDetector:
     """YAMNet-based gong sound detector for audio analysis."""
 
-    def __init__(self) -> None:
-        """Initialize the YAMNet gong detector."""
+    def __init__(self, use_trained_classifier: bool = False) -> None:
+        """Initialize the YAMNet gong detector.
+        
+        Args:
+            use_trained_classifier: Whether to use the trained classifier for enhanced detection
+        """
         self.model: Optional[hub.KerasLayer] = None
         self.class_names: Optional[list[str]] = None
         self.gong_class_index: int = 172  # YAMNet class index for "gong"
         self.target_sample_rate: int = 16000
+        
+        # Trained classifier support
+        self.use_trained_classifier: bool = use_trained_classifier
+        self.trained_classifier: Optional[object] = None
+        self.classifier_config: Optional[dict] = None
 
     def load_model(self) -> None:
         """Load the YAMNet model from TensorFlow Hub."""
@@ -37,6 +48,42 @@ class YAMNetGongDetector:
             )
         except Exception as e:
             raise RuntimeError(f"Model loading failed: {e}") from e
+
+    def load_trained_classifier(self) -> None:
+        """Load the trained classifier for enhanced gong detection.
+        
+        Raises:
+            RuntimeError: If classifier loading fails
+        """
+        if not self.use_trained_classifier:
+            return
+            
+        print("Loading trained classifier...")
+        try:
+            # Find model files relative to this module
+            module_dir = Path(__file__).parent
+            models_dir = module_dir / "models"
+            
+            classifier_path = models_dir / "classifier.pkl"
+            config_path = models_dir / "config.json"
+            
+            if not classifier_path.exists():
+                raise FileNotFoundError(f"Trained classifier not found: {classifier_path}")
+                
+            # Load classifier
+            with open(classifier_path, "rb") as f:
+                self.trained_classifier = pickle.load(f)
+                
+            # Load config
+            import json
+            with open(config_path) as f:
+                self.classifier_config = json.load(f)
+                
+            print(f"✓ Loaded {self.classifier_config['model_type']} with {self.classifier_config['feature_count']} features")
+            print(f"✓ Training accuracy: {self.classifier_config['performance']['accuracy']:.3f}")
+            
+        except Exception as e:
+            raise RuntimeError(f"Trained classifier loading failed: {e}") from e
 
     def _load_class_names(self) -> None:
         """Load class names from the model."""
@@ -202,6 +249,62 @@ class YAMNetGongDetector:
             detections.append((window_start, float(confidence), display_timestamp))
 
         print(f"Found {len(detections)} gong detections in threshold range")
+        return detections
+
+    def detect_gongs_with_classifier(
+        self,
+        embeddings: np.ndarray,
+        confidence_threshold: float = 0.5,
+        max_confidence_threshold: Optional[float] = None,
+        audio_duration: Optional[float] = None,
+    ) -> list[tuple[float, float, float]]:
+        """Detect gong sounds using trained classifier on YAMNet embeddings.
+
+        Args:
+            embeddings: YAMNet embeddings array
+            confidence_threshold: Minimum confidence for gong detection
+            max_confidence_threshold: Maximum confidence for gong detection (optional)
+            audio_duration: Total audio duration in seconds (for validation)
+
+        Returns:
+            List of (window_start, confidence, display_timestamp) tuples for detected gongs
+        """
+        if not self.use_trained_classifier or self.trained_classifier is None:
+            raise RuntimeError("Trained classifier not loaded. Call load_trained_classifier() first.")
+            
+        if max_confidence_threshold is not None:
+            print(f"Detecting gongs with trained classifier - confidence range: {confidence_threshold} - {max_confidence_threshold}")
+        else:
+            print(f"Detecting gongs with trained classifier - confidence threshold: {confidence_threshold}")
+
+        hop_length = self._calculate_hop_length(audio_duration, len(embeddings))
+        window_duration = 0.96  # YAMNet window duration
+
+        detections: list[tuple[float, float, float]] = []
+        for i, embedding in enumerate(embeddings):
+            # Reshape embedding for classifier prediction
+            embedding_reshaped = embedding.reshape(1, -1)
+            
+            # Get prediction and confidence
+            prediction = self.trained_classifier.predict(embedding_reshaped)[0]
+            confidence = self.trained_classifier.predict_proba(embedding_reshaped)[0].max()
+            
+            # Only consider positive predictions (gong = 1)
+            if prediction != 1:
+                continue
+                
+            # Check minimum threshold
+            if confidence <= confidence_threshold:
+                continue
+            # Check maximum threshold if specified
+            if max_confidence_threshold is not None and confidence >= max_confidence_threshold:
+                continue
+
+            window_start = i * hop_length
+            display_timestamp = window_start + (window_duration / 2)  # Center of window
+            detections.append((window_start, float(confidence), display_timestamp))
+
+        print(f"Found {len(detections)} gong detections with trained classifier")
         return detections
 
     def _calculate_hop_length(
