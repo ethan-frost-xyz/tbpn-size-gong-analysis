@@ -1,6 +1,6 @@
 # TBPN Size Gong Analysis
 
-A comprehensive audio event detection system using YAMNet to identify gong sounds in podcast episodes. Features a trained classifier with 99.3% accuracy and optimized batch processing.
+A AED system using YAMNet and a custom head to identify size gong sounds in TBPN episodes.
 
 ## Quick Start
 
@@ -158,7 +158,3 @@ print(f"Batch size: {perf_info['batch_size']}")
 - **yt-dlp** for YouTube downloads
 - **FFmpeg** for audio processing
 - **pandas/numpy** for data handling
-
-## License
-
-MIT License - see LICENSE file for details.
