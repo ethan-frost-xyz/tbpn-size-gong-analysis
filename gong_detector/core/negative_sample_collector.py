@@ -168,7 +168,7 @@ def collect_negative_samples(
             scores=scores,
             confidence_threshold=threshold,
             max_confidence_threshold=max_threshold,
-            audio_duration=total_duration
+            audio_duration=total_duration,
         )
 
         print(f"Found {len(gong_detections)} gong detections to avoid")
@@ -179,14 +179,14 @@ def collect_negative_samples(
             waveform=waveform,
             sample_rate=sample_rate,
             num_samples=num_samples,
-            gong_detections=gong_detections
+            gong_detections=gong_detections,
         )
 
         if not negative_timestamps:
             return {
                 "success": False,
                 "error_message": "No suitable regions found for negative samples",
-                "sample_count": 0
+                "sample_count": 0,
             }
 
         # Step 4: Extract and save negative samples
@@ -197,10 +197,12 @@ def collect_negative_samples(
         # Use date-based folder naming if available
         if video_title:
             from .youtube_utils import create_folder_name_from_title
+
             folder_name = create_folder_name_from_title(video_title)
             sample_dir = negative_base_dir / folder_name
         elif upload_date:
             from .youtube_utils import create_folder_name_from_date
+
             folder_name = create_folder_name_from_date(upload_date)
             sample_dir = negative_base_dir / folder_name
         else:
@@ -216,8 +218,8 @@ def collect_negative_samples(
                     waveform=waveform,
                     timestamp=timestamp,
                     duration_before=0.75,  # 0.75s before (like positive samples)
-                    duration_after=2.25,   # 2.25s after (like positive samples)
-                    sample_rate=sample_rate
+                    duration_after=2.25,  # 2.25s after (like positive samples)
+                    sample_rate=sample_rate,
                 )
 
                 # Create filename (matching positive sample format)
@@ -227,6 +229,7 @@ def collect_negative_samples(
 
                 # Save audio slice
                 import soundfile as sf
+
                 sf.write(str(output_path), audio_slice, sample_rate)
 
                 saved_count += 1
@@ -243,15 +246,11 @@ def collect_negative_samples(
             "success": True,
             "sample_count": saved_count,
             "video_title": video_title,
-            "sample_dir": str(sample_dir)
+            "sample_dir": str(sample_dir),
         }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error_message": str(e),
-            "sample_count": 0
-        }
+        return {"success": False, "error_message": str(e), "sample_count": 0}
 
     finally:
         # Clean up temporary audio file unless keep_audio is True
@@ -298,30 +297,28 @@ Examples:
         "--num_samples",
         type=int,
         default=5,
-        help="Number of negative samples to collect (default: 5)"
+        help="Number of negative samples to collect (default: 5)",
     )
     parser.add_argument(
         "--threshold",
         type=float,
         default=0.4,
-        help="Confidence threshold for gong detection (default: 0.4)"
+        help="Confidence threshold for gong detection (default: 0.4)",
     )
     parser.add_argument(
         "--max_threshold",
         type=float,
         default=None,
-        help="Maximum confidence threshold for gong detection (optional)"
+        help="Maximum confidence threshold for gong detection (optional)",
     )
     parser.add_argument(
-        "--keep_audio",
-        action="store_true",
-        help="Keep temporary audio files"
+        "--keep_audio", action="store_true", help="Keep temporary audio files"
     )
     parser.add_argument(
         "--cookies-from-browser",
         type=str,
         choices=["chrome", "firefox", "safari", "edge"],
-        help="Extract cookies from browser (chrome, firefox, safari, edge)"
+        help="Extract cookies from browser (chrome, firefox, safari, edge)",
     )
 
     args = parser.parse_args()
@@ -332,7 +329,7 @@ Examples:
         threshold=args.threshold,
         max_threshold=args.max_threshold,
         keep_audio=args.keep_audio,
-        cookies_from_browser=args.cookies_from_browser
+        cookies_from_browser=args.cookies_from_browser,
     )
 
     if not result["success"]:

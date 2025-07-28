@@ -38,7 +38,9 @@ def read_youtube_links(file_path: Path) -> list[str]:
             if "youtube.com/watch" in line or "youtu.be/" in line:
                 urls.append(line)
             elif line and not line.startswith("http"):
-                print(f"Warning: Line {line_num} doesn't look like a YouTube URL: {line}")
+                print(
+                    f"Warning: Line {line_num} doesn't look like a YouTube URL: {line}"
+                )
 
     if not urls:
         raise ValueError("No valid YouTube URLs found in file")

@@ -74,13 +74,18 @@ def _download_audio(url: str) -> str:
 
     # Add cookies if available
     from .youtube_utils import get_cookies_path
+
     cookies_path = get_cookies_path()
     if cookies_path:
         print(f"Using cookies from: {cookies_path}")
         ydl_opts["cookiefile"] = cookies_path
     else:
-        print("No cookies file found. If you encounter bot detection, create a cookies.txt file.")
-        print("See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
+        print(
+            "No cookies file found. If you encounter bot detection, create a cookies.txt file."
+        )
+        print(
+            "See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+        )
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -105,7 +110,9 @@ def _download_audio(url: str) -> str:
             print("\nBot detection detected! To fix this:")
             print("1. Create a cookies.txt file with your YouTube cookies")
             print("2. Place it in the project root or your home directory")
-            print("3. See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
+            print(
+                "3. See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+            )
         if isinstance(e, RuntimeError):
             raise
         raise RuntimeError(f"YouTube download failed: {e}") from e
@@ -233,13 +240,13 @@ def get_audio_info(file_path: str) -> dict:
             "duration": float(format_info.get("duration", 0)),
             "size": int(format_info.get("size", 0)),
             "format_name": format_info.get("format_name", "unknown"),
-            "sample_rate": int(audio_stream.get("sample_rate", 0))
-            if audio_stream
-            else 0,
+            "sample_rate": (
+                int(audio_stream.get("sample_rate", 0)) if audio_stream else 0
+            ),
             "channels": int(audio_stream.get("channels", 0)) if audio_stream else 0,
-            "codec_name": audio_stream.get("codec_name", "unknown")
-            if audio_stream
-            else "unknown",
+            "codec_name": (
+                audio_stream.get("codec_name", "unknown") if audio_stream else "unknown"
+            ),
         }
 
     except subprocess.CalledProcessError as e:

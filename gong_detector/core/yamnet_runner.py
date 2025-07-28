@@ -18,7 +18,9 @@ import tensorflow_hub as hub  # type: ignore
 class YAMNetGongDetector:
     """YAMNet-based gong sound detector for audio analysis."""
 
-    def __init__(self, use_trained_classifier: bool = False, batch_size: int = 1000) -> None:
+    def __init__(
+        self, use_trained_classifier: bool = False, batch_size: int = 1000
+    ) -> None:
         """Initialize the YAMNet gong detector.
 
         Args:
@@ -42,11 +44,15 @@ class YAMNetGongDetector:
     def _configure_tensorflow(self) -> None:
         """Configure TensorFlow for optimal CPU performance."""
         # Enable multi-threading
-        tf.config.threading.set_inter_op_parallelism_threads(8)  # Use 8 threads for inter-op
-        tf.config.threading.set_intra_op_parallelism_threads(4)  # Use 4 threads for intra-op
+        tf.config.threading.set_inter_op_parallelism_threads(
+            8
+        )  # Use 8 threads for inter-op
+        tf.config.threading.set_intra_op_parallelism_threads(
+            4
+        )  # Use 4 threads for intra-op
 
         # Enable memory growth to prevent memory issues
-        gpus = tf.config.experimental.list_physical_devices('GPU')
+        gpus = tf.config.experimental.list_physical_devices("GPU")
         if gpus:
             try:
                 for gpu in gpus:
@@ -56,7 +62,7 @@ class YAMNetGongDetector:
 
         # Enable mixed precision for faster computation (if supported)
         try:
-            tf.keras.mixed_precision.set_global_policy('mixed_float16')
+            tf.keras.mixed_precision.set_global_policy("mixed_float16")
         except Exception:
             pass  # Mixed precision not available, continue with default
 
@@ -94,7 +100,9 @@ class YAMNetGongDetector:
             config_path = models_dir / "config.json"
 
             if not classifier_path.exists():
-                raise FileNotFoundError(f"Trained classifier not found: {classifier_path}")
+                raise FileNotFoundError(
+                    f"Trained classifier not found: {classifier_path}"
+                )
 
             # Load classifier
             with open(classifier_path, "rb") as f:
@@ -102,11 +110,16 @@ class YAMNetGongDetector:
 
             # Load config
             import json
+
             with open(config_path) as f:
                 self.classifier_config = json.load(f)
 
-            print(f"✓ Loaded {self.classifier_config['model_type']} with {self.classifier_config['feature_count']} features")
-            print(f"✓ Training accuracy: {self.classifier_config['performance']['accuracy']:.3f}")
+            print(
+                f"✓ Loaded {self.classifier_config['model_type']} with {self.classifier_config['feature_count']} features"
+            )
+            print(
+                f"✓ Training accuracy: {self.classifier_config['performance']['accuracy']:.3f}"
+            )
 
         except Exception as e:
             raise RuntimeError(f"Trained classifier loading failed: {e}") from e
@@ -225,7 +238,7 @@ class YAMNetGongDetector:
             waveform_tensor = tf.constant(waveform, dtype=tf.float32)
 
             # Run inference with optimized settings
-            with tf.device('/CPU:0'):  # Explicitly use CPU for better control
+            with tf.device("/CPU:0"):  # Explicitly use CPU for better control
                 scores, embeddings, spectrogram = self.model(waveform_tensor)
 
             print(f"Inference complete. Generated {scores.shape[0]} predictions")
@@ -255,7 +268,9 @@ class YAMNetGongDetector:
             List of (window_start, confidence, display_timestamp) tuples for detected gongs
         """
         if max_confidence_threshold is not None:
-            print(f"Detecting gongs with confidence range: {confidence_threshold} - {max_confidence_threshold}")
+            print(
+                f"Detecting gongs with confidence range: {confidence_threshold} - {max_confidence_threshold}"
+            )
         else:
             print(f"Detecting gongs with confidence threshold: {confidence_threshold}")
 
@@ -269,13 +284,14 @@ class YAMNetGongDetector:
             if confidence <= confidence_threshold:
                 continue
             # Check maximum threshold if specified
-            if max_confidence_threshold is not None and confidence >= max_confidence_threshold:
+            if (
+                max_confidence_threshold is not None
+                and confidence >= max_confidence_threshold
+            ):
                 continue
 
             window_start = i * hop_length
-            display_timestamp = window_start + (
-                window_duration / 2
-            )  # Center of window
+            display_timestamp = window_start + (window_duration / 2)  # Center of window
             detections.append((window_start, float(confidence), display_timestamp))
 
         print(f"Found {len(detections)} gong detections in threshold range")
@@ -300,17 +316,25 @@ class YAMNetGongDetector:
             List of (window_start, confidence, display_timestamp) tuples for detected gongs
         """
         if not self.use_trained_classifier or self.trained_classifier is None:
-            raise RuntimeError("Trained classifier not loaded. Call load_trained_classifier() first.")
+            raise RuntimeError(
+                "Trained classifier not loaded. Call load_trained_classifier() first."
+            )
 
         if max_confidence_threshold is not None:
-            print(f"Detecting gongs with trained classifier - confidence range: {confidence_threshold} - {max_confidence_threshold}")
+            print(
+                f"Detecting gongs with trained classifier - confidence range: {confidence_threshold} - {max_confidence_threshold}"
+            )
         else:
-            print(f"Detecting gongs with trained classifier - confidence threshold: {confidence_threshold}")
+            print(
+                f"Detecting gongs with trained classifier - confidence threshold: {confidence_threshold}"
+            )
 
         hop_length = self._calculate_hop_length(audio_duration, len(embeddings))
         window_duration = 0.96  # YAMNet window duration
 
-        print(f"Processing {len(embeddings)} embeddings in batches of {self.batch_size}...")
+        print(
+            f"Processing {len(embeddings)} embeddings in batches of {self.batch_size}..."
+        )
 
         detections: list[tuple[float, float, float]] = []
 
@@ -320,12 +344,18 @@ class YAMNetGongDetector:
             batch_embeddings = embeddings[batch_start:batch_end]
 
             # Reshape all embeddings in batch for classifier prediction
-            batch_embeddings_reshaped = batch_embeddings.reshape(-1, batch_embeddings.shape[1])
+            batch_embeddings_reshaped = batch_embeddings.reshape(
+                -1, batch_embeddings.shape[1]
+            )
 
             # Get predictions and confidences for entire batch
             predictions = self.trained_classifier.predict(batch_embeddings_reshaped)
-            probabilities = self.trained_classifier.predict_proba(batch_embeddings_reshaped)
-            confidences = probabilities[:, 1]  # Probability for positive class (gong = 1)
+            probabilities = self.trained_classifier.predict_proba(
+                batch_embeddings_reshaped
+            )
+            confidences = probabilities[
+                :, 1
+            ]  # Probability for positive class (gong = 1)
 
             # Process each prediction in the batch
             for i, (prediction, confidence) in enumerate(zip(predictions, confidences)):
@@ -339,11 +369,16 @@ class YAMNetGongDetector:
                 if confidence <= confidence_threshold:
                     continue
                 # Check maximum threshold if specified
-                if max_confidence_threshold is not None and confidence >= max_confidence_threshold:
+                if (
+                    max_confidence_threshold is not None
+                    and confidence >= max_confidence_threshold
+                ):
                     continue
 
                 window_start = global_index * hop_length
-                display_timestamp = window_start + (window_duration / 2)  # Center of window
+                display_timestamp = window_start + (
+                    window_duration / 2
+                )  # Center of window
                 detections.append((window_start, float(confidence), display_timestamp))
 
         print(f"Found {len(detections)} gong detections with trained classifier")
@@ -369,12 +404,12 @@ class YAMNetGongDetector:
             "use_trained_classifier": self.use_trained_classifier,
             "tensorflow_threads": {
                 "inter_op": tf.config.threading.get_inter_op_parallelism_threads(),
-                "intra_op": tf.config.threading.get_intra_op_parallelism_threads()
+                "intra_op": tf.config.threading.get_intra_op_parallelism_threads(),
             },
             "available_devices": {
-                "cpu": len(tf.config.list_physical_devices('CPU')),
-                "gpu": len(tf.config.list_physical_devices('GPU'))
-            }
+                "cpu": len(tf.config.list_physical_devices("CPU")),
+                "gpu": len(tf.config.list_physical_devices("GPU")),
+            },
         }
 
     def _calculate_hop_length(

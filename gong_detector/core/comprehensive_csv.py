@@ -111,7 +111,9 @@ class ComprehensiveCSVManager:
                 confidence=f"{confidence:.3f}",
                 video_max_confidence=f"{max_confidence:.3f}",
                 detection_threshold=f"{threshold:.3f}",
-                max_threshold=f"{max_threshold:.3f}" if max_threshold is not None else "",
+                max_threshold=(
+                    f"{max_threshold:.3f}" if max_threshold is not None else ""
+                ),
                 processing_date=processing_date,
                 processing_time=processing_time,
             )

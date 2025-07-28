@@ -100,7 +100,9 @@ def download_and_trim_youtube_audio(
     return output_path, video_title, upload_date
 
 
-def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Optional[dict] = None) -> tuple[str, str, str]:
+def _download_youtube_audio(
+    url: str, output_template: str, yt_dlp_options: Optional[dict] = None
+) -> tuple[str, str, str]:
     """Download audio from YouTube using yt-dlp and extract video title.
 
     Args:
@@ -125,8 +127,12 @@ def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Opti
         print(f"Using cookies from: {cookies_path}")
         ydl_opts["cookiefile"] = cookies_path
     else:
-        print("No cookies file found. If you encounter bot detection, create a cookies.txt file.")
-        print("See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
+        print(
+            "No cookies file found. If you encounter bot detection, create a cookies.txt file."
+        )
+        print(
+            "See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+        )
 
     # Merge additional yt-dlp options
     if yt_dlp_options:
@@ -147,7 +153,9 @@ def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Opti
 
         # Find the downloaded file
         temp_dir = os.path.dirname(output_template)
-        downloaded_files = [f for f in os.listdir(temp_dir) if f.startswith("temp_audio")]
+        downloaded_files = [
+            f for f in os.listdir(temp_dir) if f.startswith("temp_audio")
+        ]
 
         if not downloaded_files:
             raise RuntimeError("Failed to download audio from YouTube")
@@ -159,7 +167,9 @@ def _download_youtube_audio(url: str, output_template: str, yt_dlp_options: Opti
             print("\nBot detection detected! To fix this:")
             print("1. Create a cookies.txt file with your YouTube cookies")
             print("2. Place it in the project root or your home directory")
-            print("3. See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp")
+            print(
+                "3. See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+            )
         raise RuntimeError(f"YouTube download failed: {e}") from e
 
 
@@ -225,7 +235,7 @@ def create_folder_name_from_title(video_title: str) -> str:
 
         # Pattern to match day, month, and day number
         # Matches: "Monday, July 7th", "Tuesday, August 15th", etc.
-        pattern = r'(\w+),\s+(\w+)\s+(\d+)(?:st|nd|rd|th)?'
+        pattern = r"(\w+),\s+(\w+)\s+(\d+)(?:st|nd|rd|th)?"
         match = re.search(pattern, video_title)
 
         if match:

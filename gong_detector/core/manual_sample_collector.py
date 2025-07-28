@@ -37,7 +37,9 @@ def create_manual_detection(
     return [(timestamp, confidence, timestamp)]
 
 
-def process_single_sample(youtube_url: str, timestamp: float, confidence: float = 1.0) -> bool:
+def process_single_sample(
+    youtube_url: str, timestamp: float, confidence: float = 1.0
+) -> bool:
     """Process a single YouTube video sample.
 
     Args:
@@ -74,15 +76,19 @@ def process_single_sample(youtube_url: str, timestamp: float, confidence: float 
         positive_base_dir = Path("gong_detector/training/data/raw_samples/positive")
 
         # Use existing save_positive_samples function with date-based naming
-        save_positive_samples(manual_detection, temp_audio, positive_base_dir, upload_date, video_title)
+        save_positive_samples(
+            manual_detection, temp_audio, positive_base_dir, upload_date, video_title
+        )
 
         # Show the actual folder that was created
         if video_title:
             from .youtube_utils import create_folder_name_from_title
+
             folder_name = create_folder_name_from_title(video_title)
             final_dir = positive_base_dir / folder_name
         elif upload_date:
             from .youtube_utils import create_folder_name_from_date
+
             folder_name = create_folder_name_from_date(upload_date)
             final_dir = positive_base_dir / folder_name
         else:
@@ -111,7 +117,9 @@ def process_single_sample(youtube_url: str, timestamp: float, confidence: float 
 def main() -> None:
     """Run interactive manual sample collection."""
     print("🎵 Manual Sample Collector")
-    print("Enter YouTube link and timestamp (e.g., 'https://youtube.com/watch?v=ABC123 120')")
+    print(
+        "Enter YouTube link and timestamp (e.g., 'https://youtube.com/watch?v=ABC123 120')"
+    )
     print("Type 'n' to exit\n")
 
     while True:
@@ -119,7 +127,7 @@ def main() -> None:
             # Get user input
             user_input = input("Enter link and seconds (type 'n' to close): ").strip()
 
-            if user_input.lower() in ['quit', 'exit', 'q', 'n', 'no']:
+            if user_input.lower() in ["quit", "exit", "q", "n", "no"]:
                 print("Goodbye!")
                 break
 

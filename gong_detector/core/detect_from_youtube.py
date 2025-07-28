@@ -26,7 +26,11 @@ from .youtube_utils import (
 
 
 def process_audio_with_yamnet(
-    temp_audio: str, threshold: float, max_threshold: Optional[float] = None, use_version_one: bool = False, batch_size: int = 1000
+    temp_audio: str,
+    threshold: float,
+    max_threshold: Optional[float] = None,
+    use_version_one: bool = False,
+    batch_size: int = 1000,
 ) -> tuple[list[tuple[float, float, float]], float, float]:
     """Process audio file with YAMNet detector.
 
@@ -42,14 +46,18 @@ def process_audio_with_yamnet(
     """
     # Initialize YAMNet detector with optimized settings
     print("\nStep 2: Loading YAMNet model...")
-    detector = YAMNetGongDetector(use_trained_classifier=use_version_one, batch_size=batch_size)
+    detector = YAMNetGongDetector(
+        use_trained_classifier=use_version_one, batch_size=batch_size
+    )
     detector.load_model()
 
     if use_version_one:
         detector.load_trained_classifier()
         # Print performance configuration
         perf_info = detector.get_performance_info()
-        print(f"✓ Performance optimized: {perf_info['tensorflow_threads']['inter_op']} inter-op threads, {perf_info['tensorflow_threads']['intra_op']} intra-op threads")
+        print(
+            f"✓ Performance optimized: {perf_info['tensorflow_threads']['inter_op']} inter-op threads, {perf_info['tensorflow_threads']['intra_op']} intra-op threads"
+        )
         print(f"✓ Batch processing: {perf_info['batch_size']} embeddings per batch")
 
     # Process audio
@@ -68,14 +76,14 @@ def process_audio_with_yamnet(
             embeddings=embeddings,
             confidence_threshold=threshold,
             max_confidence_threshold=max_threshold,
-            audio_duration=total_duration
+            audio_duration=total_duration,
         )
     else:
         detections = detector.detect_gongs(
             scores=scores,
             confidence_threshold=threshold,
             max_confidence_threshold=max_threshold,
-            audio_duration=total_duration
+            audio_duration=total_duration,
         )
 
     # Print results using detector's formatted output
@@ -221,7 +229,9 @@ def detect_from_youtube_comprehensive(
                 / "raw_samples"
                 / "positive"
             )
-            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date, video_title)
+            save_positive_samples(
+                detections, temp_audio, positive_base_dir, upload_date, video_title
+            )
 
         # Return comprehensive metadata
         return {
@@ -283,7 +293,11 @@ def main() -> None:
 
         # Step 2-4: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, args.threshold, args.max_threshold, args.use_version_one, args.batch_size
+            temp_audio,
+            args.threshold,
+            args.max_threshold,
+            args.use_version_one,
+            args.batch_size,
         )
 
         # Save to CSV if requested
@@ -303,7 +317,9 @@ def main() -> None:
                 / "positive"
             )
             print("\nSaving positive samples using date-based folder naming...")
-            save_positive_samples(detections, temp_audio, positive_base_dir, upload_date, video_title)
+            save_positive_samples(
+                detections, temp_audio, positive_base_dir, upload_date, video_title
+            )
 
         # Print summary and max confidence
         print_summary(detections, total_duration)
