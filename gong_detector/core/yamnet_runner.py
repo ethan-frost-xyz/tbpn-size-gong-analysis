@@ -20,19 +20,19 @@ class YAMNetGongDetector:
 
     def __init__(self, use_trained_classifier: bool = False, batch_size: int = 1000) -> None:
         """Initialize the YAMNet gong detector.
-        
+
         Args:
             use_trained_classifier: Whether to use the trained classifier for enhanced detection
             batch_size: Batch size for classifier predictions (larger = faster but more memory)
         """
         # Configure TensorFlow for optimal CPU usage
         self._configure_tensorflow()
-        
+
         self.model: Optional[hub.KerasLayer] = None
         self.class_names: Optional[list[str]] = None
         self.gong_class_index: int = 172  # YAMNet class index for "gong"
         self.target_sample_rate: int = 16000
-        
+
         # Trained classifier support
         self.use_trained_classifier: bool = use_trained_classifier
         self.trained_classifier: Optional[object] = None
@@ -44,7 +44,7 @@ class YAMNetGongDetector:
         # Enable multi-threading
         tf.config.threading.set_inter_op_parallelism_threads(8)  # Use 8 threads for inter-op
         tf.config.threading.set_intra_op_parallelism_threads(4)  # Use 4 threads for intra-op
-        
+
         # Enable memory growth to prevent memory issues
         gpus = tf.config.experimental.list_physical_devices('GPU')
         if gpus:
@@ -53,11 +53,11 @@ class YAMNetGongDetector:
                     tf.config.experimental.set_memory_growth(gpu, True)
             except RuntimeError as e:
                 print(f"GPU memory growth setting failed: {e}")
-        
+
         # Enable mixed precision for faster computation (if supported)
         try:
             tf.keras.mixed_precision.set_global_policy('mixed_float16')
-        except:
+        except Exception:
             pass  # Mixed precision not available, continue with default
 
     def load_model(self) -> None:
@@ -77,37 +77,37 @@ class YAMNetGongDetector:
 
     def load_trained_classifier(self) -> None:
         """Load the trained classifier for enhanced gong detection.
-        
+
         Raises:
             RuntimeError: If classifier loading fails
         """
         if not self.use_trained_classifier:
             return
-            
+
         print("Loading trained classifier...")
         try:
             # Find model files relative to this module
             module_dir = Path(__file__).parent
             models_dir = module_dir / "models"
-            
+
             classifier_path = models_dir / "classifier.pkl"
             config_path = models_dir / "config.json"
-            
+
             if not classifier_path.exists():
                 raise FileNotFoundError(f"Trained classifier not found: {classifier_path}")
-                
+
             # Load classifier
             with open(classifier_path, "rb") as f:
                 self.trained_classifier = pickle.load(f)
-                
+
             # Load config
             import json
             with open(config_path) as f:
                 self.classifier_config = json.load(f)
-                
+
             print(f"✓ Loaded {self.classifier_config['model_type']} with {self.classifier_config['feature_count']} features")
             print(f"✓ Training accuracy: {self.classifier_config['performance']['accuracy']:.3f}")
-            
+
         except Exception as e:
             raise RuntimeError(f"Trained classifier loading failed: {e}") from e
 
@@ -223,7 +223,7 @@ class YAMNetGongDetector:
         try:
             # Use float32 for optimal performance on CPU
             waveform_tensor = tf.constant(waveform, dtype=tf.float32)
-            
+
             # Run inference with optimized settings
             with tf.device('/CPU:0'):  # Explicitly use CPU for better control
                 scores, embeddings, spectrogram = self.model(waveform_tensor)
@@ -301,7 +301,7 @@ class YAMNetGongDetector:
         """
         if not self.use_trained_classifier or self.trained_classifier is None:
             raise RuntimeError("Trained classifier not loaded. Call load_trained_classifier() first.")
-            
+
         if max_confidence_threshold is not None:
             print(f"Detecting gongs with trained classifier - confidence range: {confidence_threshold} - {max_confidence_threshold}")
         else:
@@ -311,30 +311,30 @@ class YAMNetGongDetector:
         window_duration = 0.96  # YAMNet window duration
 
         print(f"Processing {len(embeddings)} embeddings in batches of {self.batch_size}...")
-        
+
         detections: list[tuple[float, float, float]] = []
-        
+
         # Process embeddings in batches for better performance
         for batch_start in range(0, len(embeddings), self.batch_size):
             batch_end = min(batch_start + self.batch_size, len(embeddings))
             batch_embeddings = embeddings[batch_start:batch_end]
-            
+
             # Reshape all embeddings in batch for classifier prediction
             batch_embeddings_reshaped = batch_embeddings.reshape(-1, batch_embeddings.shape[1])
-            
+
             # Get predictions and confidences for entire batch
             predictions = self.trained_classifier.predict(batch_embeddings_reshaped)
             probabilities = self.trained_classifier.predict_proba(batch_embeddings_reshaped)
             confidences = probabilities[:, 1]  # Probability for positive class (gong = 1)
-            
+
             # Process each prediction in the batch
             for i, (prediction, confidence) in enumerate(zip(predictions, confidences)):
                 global_index = batch_start + i
-                
+
                 # Only consider positive predictions (gong = 1)
                 if prediction != 1:
                     continue
-                    
+
                 # Check minimum threshold
                 if confidence <= confidence_threshold:
                     continue
@@ -351,7 +351,7 @@ class YAMNetGongDetector:
 
     def set_batch_size(self, batch_size: int) -> None:
         """Set the batch size for classifier predictions.
-        
+
         Args:
             batch_size: New batch size (larger = faster but more memory)
         """
@@ -360,7 +360,7 @@ class YAMNetGongDetector:
 
     def get_performance_info(self) -> dict:
         """Get information about current performance configuration.
-        
+
         Returns:
             Dictionary with performance settings
         """

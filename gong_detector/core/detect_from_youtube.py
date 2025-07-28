@@ -44,7 +44,7 @@ def process_audio_with_yamnet(
     print("\nStep 2: Loading YAMNet model...")
     detector = YAMNetGongDetector(use_trained_classifier=use_version_one, batch_size=batch_size)
     detector.load_model()
-    
+
     if use_version_one:
         detector.load_trained_classifier()
         # Print performance configuration
@@ -62,7 +62,7 @@ def process_audio_with_yamnet(
 
     # Detect gongs with duration validation
     total_duration = len(waveform) / sample_rate
-    
+
     if use_version_one:
         detections = detector.detect_gongs_with_classifier(
             embeddings=embeddings,
