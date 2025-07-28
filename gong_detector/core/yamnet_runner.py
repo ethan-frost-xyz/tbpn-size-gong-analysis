@@ -287,7 +287,8 @@ class YAMNetGongDetector:
             
             # Get prediction and confidence
             prediction = self.trained_classifier.predict(embedding_reshaped)[0]
-            confidence = self.trained_classifier.predict_proba(embedding_reshaped)[0].max()
+            probabilities = self.trained_classifier.predict_proba(embedding_reshaped)[0]
+            confidence = probabilities[1]  # Probability for positive class (gong = 1)
             
             # Only consider positive predictions (gong = 1)
             if prediction != 1:
