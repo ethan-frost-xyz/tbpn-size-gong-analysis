@@ -82,7 +82,7 @@ globs: **/*.py, src/**/*.py, tests/**/*.py
 ## Development Workflow
 - Use virtual environments (venv)
 - Implement pre-commit hooks
-- Use proper Git workflow
+- Use proper Git workflow (dont push without permission)
 - Follow semantic versioning
 - Use proper CI/CD practices
 - Implement proper logging
