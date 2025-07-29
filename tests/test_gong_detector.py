@@ -3,10 +3,10 @@
 import sys
 from pathlib import Path
 
-import pytest
-
+# Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+import pytest
 from gong_detector.core.data.csv_manager import CSVManager
 from gong_detector.core.detector.yamnet_runner import YAMNetGongDetector
 
