@@ -99,7 +99,7 @@ python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=src.gong_detector",
+    "--cov=src/gong_detector",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-fail-under=15",
@@ -110,7 +110,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/gong_detector"]
+source = ["src"]
 omit = [
     "*/tests/*",
     "*/test_*",

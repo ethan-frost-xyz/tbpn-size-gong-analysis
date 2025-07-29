@@ -7,8 +7,39 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import pytest
-from gong_detector.core.data.csv_manager import CSVManager
-from gong_detector.core.detector.yamnet_runner import YAMNetGongDetector
+from gong_detector import (
+    CSVManager,
+    YAMNetGongDetector,
+    DetectionRecord,
+    detect_from_youtube_comprehensive,
+    convert_youtube_audio,
+    validate_audio_file,
+    get_audio_info,
+    compute_peak_dbfs,
+    compute_rms_dbfs,
+    compute_audio_levels,
+    extract_audio_slice,
+    get_slice_around_timestamp,
+    analyze_audio_slice_levels,
+    is_silent,
+    normalize_waveform,
+    get_audio_stats,
+    download_and_trim_youtube_audio,
+    format_time,
+    print_summary,
+    cleanup_old_temp_files,
+    create_folder_name_from_date,
+    create_folder_name_from_title,
+    create_temp_audio_path,
+    sanitize_title_for_folder,
+    setup_directories,
+    save_positive_samples,
+    save_results_to_csv,
+    collect_negative_samples,
+    SILENCE_FLOOR_DBFS,
+    DEFAULT_SAMPLE_RATE,
+    __version__,
+)
 
 
 def test_yamnet_detector_initialization():
@@ -25,19 +56,38 @@ def test_csv_manager_initialization():
 
 def test_core_imports():
     """Test that core modules can be imported."""
-    try:
-        from gong_detector.core.pipeline import detection_pipeline
-
-        assert detection_pipeline is not None
-    except ImportError as e:
-        pytest.fail(f"Failed to import detection_pipeline: {e}")
-
-    try:
-        from gong_detector.core.utils import audio_utils
-
-        assert audio_utils is not None
-    except ImportError as e:
-        pytest.fail(f"Failed to import audio_utils: {e}")
+    # Test that all main functions are importable
+    assert CSVManager is not None
+    assert YAMNetGongDetector is not None
+    assert DetectionRecord is not None
+    assert detect_from_youtube_comprehensive is not None
+    assert convert_youtube_audio is not None
+    assert validate_audio_file is not None
+    assert get_audio_info is not None
+    assert compute_peak_dbfs is not None
+    assert compute_rms_dbfs is not None
+    assert compute_audio_levels is not None
+    assert extract_audio_slice is not None
+    assert get_slice_around_timestamp is not None
+    assert analyze_audio_slice_levels is not None
+    assert is_silent is not None
+    assert normalize_waveform is not None
+    assert get_audio_stats is not None
+    assert download_and_trim_youtube_audio is not None
+    assert format_time is not None
+    assert print_summary is not None
+    assert cleanup_old_temp_files is not None
+    assert create_folder_name_from_date is not None
+    assert create_folder_name_from_title is not None
+    assert create_temp_audio_path is not None
+    assert sanitize_title_for_folder is not None
+    assert setup_directories is not None
+    assert save_positive_samples is not None
+    assert save_results_to_csv is not None
+    assert collect_negative_samples is not None
+    assert SILENCE_FLOOR_DBFS is not None
+    assert DEFAULT_SAMPLE_RATE is not None
+    assert __version__ is not None
 
 
 def test_project_structure():
