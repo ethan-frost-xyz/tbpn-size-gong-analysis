@@ -186,7 +186,8 @@ test_results/
 
 # Logs
 *.log
-logs/
+logs/*
+!logs/.gitkeep
 
 # macOS
 .DS_Store
@@ -260,8 +261,10 @@ docker-compose*.yml
 
 # Project-specific ignores
 # Ignore specific data directories that contain large files
-data/csv_results/
-data/tbpn_ytlinks/
+data/csv_results/*
+!data/csv_results/.gitkeep
+data/tbpn_ytlinks/*
+!data/tbpn_ytlinks/.gitkeep
 
 # Ignore training data (can be regenerated)
 src/gong_detector/training/data/validated_samples/
