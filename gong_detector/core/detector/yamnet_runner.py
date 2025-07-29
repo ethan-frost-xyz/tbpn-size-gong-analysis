@@ -431,7 +431,7 @@ class YAMNetGongDetector:
             return
 
         # Import format_time here to avoid circular imports
-        from .results_utils import format_time
+        from ..utils.results_utils import format_time
 
         print("\n" + "=" * 70)
         print("GONG DETECTIONS")
@@ -464,7 +464,7 @@ class YAMNetGongDetector:
         window_starts, confidences, display_timestamps = zip(*detections)
 
         # Format YouTube timestamps as HH:MM:SS
-        from .results_utils import format_time
+        from ..utils.results_utils import format_time
 
         formatted_timestamps = [format_time(ts) for ts in display_timestamps]
 

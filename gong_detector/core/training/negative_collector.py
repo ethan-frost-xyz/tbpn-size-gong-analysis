@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 
 import numpy as np
 
-from .audio_utils import extract_audio_slice
-from .results_utils import format_time_for_filename
-from .yamnet_runner import YAMNetGongDetector
-from .youtube_utils import (
+from ..utils.audio_utils import extract_audio_slice
+from ..utils.results_utils import format_time_for_filename
+from ..detector.yamnet_runner import YAMNetGongDetector
+from ..utils.youtube_utils import (
     cleanup_old_temp_files,
     create_temp_audio_path,
     download_and_trim_youtube_audio,
@@ -196,12 +196,12 @@ def collect_negative_samples(
 
         # Use date-based folder naming if available
         if video_title:
-            from .youtube_utils import create_folder_name_from_title
+            from ..utils.youtube_utils import create_folder_name_from_title
 
             folder_name = create_folder_name_from_title(video_title)
             sample_dir = negative_base_dir / folder_name
         elif upload_date:
-            from .youtube_utils import create_folder_name_from_date
+            from ..utils.youtube_utils import create_folder_name_from_date
 
             folder_name = create_folder_name_from_date(upload_date)
             sample_dir = negative_base_dir / folder_name

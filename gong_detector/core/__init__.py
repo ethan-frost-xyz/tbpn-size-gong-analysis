@@ -5,7 +5,8 @@ This package contains the essential modules for audio processing,
 YAMNet integration, and gong detection capabilities.
 """
 
-from .audio_utils import (
+from .detector import YAMNetGongDetector
+from .utils import (
     DEFAULT_SAMPLE_RATE,
     SILENCE_FLOOR_DBFS,
     analyze_audio_slice_levels,
@@ -17,19 +18,13 @@ from .audio_utils import (
     get_slice_around_timestamp,
     is_silent,
     normalize_waveform,
-)
-from .comprehensive_csv import ComprehensiveCSVManager, DetectionRecord
-from .convert_audio import convert_youtube_audio, get_audio_info, validate_audio_file
-from .detect_from_youtube import detect_from_youtube_comprehensive
-from .negative_sample_collector import collect_negative_samples
-from .results_utils import (
+    convert_youtube_audio,
+    get_audio_info,
+    validate_audio_file,
     format_time,
     print_summary,
     save_positive_samples,
     save_results_to_csv,
-)
-from .yamnet_runner import YAMNetGongDetector
-from .youtube_utils import (
     cleanup_old_temp_files,
     create_folder_name_from_date,
     create_folder_name_from_title,
@@ -38,6 +33,9 @@ from .youtube_utils import (
     sanitize_title_for_folder,
     setup_directories,
 )
+from .pipeline import detect_from_youtube_comprehensive
+from .data import ComprehensiveCSVManager, DetectionRecord
+from .training import collect_negative_samples
 
 __version__ = "1.0.0"
 

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     pass
 
 from .audio_utils import extract_audio_slice
-from .yamnet_runner import YAMNetGongDetector
+from ..detector.yamnet_runner import YAMNetGongDetector
 
 
 def format_time(seconds: float) -> str:

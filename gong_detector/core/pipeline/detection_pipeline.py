@@ -11,13 +11,13 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from .results_utils import (
+from ..utils.results_utils import (
     print_summary,
     save_positive_samples,
     save_results_to_csv,
 )
-from .yamnet_runner import YAMNetGongDetector
-from .youtube_utils import (
+from ..detector.yamnet_runner import YAMNetGongDetector
+from ..utils.youtube_utils import (
     cleanup_old_temp_files,
     create_temp_audio_path,
     download_and_trim_youtube_audio,
