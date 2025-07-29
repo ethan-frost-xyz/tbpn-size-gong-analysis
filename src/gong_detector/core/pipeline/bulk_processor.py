@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .detection_pipeline import detect_from_youtube_comprehensive
 from ..training.negative_collector import collect_negative_samples
+from ..data import ComprehensiveCSVManager
 
 
 def read_youtube_links(file_path: Path) -> list[str]:
@@ -55,11 +56,12 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m gong_detector.core.bulk_process
-  python -m gong_detector.core.bulk_process --threshold 0.5
-  python -m gong_detector.core.bulk_process --threshold 0.3 --max_threshold 0.8
-  python -m gong_detector.core.bulk_process --save_positive_samples
-  python -m gong_detector.core.bulk_process --collect_negative_samples --sample_count 10
+  python -m gong_detector.core.pipeline.bulk_processor
+  python -m gong_detector.core.pipeline.bulk_processor --threshold 0.5
+  python -m gong_detector.core.pipeline.bulk_processor --threshold 0.3 --max_threshold 0.8
+  python -m gong_detector.core.pipeline.bulk_processor --save_positive_samples
+  python -m gong_detector.core.pipeline.bulk_processor --collect_negative_samples --sample_count 10
+  python -m gong_detector.core.pipeline.bulk_processor --version_one --csv
         """,
     )
 
@@ -107,6 +109,11 @@ Examples:
         default=2000,
         help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
     )
+    parser.add_argument(
+        "--csv",
+        action="store_true",
+        help="Save all detection results to comprehensive CSV file",
+    )
 
     args = parser.parse_args()
 
@@ -124,6 +131,11 @@ Examples:
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
+
+    # Initialize CSV manager if requested
+    csv_manager = None
+    if args.csv:
+        csv_manager = ComprehensiveCSVManager()
 
     # Process each URL
     successful = 0
@@ -158,10 +170,34 @@ Examples:
                 print(f"✓ Collected {result['sample_count']} negative samples")
             else:
                 print(f"✓ Detected {result['detection_count']} gongs")
+                # Add to CSV if requested and not collecting negative samples
+                if csv_manager and not args.collect_negative_samples:
+                    csv_manager.add_video_detections(
+                        video_url=result["video_url"],
+                        video_title=result["video_title"],
+                        upload_date=result["upload_date"],
+                        video_duration=result["video_duration"],
+                        max_confidence=result["max_confidence"],
+                        threshold=args.threshold,
+                        max_threshold=args.max_threshold,
+                        detections=result["detections"],
+                    )
             successful += 1
         else:
             print(f"✗ Failed: {result['error_message']}")
             failed += 1
+
+    # Save CSV if requested
+    if csv_manager and not args.collect_negative_samples:
+        try:
+            csv_path = csv_manager.save_comprehensive_csv("bulk_run")
+            stats = csv_manager.get_summary_stats()
+            print(f"\n✓ CSV saved to: {csv_path}")
+            print(f"  Total detections: {stats.get('total_detections', 0)}")
+            print(f"  Unique videos: {stats.get('unique_videos', 0)}")
+            print(f"  Average confidence: {stats.get('average_confidence', 0):.3f}")
+        except Exception as e:
+            print(f"✗ CSV save failed: {e}")
 
     # Print final summary
     print(f"\n{'='*60}")
