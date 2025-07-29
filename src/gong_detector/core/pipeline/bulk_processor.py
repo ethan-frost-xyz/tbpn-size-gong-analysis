@@ -142,9 +142,9 @@ Examples:
     failed = 0
 
     for i, url in enumerate(urls, 1):
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Processing {i}/{len(urls)}: {url}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         if args.collect_negative_samples:
             result = collect_negative_samples(
@@ -200,9 +200,9 @@ Examples:
             print(f"✗ CSV save failed: {e}")
 
     # Print final summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("BULK PROCESSING COMPLETE")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Total URLs: {len(urls)}")
     print(f"Successful: {successful}")
     print(f"Failed: {failed}")
