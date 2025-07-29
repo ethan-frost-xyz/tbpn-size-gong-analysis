@@ -345,7 +345,7 @@ def setup_directories() -> tuple[str, str]:
     # Go up to core directory and then to temp_audio
     core_dir = os.path.dirname(os.path.dirname(current_dir))
     temp_audio_dir = os.path.join(core_dir, "core", "temp_audio")
-    csv_results_dir = "csv_results"
+    csv_results_dir = "data/csv_results"
 
     os.makedirs(temp_audio_dir, exist_ok=True)
     os.makedirs(csv_results_dir, exist_ok=True)

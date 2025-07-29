@@ -55,7 +55,7 @@ class DetectionRecord:
 class ComprehensiveCSVManager:
     """Manages comprehensive CSV generation for gong detection results."""
 
-    def __init__(self, csv_results_dir: str = "csv_results"):
+    def __init__(self, csv_results_dir: str = "data/csv_results"):
         """Initialize CSV manager.
 
         Args:
