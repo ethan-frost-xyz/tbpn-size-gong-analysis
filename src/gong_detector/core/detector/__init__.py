@@ -2,4 +2,4 @@
 
 from .yamnet_runner import YAMNetGongDetector
 
-__all__ = ["YAMNetGongDetector"] 
+__all__ = ["YAMNetGongDetector"]

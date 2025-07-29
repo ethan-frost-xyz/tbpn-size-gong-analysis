@@ -1,7 +1,8 @@
 """Pytest configuration and common fixtures."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture
@@ -13,4 +14,4 @@ def test_data_dir():
 @pytest.fixture
 def sample_audio_file():
     """Provide path to a sample audio file for testing."""
-    return Path(__file__).parent / "data" / "sample_audio.wav" 
+    return Path(__file__).parent / "data" / "sample_audio.wav"

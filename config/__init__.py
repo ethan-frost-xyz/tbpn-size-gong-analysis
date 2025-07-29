@@ -1,1 +1,1 @@
-"""Configuration package for gong_detector.""" 
+"""Configuration package for gong_detector."""

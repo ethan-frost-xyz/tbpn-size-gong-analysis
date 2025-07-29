@@ -2,4 +2,4 @@
 
 from .csv_manager import ComprehensiveCSVManager, DetectionRecord
 
-__all__ = ["ComprehensiveCSVManager", "DetectionRecord"] 
+__all__ = ["ComprehensiveCSVManager", "DetectionRecord"]

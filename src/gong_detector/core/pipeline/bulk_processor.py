@@ -9,9 +9,9 @@ import argparse
 import sys
 from pathlib import Path
 
-from .detection_pipeline import detect_from_youtube_comprehensive
-from ..training.negative_collector import collect_negative_samples
 from ..data import ComprehensiveCSVManager
+from ..training.negative_collector import collect_negative_samples
+from .detection_pipeline import detect_from_youtube_comprehensive
 
 
 def read_youtube_links(file_path: Path) -> list[str]:

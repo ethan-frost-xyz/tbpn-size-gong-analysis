@@ -1,1 +1,1 @@
-"""Test package for gong_detector.""" 
+"""Test package for gong_detector."""

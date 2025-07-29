@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 
 import numpy as np
 
+from ..detector.yamnet_runner import YAMNetGongDetector
 from ..utils.audio_utils import extract_audio_slice
 from ..utils.results_utils import format_time_for_filename
-from ..detector.yamnet_runner import YAMNetGongDetector
 from ..utils.youtube_utils import (
     cleanup_old_temp_files,
     create_temp_audio_path,

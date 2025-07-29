@@ -2,4 +2,4 @@
 
 from .detection_pipeline import detect_from_youtube_comprehensive
 
-__all__ = ["detect_from_youtube_comprehensive"] 
+__all__ = ["detect_from_youtube_comprehensive"]

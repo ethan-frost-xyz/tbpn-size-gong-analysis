@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     pass
 
-from .audio_utils import extract_audio_slice
 from ..detector.yamnet_runner import YAMNetGongDetector
+from .audio_utils import extract_audio_slice
 
 
 def format_time(seconds: float) -> str:
