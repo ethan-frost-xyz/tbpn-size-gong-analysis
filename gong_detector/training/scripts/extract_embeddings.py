@@ -12,7 +12,7 @@ import pandas as pd
 
 # Add core module to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from gong_detector.core.yamnet_runner import YAMNetGongDetector
+from gong_detector.core.detector.yamnet_runner import YAMNetGongDetector
 
 
 def get_audio_files(folder_path: Path) -> list[Path]:
