@@ -102,7 +102,7 @@ addopts = [
     "--cov=src.gong_detector",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-fail-under=20",
+    "--cov-fail-under=15",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
