@@ -13,7 +13,7 @@ import numpy as np
 
 # Add core module to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from gong_detector.core.yamnet_runner import YAMNetGongDetector
+from gong_detector.core.detector.yamnet_runner import YAMNetGongDetector
 
 
 def load_trained_model(models_dir: Path) -> tuple[object, dict]:
