@@ -82,7 +82,7 @@ from gong_detector.core import (
     format_time, print_summary, save_positive_samples, save_results_to_csv,
     
     # Data management
-    ComprehensiveCSVManager, DetectionRecord,
+    CSVManager, DetectionRecord,
     
     # Training utilities
     collect_negative_samples
@@ -103,7 +103,7 @@ from gong_detector.core.utils import (
 )
 
 # Data management
-from gong_detector.core.data import ComprehensiveCSVManager, DetectionRecord
+from gong_detector.core.data import CSVManager, DetectionRecord
 
 # Training utilities
 from gong_detector.core.training import collect_negative_samples
