@@ -5,7 +5,7 @@ This package contains the essential modules for audio processing,
 YAMNet integration, and gong detection capabilities.
 """
 
-from .data import ComprehensiveCSVManager, DetectionRecord
+from .data import CSVManager, DetectionRecord
 from .detector import YAMNetGongDetector
 from .pipeline import detect_from_youtube_comprehensive
 from .training import collect_negative_samples
@@ -45,7 +45,7 @@ __all__ = [
     "YAMNetGongDetector",
     # Comprehensive detection and CSV functionality
     "detect_from_youtube_comprehensive",
-    "ComprehensiveCSVManager",
+    "CSVManager",
     "DetectionRecord",
     # Audio conversion functions
     "convert_youtube_audio",

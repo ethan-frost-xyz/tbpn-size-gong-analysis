@@ -52,7 +52,7 @@ class DetectionRecord:
     model_version: str = "yamnet_default"
 
 
-class ComprehensiveCSVManager:
+class CSVManager:
     """Manages comprehensive CSV generation for gong detection results."""
 
     def __init__(self, csv_results_dir: str = "data/csv_results"):

@@ -9,7 +9,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from ..data import ComprehensiveCSVManager
+from ..data import CSVManager
 from ..training.negative_collector import collect_negative_samples
 from .detection_pipeline import detect_from_youtube_comprehensive
 
@@ -135,7 +135,7 @@ Examples:
     # Initialize CSV manager if requested
     csv_manager = None
     if args.csv:
-        csv_manager = ComprehensiveCSVManager()
+        csv_manager = CSVManager()
 
     # Process each URL
     successful = 0
