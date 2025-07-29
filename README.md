@@ -33,7 +33,3 @@ tests/                # Test suite
 data/                 # Data files
 config/               # Configuration
 ```
-
-## License
-
-MIT License
