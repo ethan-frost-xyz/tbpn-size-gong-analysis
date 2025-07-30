@@ -9,13 +9,16 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 # Import from local modules
-from core.pipeline.detection_pipeline import detect_from_youtube_comprehensive
-from core.pipeline.bulk_processor import main as bulk_processor_main
-from core.training.manual_collector import process_single_sample
-from core.training.negative_collector import collect_negative_samples
-from core.utils.convert_audio import convert_youtube_audio
-from core.detector.yamnet_runner import YAMNetGongDetector
+from gong_detector.core.pipeline.detection_pipeline import detect_from_youtube_comprehensive
+from gong_detector.core.pipeline.bulk_processor import main as bulk_processor_main
+from gong_detector.core.training.manual_collector import process_single_sample
+from gong_detector.core.training.negative_collector import collect_negative_samples
+from gong_detector.core.utils.convert_audio import convert_youtube_audio
+from gong_detector.core.detector.yamnet_runner import YAMNetGongDetector
 
 
 class MenuItem:
@@ -184,7 +187,7 @@ def bulk_processing() -> None:
     print("\n=== Bulk Processing ===\n")
     
     # Check if links file exists
-    links_file = Path("core/data/tbpn_youtube_links.txt")
+    links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
     if not links_file.exists():
         print(f"Error: Links file not found at {links_file}")
         print("Please create the file with YouTube URLs (one per line)")
@@ -193,18 +196,13 @@ def bulk_processing() -> None:
     # Get parameters
     threshold = get_float_input("Confidence threshold", 0.94)
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", False)
-    batch_size = get_int_input("Batch size", 2000)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
-    keep_audio = get_yes_no_input("Keep temporary audio files?", False)
-    collect_negative = get_yes_no_input("Collect negative samples instead?", False)
-    
-    if collect_negative:
-        sample_count = get_int_input("Number of negative samples per video", 5)
+    save_csv = get_yes_no_input("Save results to CSV file?", False)
     
     print(f"\nProcessing videos from: {links_file}")
     print(f"Threshold: {threshold}")
     print(f"Using trained classifier: {use_version_one}")
-    print(f"Batch size: {batch_size}")
+    print(f"Save CSV: {save_csv}")
     
     # Set up sys.argv for bulk processor
     import argparse
@@ -215,11 +213,8 @@ def bulk_processing() -> None:
         sys.argv.append("--version_one")
     if should_save_samples:
         sys.argv.append("--save_positive_samples")
-    if keep_audio:
-        sys.argv.append("--keep_audio")
-    if collect_negative:
-        sys.argv.append("--collect_negative_samples")
-        sys.argv.extend(["--sample_count", str(sample_count)])
+    if save_csv:
+        sys.argv.append("--csv")
     
     # Run bulk processor
     bulk_processor_main()

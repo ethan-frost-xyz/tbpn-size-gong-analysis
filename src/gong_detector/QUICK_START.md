@@ -4,22 +4,11 @@
 
 The `run_gong_detector.py` script provides an interactive menu system for accessing all gong detector functionality. It's located in the `src/gong_detector/` directory and serves as the main entry point for all gong detection tools.
 
-### **Prerequisites**
+### **Quick Start**
 
-1. Activate the virtual environment:
-   ```bash
-   source venv/bin/activate
-   ```
-
-2. Navigate to the gong_detector directory:
-   ```bash
-   cd src/gong_detector
-   ```
-
-3. Run the master menu:
-   ```bash
-   python run_gong_detector.py
-   ```
+```bash
+cd src/gong_detector && python run_gong_detector.py
+```
 
 ### **Menu Navigation**
 
