@@ -4,29 +4,29 @@
 
 ### **Basic Detection:**
 ```bash
-python -m gong_detector.core.pipeline.detection_pipeline "https://youtube.com/watch?v=VIDEO_ID"
+python -m src.gong_detector.core.pipeline.detection_pipeline "https://youtube.com/watch?v=VIDEO_ID"
 ```
 
 ### **With Trained Classifier (Enhanced):**
 ```bash
-python -m gong_detector.core.pipeline.detection_pipeline "https://youtube.com/watch?v=VIDEO_ID" --use_version_one
+python -m src.gong_detector.core.pipeline.detection_pipeline "https://youtube.com/watch?v=VIDEO_ID" --use_version_one
 ```
 
 ### **Bulk Processing:**
 ```bash
-python -m gong_detector.core.pipeline.bulk_processor --version_one
+python -m src.gong_detector.core.pipeline.bulk_processor --version_one
 ```
 
 ### **Sample Collection:**
 ```bash
 # Collect positive samples for training
-python -m gong_detector.core.pipeline.detection_pipeline "URL" --save_positive_samples
+python -m src.gong_detector.core.pipeline.detection_pipeline "URL" --save_positive_samples
 
 # Interactive manual collection
-python -m gong_detector.core.training.manual_collector
+python -m src.gong_detector.core.training.manual_collector
 
 # Collect negative samples
-python -m gong_detector.core.training.negative_collector "URL"
+python -m src.gong_detector.core.training.negative_collector "URL"
 ```
 
 ## **Project Structure**
@@ -38,7 +38,7 @@ python -m gong_detector.core.training.negative_collector "URL"
 - `training/manual_collector.py` - Interactive training sample collection
 - `training/negative_collector.py` - Non-gong sample collection for training
 - `utils/` - Audio processing, YouTube operations, and results utilities
-- `data/` - CSV management and input data files
+- `data/` - CSV management and input data files (includes `tbpn_youtube_links.txt`)
 - `models/` - Trained classifier files (classifier.pkl, config.json)
 
 ### **Training Pipeline (`/training`)**
@@ -116,3 +116,10 @@ from gong_detector.core.training import collect_negative_samples
 - **Conservative Detection**: High thresholds prevent false positives
 - **Training Integration**: Seamless workflow from detection to model training
 - **Performance Monitoring**: Real-time feedback on resource usage
+
+## **Recent Fixes**
+
+✅ **Fixed routing issues**: All pipeline scripts now work with correct module paths  
+✅ **Fixed classifier loading**: Models now load from correct `core/models/` directory  
+✅ **Fixed file paths**: YouTube links file moved to `core/data/` directory  
+✅ **Tested all commands**: Bulk processing, individual detection, and training scripts all working
