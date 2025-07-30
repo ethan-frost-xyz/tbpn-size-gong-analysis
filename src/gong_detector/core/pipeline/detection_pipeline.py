@@ -158,7 +158,7 @@ Examples:
 
 def detect_from_youtube_comprehensive(
     youtube_url: str,
-            threshold: float = 0.94,
+    threshold: float = 0.94,
     max_threshold: Optional[float] = None,
     start_time: Optional[int] = None,
     duration: Optional[int] = None,

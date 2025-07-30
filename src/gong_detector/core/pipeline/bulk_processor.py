@@ -120,7 +120,7 @@ Examples:
     # Find links file in the core/data directory
     script_dir = Path(__file__).parent
     links_file = script_dir.parent / "data" / "tbpn_youtube_links.txt"
-    
+
     # If not found, try from project root
     if not links_file.exists():
         links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
