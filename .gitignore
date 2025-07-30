@@ -269,6 +269,7 @@ data/tbpn_ytlinks/*
 # Ignore training data (can be regenerated)
 src/gong_detector/training/data/validated_samples/
 src/gong_detector/training/data/raw_samples/
+src/gong_detector/data/tbpn_ytlinks.txt
 
 # Ignore model files (can be retrained)
 src/gong_detector/core/models/*.pkl
