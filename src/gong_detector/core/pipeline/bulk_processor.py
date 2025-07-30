@@ -121,6 +121,11 @@ Examples:
     script_dir = Path(__file__).parent
     links_file = script_dir / "tbpn_youtube_links.txt"
 
+    # If not found in script directory, try in data directory
+    if not links_file.exists():
+        data_dir = script_dir.parent / "data"
+        links_file = data_dir / "tbpn_youtube_links.txt"
+
     # Read URLs from file
     try:
         urls = read_youtube_links(links_file)

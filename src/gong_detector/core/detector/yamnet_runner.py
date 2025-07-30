@@ -92,9 +92,10 @@ class YAMNetGongDetector:
 
         print("Loading trained classifier...")
         try:
-            # Find model files relative to this module
+            # Find model files relative to the core module
             module_dir = Path(__file__).parent
-            models_dir = module_dir / "models"
+            core_dir = module_dir.parent
+            models_dir = core_dir / "models"
 
             classifier_path = models_dir / "classifier.pkl"
             config_path = models_dir / "config.json"
