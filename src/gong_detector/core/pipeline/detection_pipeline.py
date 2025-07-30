@@ -220,7 +220,7 @@ def detect_from_youtube_comprehensive(
         # Save positive samples if requested
         if should_save_positive_samples and detections:
             # Use date-based folder naming for consistency
-            project_root = Path(__file__).parent.parent.parent
+            project_root = Path(__file__).parent.parent.parent.parent
             positive_base_dir = (
                 project_root
                 / "gong_detector"
@@ -307,7 +307,7 @@ def main() -> None:
         # Save positive samples if requested
         if args.save_positive_samples and detections:
             # Use date-based folder naming for consistency
-            project_root = Path(__file__).parent.parent.parent
+            project_root = Path(__file__).parent.parent.parent.parent
             positive_base_dir = (
                 project_root
                 / "gong_detector"

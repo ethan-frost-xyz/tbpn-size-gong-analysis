@@ -191,7 +191,17 @@ def collect_negative_samples(
 
         # Step 4: Extract and save negative samples
         print("Step 4: Extracting and saving negative samples...")
-        negative_base_dir = Path("gong_detector/training/data/raw_samples/negative")
+        # Get the correct path relative to the project root
+        project_root = Path(__file__).parent.parent.parent.parent.parent
+        negative_base_dir = (
+            project_root
+            / "src"
+            / "gong_detector"
+            / "training"
+            / "data"
+            / "raw_samples"
+            / "negative"
+        )
         negative_base_dir.mkdir(parents=True, exist_ok=True)
 
         # Use date-based folder naming if available

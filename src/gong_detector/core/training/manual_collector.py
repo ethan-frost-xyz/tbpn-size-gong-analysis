@@ -73,7 +73,16 @@ def process_single_sample(
         print("Step 3: Extracting and saving audio segment...")
 
         # Use date-based folder naming for consistency
-        positive_base_dir = Path("gong_detector/training/data/raw_samples/positive")
+        project_root = Path(__file__).parent.parent.parent.parent.parent
+        positive_base_dir = (
+            project_root
+            / "src"
+            / "gong_detector"
+            / "training"
+            / "data"
+            / "raw_samples"
+            / "positive"
+        )
 
         # Use existing save_positive_samples function with date-based naming
         save_positive_samples(
