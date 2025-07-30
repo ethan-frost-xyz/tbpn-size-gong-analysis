@@ -253,7 +253,7 @@ class YAMNetGongDetector:
     def detect_gongs(
         self,
         scores: np.ndarray,
-        confidence_threshold: float = 0.5,
+        confidence_threshold: float = 0.94,
         max_confidence_threshold: Optional[float] = None,
         audio_duration: Optional[float] = None,
     ) -> list[tuple[float, float, float]]:
@@ -301,7 +301,7 @@ class YAMNetGongDetector:
     def detect_gongs_with_classifier(
         self,
         embeddings: np.ndarray,
-        confidence_threshold: float = 0.5,
+        confidence_threshold: float = 0.94,
         max_confidence_threshold: Optional[float] = None,
         audio_duration: Optional[float] = None,
     ) -> list[tuple[float, float, float]]:
