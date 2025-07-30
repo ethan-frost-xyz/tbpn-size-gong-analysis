@@ -117,14 +117,9 @@ Examples:
 
     args = parser.parse_args()
 
-    # Find links file in same directory as this script
+    # Find links file in the core/data directory
     script_dir = Path(__file__).parent
-    links_file = script_dir / "tbpn_youtube_links.txt"
-
-    # If not found in script directory, try in data directory
-    if not links_file.exists():
-        data_dir = script_dir.parent / "data"
-        links_file = data_dir / "tbpn_youtube_links.txt"
+    links_file = script_dir.parent / "data" / "tbpn_youtube_links.txt"
 
     # Read URLs from file
     try:
