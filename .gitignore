@@ -261,8 +261,8 @@ docker-compose*.yml
 
 # Project-specific ignores
 # Ignore specific data directories that contain large files
-data/csv_results/*
-!data/csv_results/.gitkeep
+results/csv_results/*
+!results/csv_results/.gitkeep
 data/tbpn_ytlinks/*
 !data/tbpn_ytlinks/.gitkeep
 

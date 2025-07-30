@@ -93,7 +93,8 @@ python -m src.gong_detector.core.training.negative_collector "URL"
 - `training/manual_collector.py` - Interactive training sample collection
 - `training/negative_collector.py` - Non-gong sample collection for training
 - `utils/` - Audio processing, YouTube operations, and results utilities
-- `data/` - CSV management and input data files (includes `tbpn_youtube_links.txt`)
+- `results/` - CSV management and output files (includes `csv_results/`)
+- `core/data/` - Input data files (includes `tbpn_youtube_links.txt`)
 - `models/` - Trained classifier files (classifier.pkl, config.json)
 
 ### **Training Pipeline (`/training`)**

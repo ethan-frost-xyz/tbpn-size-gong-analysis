@@ -147,7 +147,7 @@ python gong_detector/core/bulk_process.py --threshold 0.5 --save_positive_sample
 - **Unique IDs**: Every detection has a UUID for easy referencing
 - **Extensible schema**: Future-ready with validation and notes fields
 - **Summary statistics**: Automatic calculation of detection patterns
-- **Saved in `data/csv_results/`**: Organized with timestamps and run names
+- **Saved in `results/csv_results/`**: Organized with timestamps and run names
 
 **CSV Schema:**
 - `detection_id` - Unique identifier for each detection
@@ -164,7 +164,7 @@ python gong_detector/core/bulk_process.py --threshold 0.5 --save_positive_sample
 
 **Example Output:**
 ```
-CSV saved to: data/csv_results/comprehensive_detections_tbpn_batch_1_20250726_184200.csv
+CSV saved to: results/csv_results/comprehensive_detections_tbpn_batch_1_20250726_184200.csv
 Total detections: 47
 Videos processed: 12
 Average confidence: 0.682
