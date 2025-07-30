@@ -39,7 +39,8 @@ def process_audio_with_yamnet(
         threshold: Confidence threshold for detection
         max_threshold: Maximum confidence threshold for detection (optional)
         use_version_one: Whether to use the trained classifier for enhanced detection
-        batch_size: Batch size for classifier predictions (larger = faster but more memory)
+        batch_size: Batch size for classifier predictions 
+                   (larger = faster but more memory)
 
     Returns:
         Tuple of (detections, total_duration, max_gong_confidence)
@@ -106,10 +107,14 @@ def create_argument_parser() -> argparse.ArgumentParser:
         epilog="""
 Examples:
   python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID"
-  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --start_time 5680 --duration 20
-  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --threshold 0.3 --save_csv results.csv
-  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --threshold 0.3 --max_threshold 0.8
-  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" --save_positive_samples
+  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" 
+                                --start_time 5680 --duration 20
+  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" 
+                                --threshold 0.3 --save_csv results.csv
+  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" 
+                                --threshold 0.3 --max_threshold 0.8
+  python detect_from_youtube.py "https://www.youtube.com/watch?v=VIDEO_ID" 
+                                --save_positive_samples
         """,
     )
 
@@ -150,7 +155,8 @@ Examples:
         "--batch_size",
         type=int,
         default=2000,
-        help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
+        help="Batch size for classifier predictions "
+             "(larger = faster but more memory, default: 2000)",
     )
 
     return parser
