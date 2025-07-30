@@ -58,12 +58,9 @@ def main() -> None:
 Examples:
   python -m gong_detector.core.pipeline.bulk_processor
   python -m gong_detector.core.pipeline.bulk_processor --threshold 0.5
-  python -m gong_detector.core.pipeline.bulk_processor 
-          --threshold 0.3 --max_threshold 0.8
-  python -m gong_detector.core.pipeline.bulk_processor 
-          --save_positive_samples
-  python -m gong_detector.core.pipeline.bulk_processor 
-          --collect_negative_samples --sample_count 10
+  python -m gong_detector.core.pipeline.bulk_processor --threshold 0.3 --max_threshold 0.8
+  python -m gong_detector.core.pipeline.bulk_processor --save_positive_samples
+  python -m gong_detector.core.pipeline.bulk_processor --collect_negative_samples --sample_count 10
   python -m gong_detector.core.pipeline.bulk_processor --version_one --csv
         """,
     )
@@ -110,8 +107,7 @@ Examples:
         "--batch_size",
         type=int,
         default=2000,
-        help="Batch size for classifier predictions "
-             "(larger = faster but more memory, default: 2000)",
+        help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
     )
     parser.add_argument(
         "--csv",

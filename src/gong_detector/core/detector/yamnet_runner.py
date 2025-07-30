@@ -25,8 +25,7 @@ class YAMNetGongDetector:
 
         Args:
             use_trained_classifier: Whether to use the trained classifier for enhanced detection
-            batch_size: Batch size for classifier predictions 
-                       (larger = faster but more memory)
+            batch_size: Batch size for classifier predictions (larger = faster but more memory)
         """
         # Configure TensorFlow for optimal CPU usage
         self._configure_tensorflow()
