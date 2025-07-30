@@ -1,5 +1,71 @@
 # Quick Start: Gong Detection System
 
+## **Master Menu Interface**
+
+The `run_gong_detector.py` script provides an interactive menu system for accessing all gong detector functionality. It's located in the `src/gong_detector/` directory and serves as the main entry point for all gong detection tools.
+
+### **Prerequisites**
+
+1. Activate the virtual environment:
+   ```bash
+   source venv/bin/activate
+   ```
+
+2. Navigate to the gong_detector directory:
+   ```bash
+   cd src/gong_detector
+   ```
+
+3. Run the master menu:
+   ```bash
+   python run_gong_detector.py
+   ```
+
+### **Menu Navigation**
+
+- **↑/↓ Arrow Keys**: Navigate between menu options
+- **Enter**: Select the highlighted option
+- **q**: Quit the application
+
+### **Available Options**
+
+1. **Single Video Detection** - Detect gongs in a single YouTube video
+2. **Bulk Processing** - Process multiple videos from `core/data/tbpn_youtube_links.txt`
+3. **Manual Sample Collection** - Extract specific timestamps for training data
+4. **Negative Sample Collection** - Collect non-gong samples for training
+5. **Audio Conversion** - Convert YouTube URLs or local files to WAV format
+6. **Model Management** - Check YAMNet model status and configuration
+
+### **Features**
+
+- **Interactive Parameter Input**: All parameters are prompted interactively with sensible defaults
+- **Error Handling**: Graceful error handling with user-friendly messages
+- **Return to Menu**: After each operation, returns to the main menu
+- **Keyboard Interrupt Support**: Ctrl+C to cancel operations
+
+### **Example Workflow**
+
+1. Start the menu: `python run_gong_detector.py`
+2. Use arrow keys to select "Single Video Detection"
+3. Press Enter
+4. Enter YouTube URL when prompted
+5. Set confidence threshold (or press Enter for default 0.94)
+6. Choose other parameters as needed
+7. Watch the detection run
+8. Press Enter to return to main menu
+
+### **Troubleshooting**
+
+- **Import Errors**: Make sure you're in the virtual environment and in the correct directory
+- **Terminal Issues**: The script requires a proper terminal (not piped input)
+- **Model Loading**: Use "Model Management" to check if YAMNet is working correctly
+
+### **File Location**
+
+The master menu script is located at: `src/gong_detector/run_gong_detector.py`
+
+---
+
 ## **Core Commands**
 
 ### **Basic Detection:**
