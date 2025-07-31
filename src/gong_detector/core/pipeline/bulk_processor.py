@@ -137,7 +137,7 @@ Examples:
                 print(f"Using links file: {links_file}")
             else:
                 print(f"No YouTube links files found in {data_dir}")
-        
+
         # Final fallback to old location
         if not links_file.exists():
             links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")

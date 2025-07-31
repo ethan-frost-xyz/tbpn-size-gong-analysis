@@ -103,7 +103,7 @@ class CSVManager:
             timestamped_link = self._create_timestamped_youtube_link(
                 video_url, int(display_timestamp)
             )
-            
+
             record = DetectionRecord(
                 detection_id=str(uuid.uuid4()),
                 video_url=video_url,
