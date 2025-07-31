@@ -122,25 +122,8 @@ Examples:
 
     args = parser.parse_args()
 
-    # Find links file in the data directory
+    # Use the selected links file
     links_file = Path("data/tbpn_ytlinks/tbpn_youtube_links.txt")
-
-    # If not found, try other available files in data/tbpn_ytlinks/
-    if not links_file.exists():
-        data_dir = Path("data/tbpn_ytlinks")
-        if data_dir.exists():
-            # Look for any .txt files (excluding .gitkeep)
-            txt_files = [f for f in data_dir.glob("*.txt") if f.name != ".gitkeep"]
-            if txt_files:
-                # Use the first available txt file
-                links_file = txt_files[0]
-                print(f"Using links file: {links_file}")
-            else:
-                print(f"No YouTube links files found in {data_dir}")
-
-        # Final fallback to old location
-        if not links_file.exists():
-            links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
 
     # Read URLs from file
     try:
