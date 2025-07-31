@@ -25,6 +25,7 @@ class DetectionRecord:
     video_title: str
     detection_timestamp_formatted: str  # HH:MM:SS format
     confidence: str  # Formatted to 3 decimal places
+    youtube_timestamped_link: str  # YouTube URL with timestamp
     video_max_confidence: str  # Formatted to 3 decimal places
 
     # Video metadata
@@ -98,6 +99,11 @@ class CSVManager:
 
         # Create a record for each detection
         for window_start, confidence, display_timestamp in detections:
+            # Generate timestamped YouTube link
+            timestamped_link = self._create_timestamped_youtube_link(
+                video_url, int(display_timestamp)
+            )
+            
             record = DetectionRecord(
                 detection_id=str(uuid.uuid4()),
                 video_url=video_url,
@@ -109,6 +115,7 @@ class CSVManager:
                 detection_timestamp_formatted=self._format_time(display_timestamp),
                 window_start_seconds=window_start,
                 confidence=f"{confidence:.3f}",
+                youtube_timestamped_link=timestamped_link,
                 video_max_confidence=f"{max_confidence:.3f}",
                 detection_threshold=f"{threshold:.3f}",
                 max_threshold=(
@@ -210,6 +217,35 @@ class CSVManager:
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+    def _create_timestamped_youtube_link(self, video_url: str, timestamp_seconds: int) -> str:
+        """Create a YouTube URL with timestamp parameter.
+
+        Args:
+            video_url: Original YouTube URL
+            timestamp_seconds: Timestamp in seconds (no decimals)
+
+        Returns:
+            YouTube URL with timestamp parameter
+        """
+        # Handle different YouTube URL formats
+        if "youtube.com/watch?v=" in video_url:
+            # Standard YouTube URL
+            if "&t=" in video_url or "?t=" in video_url:
+                # URL already has timestamp, replace it
+                base_url = video_url.split("&t=")[0].split("?t=")[0]
+                return f"{base_url}&t={timestamp_seconds}"
+            else:
+                # Add timestamp parameter
+                separator = "&" if "?" in video_url else "?"
+                return f"{video_url}{separator}t={timestamp_seconds}"
+        elif "youtu.be/" in video_url:
+            # Short YouTube URL
+            video_id = video_url.split("youtu.be/")[1].split("?")[0]
+            return f"https://www.youtube.com/watch?v={video_id}&t={timestamp_seconds}"
+        else:
+            # Unknown format, return original URL
+            return video_url
 
     def clear_records(self) -> None:
         """Clear all collected detection records."""
