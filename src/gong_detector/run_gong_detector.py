@@ -191,11 +191,29 @@ def bulk_processing() -> None:
     print("\n=== Bulk Processing ===\n")
 
     # Check if links file exists
-    links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
+    links_file = Path("data/tbpn_ytlinks/tbpn_youtube_links.txt")
+    
+    # If not found, try other available files in data/tbpn_ytlinks/
     if not links_file.exists():
-        print(f"Error: Links file not found at {links_file}")
-        print("Please create the file with YouTube URLs (one per line)")
-        return
+        data_dir = Path("data/tbpn_ytlinks")
+        if data_dir.exists():
+            # Look for any .txt files (excluding .gitkeep)
+            txt_files = [f for f in data_dir.glob("*.txt") if f.name != ".gitkeep"]
+            if txt_files:
+                # Use the first available txt file
+                links_file = txt_files[0]
+                print(f"Using links file: {links_file}")
+            else:
+                print(f"Error: No YouTube links files found in {data_dir}")
+                print("Please add a .txt file with YouTube URLs (one per line)")
+                return
+        else:
+            # Final fallback to old location
+            links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
+            if not links_file.exists():
+                print(f"Error: Links file not found at {links_file}")
+                print("Please create the file with YouTube URLs (one per line)")
+                return
 
     # Get parameters
     threshold = get_float_input("Confidence threshold", 0.94)

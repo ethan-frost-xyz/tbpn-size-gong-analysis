@@ -6,6 +6,7 @@ using YAMNet. Designed for testing on real podcast episodes.
 """
 
 import argparse
+import logging
 import os
 import sys
 from pathlib import Path
@@ -13,6 +14,7 @@ from typing import Any, Optional
 
 from ..detector.yamnet_runner import YAMNetGongDetector
 from ..utils.results_utils import (
+    consolidate_overlapping_detections,
     print_summary,
     save_positive_samples,
     save_results_to_csv,
@@ -31,6 +33,7 @@ def process_audio_with_yamnet(
     max_threshold: Optional[float] = None,
     use_version_one: bool = False,
     batch_size: int = 1000,
+    consolidate_detections: bool = True,
 ) -> tuple[list[tuple[float, float, float]], float, float]:
     """Process audio file with YAMNet detector.
 
@@ -40,9 +43,11 @@ def process_audio_with_yamnet(
         max_threshold: Maximum confidence threshold for detection (optional)
         use_version_one: Whether to use the trained classifier for enhanced detection
         batch_size: Batch size for classifier predictions (larger = faster but more memory)
+        consolidate_detections: Whether to consolidate overlapping detections (default: True)
 
     Returns:
-        Tuple of (detections, total_duration, max_gong_confidence)
+        Tuple of (consolidated_detections, total_duration, max_gong_confidence)
+        Note: detections are automatically consolidated to remove sliding-window overlaps
     """
     # Initialize YAMNet detector with optimized settings
     print("\nStep 2: Loading YAMNet model...")
@@ -88,6 +93,36 @@ def process_audio_with_yamnet(
 
     # Print results using detector's formatted output
     detector.print_detections(detections)
+
+    # Configure logging for this module
+    logger = logging.getLogger(__name__)
+
+    # Consolidate overlapping detections (remove duplicates from sliding window)
+    if consolidate_detections:
+        print("\nStep 5: Consolidating overlapping detections...")
+        original_count = len(detections)
+
+        try:
+            detections = consolidate_overlapping_detections(detections)
+            consolidated_count = len(detections)
+
+            if original_count != consolidated_count:
+                reduction = original_count - consolidated_count
+                print(
+                    f"✓ Consolidated {original_count} → {consolidated_count} "
+                    f"detections (removed {reduction} overlaps)"
+                )
+                # Print final consolidated results
+                print("\nFinal consolidated detections:")
+                detector.print_detections(detections)
+            else:
+                print("✓ No overlapping detections found")
+
+        except (ValueError, TypeError) as e:
+            logger.error(f"Consolidation failed: {e}")
+            print(f"⚠ Consolidation failed, using original detections: {e}")
+    else:
+        print("\nStep 5: Skipping detection consolidation (disabled)")
 
     max_gong_confidence = scores[:, 172].max()
 
@@ -152,6 +187,11 @@ Examples:
         default=2000,
         help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
     )
+    parser.add_argument(
+        "--no_consolidate",
+        action="store_true",
+        help="Disable consolidation of overlapping detections (keep all raw detections)",
+    )
 
     return parser
 
@@ -166,6 +206,7 @@ def detect_from_youtube_comprehensive(
     keep_audio: bool = False,
     use_version_one: bool = False,
     batch_size: int = 2000,
+    consolidate_detections: bool = True,
 ) -> dict[str, Any]:
     """Run YouTube gong detection and return comprehensive metadata.
 
@@ -212,9 +253,14 @@ def detect_from_youtube_comprehensive(
             duration=duration,
         )
 
-        # Step 2-4: Process with YAMNet
+        # Step 2-5: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
-            temp_audio, threshold, max_threshold, use_version_one, batch_size
+            temp_audio,
+            threshold,
+            max_threshold,
+            use_version_one,
+            batch_size,
+            consolidate_detections,
         )
 
         # Save positive samples if requested
@@ -291,13 +337,14 @@ def main() -> None:
             duration=args.duration,
         )
 
-        # Step 2-4: Process with YAMNet
+        # Step 2-5: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
             temp_audio,
             args.threshold,
             args.max_threshold,
             args.use_version_one,
             args.batch_size,
+            not args.no_consolidate,  # Invert the flag: no_consolidate=False means consolidate=True
         )
 
         # Save to CSV if requested

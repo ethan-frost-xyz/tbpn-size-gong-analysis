@@ -114,16 +114,33 @@ Examples:
         action="store_true",
         help="Save all detection results to comprehensive CSV file",
     )
+    parser.add_argument(
+        "--no_consolidate",
+        action="store_true",
+        help="Disable consolidation of overlapping detections (keep all raw detections)",
+    )
 
     args = parser.parse_args()
 
-    # Find links file in the core/data directory
-    script_dir = Path(__file__).parent
-    links_file = script_dir.parent / "data" / "tbpn_youtube_links.txt"
+    # Find links file in the data directory
+    links_file = Path("data/tbpn_ytlinks/tbpn_youtube_links.txt")
 
-    # If not found, try from project root
+    # If not found, try other available files in data/tbpn_ytlinks/
     if not links_file.exists():
-        links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
+        data_dir = Path("data/tbpn_ytlinks")
+        if data_dir.exists():
+            # Look for any .txt files (excluding .gitkeep)
+            txt_files = [f for f in data_dir.glob("*.txt") if f.name != ".gitkeep"]
+            if txt_files:
+                # Use the first available txt file
+                links_file = txt_files[0]
+                print(f"Using links file: {links_file}")
+            else:
+                print(f"No YouTube links files found in {data_dir}")
+        
+        # Final fallback to old location
+        if not links_file.exists():
+            links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
 
     # Read URLs from file
     try:
@@ -167,6 +184,7 @@ Examples:
                 keep_audio=args.keep_audio,
                 use_version_one=args.version_one,
                 batch_size=args.batch_size,
+                consolidate_detections=not args.no_consolidate,
             )
 
         if result["success"]:
