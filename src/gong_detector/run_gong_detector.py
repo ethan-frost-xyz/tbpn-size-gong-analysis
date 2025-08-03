@@ -193,28 +193,14 @@ def bulk_processing() -> None:
     # Check if links file exists
     links_file = Path("data/tbpn_ytlinks/tbpn_youtube_links.txt")
 
-    # If not found, try other available files in data/tbpn_ytlinks/
     if not links_file.exists():
-        data_dir = Path("data/tbpn_ytlinks")
-        if data_dir.exists():
-            # Look for any .txt files (excluding .gitkeep)
-            txt_files = [f for f in data_dir.glob("*.txt") if f.name != ".gitkeep"]
-            if txt_files:
-                # Use the first available txt file
-                links_file = txt_files[0]
-                print(f"Using links file: {links_file}")
-            else:
-                print(f"Error: No YouTube links files found in {data_dir}")
-                print("Please add a .txt file with YouTube URLs (one per line)")
-                return
-        else:
-            print(f"Error: No YouTube links files found in {data_dir}")
-            print("Please add a .txt file with YouTube URLs (one per line)")
-            return
+        print(f"Error: File '{links_file}' not found")
+        print("Please add a .txt file with YouTube URLs (one per line)")
+        return
 
     # Get parameters
     threshold = get_float_input("Confidence threshold", 0.94)
-    use_version_one = get_yes_no_input("Use trained classifier (version one)?", False)
+    use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     save_csv = get_yes_no_input("Save results to CSV file?", False)
 
