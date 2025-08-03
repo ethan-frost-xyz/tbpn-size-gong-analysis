@@ -35,7 +35,7 @@ class DetectionRecord:
     funding_valuation: str = ""
     funding_round: str = ""
 
-    # Detection metadata    
+    # Detection metadata
     detection_timestamp_seconds: float
     window_start_seconds: float
     video_max_confidence: str  # Formatted to 3 decimal places

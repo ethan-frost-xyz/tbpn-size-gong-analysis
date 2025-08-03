@@ -11,7 +11,7 @@ Key Features:
 - Silence detection utilities
 """
 
-from typing import Dict, Tuple, Union
+from typing import Union
 
 import numpy as np
 
@@ -86,7 +86,7 @@ def compute_crest_factor(waveform: np.ndarray) -> float:
     return float(peak_amplitude / rms_amplitude)
 
 
-def compute_loudness_metrics(waveform: np.ndarray) -> Dict[str, Union[float, bool]]:
+def compute_loudness_metrics(waveform: np.ndarray) -> dict[str, Union[float, bool]]:
     """Compute comprehensive loudness metrics optimized for clipped gong detection.
 
     Args:
@@ -148,7 +148,7 @@ def compute_loudness_metrics(waveform: np.ndarray) -> Dict[str, Union[float, boo
     }
 
 
-def compute_audio_levels(waveform: np.ndarray) -> Tuple[float, float]:
+def compute_audio_levels(waveform: np.ndarray) -> tuple[float, float]:
     """Compute both peak and RMS dBFS levels from a waveform.
 
     Args:
@@ -254,7 +254,7 @@ def analyze_audio_slice_levels(
     timestamp: float,
     context_seconds: float = 20.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Extract audio slice and compute its dBFS levels.
 
     Args:
@@ -326,7 +326,7 @@ def normalize_waveform(
     return (waveform * gain).astype(np.float32)
 
 
-def get_audio_stats(waveform: np.ndarray) -> Dict[str, Union[int, float, bool]]:
+def get_audio_stats(waveform: np.ndarray) -> dict[str, Union[int, float, bool]]:
     """Get comprehensive audio statistics for a waveform.
 
     Args:
