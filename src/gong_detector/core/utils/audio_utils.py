@@ -53,6 +53,85 @@ def compute_rms_dbfs(waveform: np.ndarray) -> float:
     return float(20.0 * np.log10(rms_amplitude))
 
 
+def compute_crest_factor(waveform: np.ndarray) -> float:
+    """Compute crest factor (peak-to-RMS ratio) from a waveform.
+
+    Args:
+        waveform: Audio waveform as numpy array, normalized to [-1, 1]
+
+    Returns:
+        Crest factor as a linear ratio (1.0 = pure sine, >10 = very peaky)
+        Returns 1.0 for silence to avoid division by zero
+    """
+    if len(waveform) == 0:
+        return 1.0
+
+    abs_waveform = np.abs(waveform)
+    peak_amplitude = np.max(abs_waveform)
+    rms_amplitude = np.sqrt(np.mean(waveform**2))
+
+    # Handle silence or very quiet signals
+    if rms_amplitude < MIN_AMPLITUDE:
+        return 1.0
+
+    return float(peak_amplitude / rms_amplitude)
+
+
+def compute_loudness_metrics(waveform: np.ndarray) -> dict[str, float]:
+    """Compute comprehensive loudness metrics optimized for clipped gong detection.
+
+    Args:
+        waveform: Audio waveform as numpy array, normalized to [-1, 1]
+
+    Returns:
+        Dictionary with keys: peak_dbfs, rms_dbfs, crest_factor, likely_clipped
+    """
+    if len(waveform) == 0:
+        return {
+            "peak_dbfs": SILENCE_FLOOR_DBFS,
+            "rms_dbfs": SILENCE_FLOOR_DBFS,
+            "crest_factor": 1.0,
+            "likely_clipped": False,
+        }
+
+    # Compute all metrics in single pass for efficiency
+    abs_waveform = np.abs(waveform)
+    peak_amplitude = np.max(abs_waveform)
+    rms_amplitude = np.sqrt(np.mean(waveform**2))
+
+    # Handle silence case
+    if peak_amplitude < MIN_AMPLITUDE:
+        return {
+            "peak_dbfs": SILENCE_FLOOR_DBFS,
+            "rms_dbfs": SILENCE_FLOOR_DBFS,
+            "crest_factor": 1.0,
+            "likely_clipped": False,
+        }
+
+    # Compute dBFS values
+    peak_dbfs = 20.0 * np.log10(peak_amplitude)
+    rms_dbfs = (
+        20.0 * np.log10(rms_amplitude)
+        if rms_amplitude >= MIN_AMPLITUDE
+        else SILENCE_FLOOR_DBFS
+    )
+
+    # Compute crest factor
+    crest_factor = (
+        peak_amplitude / rms_amplitude if rms_amplitude >= MIN_AMPLITUDE else 1.0
+    )
+
+    # Simple clipping detection: peak near 0 dBFS with low crest factor
+    likely_clipped = peak_dbfs > -1.0 and crest_factor < 4.0
+
+    return {
+        "peak_dbfs": float(peak_dbfs),
+        "rms_dbfs": float(rms_dbfs),
+        "crest_factor": float(crest_factor),
+        "likely_clipped": likely_clipped,
+    }
+
+
 def compute_audio_levels(waveform: np.ndarray) -> tuple[float, float]:
     """Compute both peak and RMS dBFS levels from a waveform.
 
