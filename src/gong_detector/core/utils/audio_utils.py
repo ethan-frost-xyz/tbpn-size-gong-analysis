@@ -92,6 +92,8 @@ def compute_loudness_metrics(waveform: np.ndarray) -> dict[str, float]:
             "rms_dbfs": SILENCE_FLOOR_DBFS,
             "crest_factor": 1.0,
             "likely_clipped": False,
+            "peak_amplitude": 0.0,
+            "rms_amplitude": 0.0,
         }
 
     # Compute all metrics in single pass for efficiency
@@ -106,6 +108,8 @@ def compute_loudness_metrics(waveform: np.ndarray) -> dict[str, float]:
             "rms_dbfs": SILENCE_FLOOR_DBFS,
             "crest_factor": 1.0,
             "likely_clipped": False,
+            "peak_amplitude": 0.0,
+            "rms_amplitude": 0.0,
         }
 
     # Compute dBFS values
@@ -129,6 +133,8 @@ def compute_loudness_metrics(waveform: np.ndarray) -> dict[str, float]:
         "rms_dbfs": float(rms_dbfs),
         "crest_factor": float(crest_factor),
         "likely_clipped": likely_clipped,
+        "peak_amplitude": float(peak_amplitude),
+        "rms_amplitude": float(rms_amplitude),
     }
 
 

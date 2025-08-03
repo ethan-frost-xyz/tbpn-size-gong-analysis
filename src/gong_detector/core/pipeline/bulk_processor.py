@@ -186,6 +186,10 @@ Examples:
                         threshold=args.threshold,
                         max_threshold=args.max_threshold,
                         detections=result["detections"],
+                        video_loudness_metrics=result.get("video_loudness_metrics"),
+                        detection_loudness_metrics=result.get(
+                            "detection_loudness_metrics"
+                        ),
                     )
             successful += 1
         else:
@@ -201,6 +205,17 @@ Examples:
             print(f"  Total detections: {stats.get('total_detections', 0)}")
             print(f"  Unique videos: {stats.get('unique_videos', 0)}")
             print(f"  Average confidence: {stats.get('average_confidence', 0):.3f}")
+
+            # Display loudness statistics if available
+            if "avg_detection_peak_dbfs" in stats:
+                print("  Audio levels (detection avg):")
+                print(
+                    f"    Peak dBFS: {stats.get('avg_detection_peak_dbfs', 0):.1f} dB"
+                )
+                print(f"    RMS dBFS: {stats.get('avg_detection_rms_dbfs', 0):.1f} dB")
+                print(
+                    f"    Crest factor: {stats.get('avg_detection_crest_factor', 0):.1f}"
+                )
         except Exception as e:
             print(f"✗ CSV save failed: {e}")
 

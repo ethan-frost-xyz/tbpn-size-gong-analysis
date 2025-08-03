@@ -236,6 +236,8 @@ def detect_from_youtube_comprehensive(
         - detection_count: Number of detections found
         - success: Whether processing was successful
         - error_message: Error message if failed
+        - video_loudness_metrics: Video-level loudness metrics
+        - detection_loudness_metrics: Detection-level loudness metrics
     """
     # Setup directories
     temp_audio_dir, csv_results_dir = setup_directories()
@@ -262,6 +264,57 @@ def detect_from_youtube_comprehensive(
             batch_size,
             consolidate_detections,
         )
+
+        # Compute loudness metrics
+
+        from ..utils.audio_utils import (
+            analyze_audio_slice_levels,
+            compute_loudness_metrics,
+        )
+
+        # Load audio for loudness analysis
+        detector = YAMNetGongDetector(
+            use_trained_classifier=use_version_one, batch_size=batch_size
+        )
+        waveform, sample_rate = detector.load_and_preprocess_audio(temp_audio)
+
+        # Compute video-level loudness metrics
+        video_loudness_metrics = compute_loudness_metrics(waveform)
+
+        # Compute detection-level loudness metrics
+        detection_loudness_metrics = []
+        for _window_start, _confidence, display_timestamp in detections:
+            # Analyze audio slice around detection timestamp
+            peak_dbfs, rms_dbfs = analyze_audio_slice_levels(
+                waveform,
+                display_timestamp,
+                context_seconds=5.0,
+                sample_rate=sample_rate,
+            )
+
+            # Extract slice for detailed analysis
+            from ..utils.audio_utils import get_slice_around_timestamp
+
+            audio_slice = get_slice_around_timestamp(
+                waveform,
+                display_timestamp,
+                context_seconds=5.0,
+                sample_rate=sample_rate,
+            )
+
+            # Compute comprehensive metrics for the slice
+            slice_metrics = compute_loudness_metrics(audio_slice)
+
+            detection_loudness_metrics.append(
+                {
+                    "peak_dbfs": peak_dbfs,
+                    "rms_dbfs": rms_dbfs,
+                    "crest_factor": slice_metrics["crest_factor"],
+                    "likely_clipped": slice_metrics["likely_clipped"],
+                    "peak_amplitude": slice_metrics.get("peak_amplitude", 0.0),
+                    "rms_amplitude": slice_metrics.get("rms_amplitude", 0.0),
+                }
+            )
 
         # Save positive samples if requested
         if should_save_positive_samples and detections:
@@ -292,6 +345,8 @@ def detect_from_youtube_comprehensive(
             "detection_count": len(detections),
             "success": True,
             "error_message": "",
+            "video_loudness_metrics": video_loudness_metrics,
+            "detection_loudness_metrics": detection_loudness_metrics,
         }
 
     except Exception as e:
@@ -307,6 +362,8 @@ def detect_from_youtube_comprehensive(
             "detection_count": 0,
             "success": False,
             "error_message": str(e),
+            "video_loudness_metrics": {},
+            "detection_loudness_metrics": [],
         }
 
     finally:
