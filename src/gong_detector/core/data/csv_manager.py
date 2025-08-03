@@ -21,41 +21,47 @@ class DetectionRecord:
     making it easy to analyze patterns and find edge cases later.
     """
 
-    # Key fields
+    # Key fields (required)
     video_title: str
     upload_date_formatted: str  # YYYY-MM-DD format
     detection_timestamp_formatted: str  # HH:MM:SS format
     confidence: str  # Formatted to 3 decimal places
     youtube_timestamped_link: str  # YouTube URL with timestamp
-    host_name: str = ""
-
-    # Company metadata
-    company_name: str = ""
-    funding_amount: str = ""
-    funding_valuation: str = ""
-    funding_round: str = ""
-
-    # Video metadata
     upload_date: str  # YYYYMMDD format
     video_duration_seconds: float
-
-    # Detection specifics
-    video_max_confidence: str  # Formatted to 3 decimal places
     detection_timestamp_seconds: float
     window_start_seconds: float
-
-    # Processing context
+    video_max_confidence: str  # Formatted to 3 decimal places
     detection_threshold: str  # Formatted to 3 decimal places
     max_threshold: str  # Formatted to 3 decimal places (empty if not used)
     processing_date: str  # ISO format YYYY-MM-DD
     processing_time: str  # ISO format HH:MM:SS
-
-    # Unique identifiers
     detection_id: str
     video_url: str
 
-    # Future placeholders
+    # Optional fields (with defaults)
+    host_name: str = ""
+    company_name: str = ""
+    funding_amount: str = ""
+    funding_valuation: str = ""
+    funding_round: str = ""
     notes: str = ""
+
+    # Audio loudness metrics (optional)
+    detection_peak_dbfs: str = ""  # Peak dBFS at detection timestamp
+    detection_rms_dbfs: str = ""  # RMS dBFS at detection timestamp
+    detection_crest_factor: str = ""  # Crest factor at detection timestamp
+    detection_likely_clipped: str = ""  # Whether detection audio is likely clipped
+    detection_peak_amplitude: str = ""  # Peak amplitude at detection timestamp
+    detection_rms_amplitude: str = ""  # RMS amplitude at detection timestamp
+
+    # Video-level audio metrics (optional)
+    video_peak_dbfs: str = ""  # Peak dBFS for entire video
+    video_rms_dbfs: str = ""  # RMS dBFS for entire video
+    video_crest_factor: str = ""  # Crest factor for entire video
+    video_likely_clipped: str = ""  # Whether video audio is likely clipped
+    video_peak_amplitude: str = ""  # Peak amplitude for entire video
+    video_rms_amplitude: str = ""  # RMS amplitude for entire video
 
 
 class CSVManager:
@@ -81,6 +87,8 @@ class CSVManager:
         threshold: float,
         max_threshold: Optional[float],
         detections: list[tuple[float, float, float]],
+        video_loudness_metrics: Optional[dict[str, float]] = None,
+        detection_loudness_metrics: Optional[list[dict[str, float]]] = None,
     ) -> None:
         """Add all detections from a single video to the comprehensive record.
 
@@ -93,6 +101,8 @@ class CSVManager:
             threshold: Detection threshold used
             max_threshold: Maximum threshold used (if any)
             detections: List of (window_start, confidence, display_timestamp) tuples
+            video_loudness_metrics: Optional dict with video-level loudness metrics
+            detection_loudness_metrics: Optional list of dicts with detection-level loudness metrics
         """
         # Format upload date for human readability
         upload_date_formatted = self._format_upload_date(upload_date)
@@ -102,11 +112,24 @@ class CSVManager:
         processing_date = now.strftime("%Y-%m-%d")
         processing_time = now.strftime("%H:%M:%S")
 
+        # Validate loudness metrics
+        if detection_loudness_metrics is not None and len(
+            detection_loudness_metrics
+        ) != len(detections):
+            raise ValueError(
+                "detection_loudness_metrics length must match detections length"
+            )
+
         # Create a record for each detection
-        for window_start, confidence, display_timestamp in detections:
+        for i, (window_start, confidence, display_timestamp) in enumerate(detections):
             # Generate timestamped YouTube link
             timestamped_link = self._create_timestamped_youtube_link(
                 video_url, int(display_timestamp)
+            )
+
+            # Get detection-level loudness metrics if available
+            detection_metrics = (
+                detection_loudness_metrics[i] if detection_loudness_metrics else {}
             )
 
             record = DetectionRecord(
@@ -128,6 +151,36 @@ class CSVManager:
                 ),
                 processing_date=processing_date,
                 processing_time=processing_time,
+                # Detection-level loudness metrics
+                detection_peak_dbfs=f"{detection_metrics.get('peak_dbfs', 0):.2f}",
+                detection_rms_dbfs=f"{detection_metrics.get('rms_dbfs', 0):.2f}",
+                detection_crest_factor=f"{detection_metrics.get('crest_factor', 0):.2f}",
+                detection_likely_clipped=str(
+                    detection_metrics.get("likely_clipped", False)
+                ),
+                detection_peak_amplitude=f"{detection_metrics.get('peak_amplitude', 0):.6f}",
+                detection_rms_amplitude=f"{detection_metrics.get('rms_amplitude', 0):.6f}",
+                # Video-level loudness metrics
+                video_peak_dbfs=f"{video_loudness_metrics.get('peak_dbfs', 0):.2f}"
+                if video_loudness_metrics
+                else "",
+                video_rms_dbfs=f"{video_loudness_metrics.get('rms_dbfs', 0):.2f}"
+                if video_loudness_metrics
+                else "",
+                video_crest_factor=f"{video_loudness_metrics.get('crest_factor', 0):.2f}"
+                if video_loudness_metrics
+                else "",
+                video_likely_clipped=str(
+                    video_loudness_metrics.get("likely_clipped", False)
+                )
+                if video_loudness_metrics
+                else "",
+                video_peak_amplitude=f"{video_loudness_metrics.get('peak_amplitude', 0):.6f}"
+                if video_loudness_metrics
+                else "",
+                video_rms_amplitude=f"{video_loudness_metrics.get('rms_amplitude', 0):.6f}"
+                if video_loudness_metrics
+                else "",
             )
             self.detection_records.append(record)
 
@@ -181,12 +234,69 @@ class CSVManager:
         max_confidence = max(confidences)
         min_confidence = min(confidences)
 
+        # Calculate loudness statistics
+        loudness_stats = {}
+        if any(record.detection_peak_dbfs for record in self.detection_records):
+            peak_dbfs_values = [
+                float(record.detection_peak_dbfs)
+                for record in self.detection_records
+                if record.detection_peak_dbfs
+            ]
+            rms_dbfs_values = [
+                float(record.detection_rms_dbfs)
+                for record in self.detection_records
+                if record.detection_rms_dbfs
+            ]
+            crest_factor_values = [
+                float(record.detection_crest_factor)
+                for record in self.detection_records
+                if record.detection_crest_factor
+            ]
+
+            if peak_dbfs_values:
+                loudness_stats.update(
+                    {
+                        "avg_detection_peak_dbfs": round(
+                            sum(peak_dbfs_values) / len(peak_dbfs_values), 2
+                        ),
+                        "max_detection_peak_dbfs": round(max(peak_dbfs_values), 2),
+                        "min_detection_peak_dbfs": round(min(peak_dbfs_values), 2),
+                    }
+                )
+
+            if rms_dbfs_values:
+                loudness_stats.update(
+                    {
+                        "avg_detection_rms_dbfs": round(
+                            sum(rms_dbfs_values) / len(rms_dbfs_values), 2
+                        ),
+                        "max_detection_rms_dbfs": round(max(rms_dbfs_values), 2),
+                        "min_detection_rms_dbfs": round(min(rms_dbfs_values), 2),
+                    }
+                )
+
+            if crest_factor_values:
+                loudness_stats.update(
+                    {
+                        "avg_detection_crest_factor": round(
+                            sum(crest_factor_values) / len(crest_factor_values), 2
+                        ),
+                        "max_detection_crest_factor": round(
+                            max(crest_factor_values), 2
+                        ),
+                        "min_detection_crest_factor": round(
+                            min(crest_factor_values), 2
+                        ),
+                    }
+                )
+
         return {
             "total_detections": total_detections,
             "unique_videos": unique_videos,
             "average_confidence": round(avg_confidence, 4),
             "max_confidence": round(max_confidence, 4),
             "min_confidence": round(min_confidence, 4),
+            **loudness_stats,
         }
 
     def _format_upload_date(self, upload_date: str) -> str:
