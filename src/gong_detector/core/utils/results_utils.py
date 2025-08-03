@@ -151,8 +151,14 @@ def save_positive_samples(
                 sample_rate=sample_rate,
             )
 
-            # Save segment with descriptive filename (use display timestamp for filename)
-            filename = f"at_{format_time_for_filename(display_timestamp)}_s_conf_{confidence:.3f}_{i + 1}.wav"
+            # Compute loudness metrics for the segment
+            from ..utils.audio_utils import compute_loudness_metrics
+
+            loudness_metrics = compute_loudness_metrics(segment)
+
+            # Create descriptive filename with loudness info
+            clipped_flag = "_CLIPPED" if loudness_metrics["likely_clipped"] else ""
+            filename = f"at_{format_time_for_filename(display_timestamp)}_s_conf_{confidence:.3f}_rms_{loudness_metrics['rms_dbfs']:.1f}dB_crest_{loudness_metrics['crest_factor']:.1f}{clipped_flag}_{i + 1}.wav"
             output_path = final_positive_dir / filename
 
             # Convert numpy array to WAV file
