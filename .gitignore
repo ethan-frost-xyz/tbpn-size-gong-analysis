@@ -261,8 +261,6 @@ docker-compose*.yml
 
 # Project-specific ignores
 # Ignore specific data directories that contain large files
-results/csv_results/*
-!results/csv_results/.gitkeep
 data/tbpn_ytlinks/*
 !data/tbpn_ytlinks/.gitkeep
 
@@ -279,7 +277,7 @@ src/gong_detector/training/data/models/*.pkl
 src/gong_detector/training/data/models/*.h5
 
 # Ignore temporary audio files
-src/gong_detector/core/temp_audio/
+data/temp_audio/
 temp_audio/
 
 # Ignore specific configuration files that might contain secrets
