@@ -21,14 +21,21 @@ class DetectionRecord:
     making it easy to analyze patterns and find edge cases later.
     """
 
-    # Key fields (required)
+    # Key fields
     video_title: str
     upload_date_formatted: str  # YYYY-MM-DD format
     detection_timestamp_formatted: str  # HH:MM:SS format
     confidence: str  # Formatted to 3 decimal places
     youtube_timestamped_link: str  # YouTube URL with timestamp
-    upload_date: str  # YYYYMMDD format
-    video_duration_seconds: float
+
+    # Company metadata (manual)
+    host_name: str = ""
+    company_name: str = ""
+    funding_amount: str = ""
+    funding_valuation: str = ""
+    funding_round: str = ""
+
+    # Detection metadata    
     detection_timestamp_seconds: float
     window_start_seconds: float
     video_max_confidence: str  # Formatted to 3 decimal places
@@ -37,17 +44,13 @@ class DetectionRecord:
     processing_date: str  # ISO format YYYY-MM-DD
     processing_time: str  # ISO format HH:MM:SS
     detection_id: str
+
+    # Video metadata
+    upload_date: str  # YYYYMMDD format
+    video_duration_seconds: float
     video_url: str
 
-    # Optional fields (with defaults)
-    host_name: str = ""
-    company_name: str = ""
-    funding_amount: str = ""
-    funding_valuation: str = ""
-    funding_round: str = ""
-    notes: str = ""
-
-    # Audio loudness metrics (optional)
+    # Audio loudness metrics
     detection_peak_dbfs: str = ""  # Peak dBFS at detection timestamp
     detection_rms_dbfs: str = ""  # RMS dBFS at detection timestamp
     detection_crest_factor: str = ""  # Crest factor at detection timestamp
@@ -55,7 +58,7 @@ class DetectionRecord:
     detection_peak_amplitude: str = ""  # Peak amplitude at detection timestamp
     detection_rms_amplitude: str = ""  # RMS amplitude at detection timestamp
 
-    # Video-level audio metrics (optional)
+    # Video-level audio metrics
     video_peak_dbfs: str = ""  # Peak dBFS for entire video
     video_rms_dbfs: str = ""  # RMS dBFS for entire video
     video_crest_factor: str = ""  # Crest factor for entire video
