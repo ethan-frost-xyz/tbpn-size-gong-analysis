@@ -53,7 +53,7 @@ python -m gong_detector.core.negative_sample_collector "https://www.youtube.com/
 # Collect 10 negative samples with custom threshold
 python -m gong_detector.core.negative_sample_collector "https://www.youtube.com/watch?v=VIDEO_ID" --num_samples 10 --threshold 0.3
 
-# Bulk processing - collect from all videos in tbpn_youtube_links.txt
+# Bulk processing - collect from all videos in data/tbpn_ytlinks/tbpn_youtube_links.txt
 python -m gong_detector.core.bulk_process --collect_negative_samples --sample_count 10
 ```
 

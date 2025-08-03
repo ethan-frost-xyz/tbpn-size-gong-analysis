@@ -269,8 +269,8 @@ data/tbpn_ytlinks/*
 # Ignore training data (can be regenerated)
 src/gong_detector/training/data/validated_samples/
 src/gong_detector/training/data/raw_samples/
+# Legacy paths (now consolidated to data/tbpn_ytlinks/tbpn_youtube_links.txt)
 src/gong_detector/data/tbpn_ytlinks.txt
-src/gong_detector/core/data/tbpn_youtube_links.txt
 
 # Ignore model files (can be retrained)
 src/gong_detector/core/models/*.pkl

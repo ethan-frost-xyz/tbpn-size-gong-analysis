@@ -208,12 +208,9 @@ def bulk_processing() -> None:
                 print("Please add a .txt file with YouTube URLs (one per line)")
                 return
         else:
-            # Final fallback to old location
-            links_file = Path("src/gong_detector/core/data/tbpn_youtube_links.txt")
-            if not links_file.exists():
-                print(f"Error: Links file not found at {links_file}")
-                print("Please create the file with YouTube URLs (one per line)")
-                return
+            print(f"Error: No YouTube links files found in {data_dir}")
+            print("Please add a .txt file with YouTube URLs (one per line)")
+            return
 
     # Get parameters
     threshold = get_float_input("Confidence threshold", 0.94)

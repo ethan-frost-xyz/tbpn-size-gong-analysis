@@ -19,7 +19,7 @@ cd src/gong_detector && python run_gong_detector.py
 ### **Available Options**
 
 1. **Single Video Detection** - Detect gongs in a single YouTube video
-2. **Bulk Processing** - Process multiple videos from `core/data/tbpn_youtube_links.txt`
+2. **Bulk Processing** - Process multiple videos from `data/tbpn_ytlinks/tbpn_youtube_links.txt`
 3. **Manual Sample Collection** - Extract specific timestamps for training data
 4. **Negative Sample Collection** - Collect non-gong samples for training
 5. **Audio Conversion** - Convert YouTube URLs or local files to WAV format
@@ -94,7 +94,7 @@ python -m src.gong_detector.core.training.negative_collector "URL"
 - `training/negative_collector.py` - Non-gong sample collection for training
 - `utils/` - Audio processing, YouTube operations, and results utilities
 - `results/` - CSV management and output files (includes `csv_results/`)
-- `core/data/` - Input data files (includes `tbpn_youtube_links.txt`)
+- `data/tbpn_ytlinks/` - Input data files (includes `tbpn_youtube_links.txt`)
 - `models/` - Trained classifier files (classifier.pkl, config.json)
 
 ### **Training Pipeline (`/training`)**
