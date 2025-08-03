@@ -218,7 +218,9 @@ class CSVManager:
         secs = int(seconds % 60)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
-    def _create_timestamped_youtube_link(self, video_url: str, timestamp_seconds: int) -> str:
+    def _create_timestamped_youtube_link(
+        self, video_url: str, timestamp_seconds: int
+    ) -> str:
         """Create a YouTube URL with timestamp parameter.
 
         Args:
