@@ -199,8 +199,8 @@ class CSVManager:
         if not self.detection_records:
             raise ValueError("No detection records to save")
 
-        # Generate filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Generate filename with readable date and time
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         if run_name:
             filename = f"comprehensive_detections_{run_name}_{timestamp}.csv"
         else:
