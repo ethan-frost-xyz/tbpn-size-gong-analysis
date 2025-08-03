@@ -29,11 +29,11 @@ class DetectionRecord:
     youtube_timestamped_link: str  # YouTube URL with timestamp
 
     # Company metadata (manual)
-    host_name: str = ""
-    company_name: str = ""
-    funding_amount: str = ""
-    funding_valuation: str = ""
-    funding_round: str = ""
+    host_name: str = "" # john or jordy or other
+    company_name: str = "" # company name
+    funding_amount: str = "" # in millions
+    funding_valuation: str = "" # in millions
+    funding_round: str = "" # seed, series a, series b, etc.
 
     # Detection metadata
     detection_timestamp_seconds: float
