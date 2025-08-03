@@ -151,7 +151,7 @@ def single_video_detection() -> None:
     # Get parameters
     youtube_url = get_user_input("Enter YouTube URL")
     threshold = get_float_input("Confidence threshold", 0.94)
-    use_version_one = get_yes_no_input("Use trained classifier (version one)?", False)
+    use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
     batch_size = get_int_input("Batch size", 2000)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     keep_audio = get_yes_no_input("Keep temporary audio files?", False)
