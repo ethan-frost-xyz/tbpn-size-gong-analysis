@@ -23,17 +23,24 @@ class DetectionRecord:
 
     # Key fields
     video_title: str
+    upload_date_formatted: str  # YYYY-MM-DD format
     detection_timestamp_formatted: str  # HH:MM:SS format
     confidence: str  # Formatted to 3 decimal places
     youtube_timestamped_link: str  # YouTube URL with timestamp
-    video_max_confidence: str  # Formatted to 3 decimal places
+    host_name: str = ""
+
+    # Company metadata
+    company_name: str = ""
+    funding_amount: str = ""
+    funding_valuation: str = ""
+    funding_round: str = ""
 
     # Video metadata
     upload_date: str  # YYYYMMDD format
-    upload_date_formatted: str  # YYYY-MM-DD format
     video_duration_seconds: float
 
     # Detection specifics
+    video_max_confidence: str  # Formatted to 3 decimal places
     detection_timestamp_seconds: float
     window_start_seconds: float
 
@@ -47,10 +54,8 @@ class DetectionRecord:
     detection_id: str
     video_url: str
 
-    # Future extensibility placeholders
+    # Future placeholders
     notes: str = ""
-    validated: str = ""  # For future human validation
-    model_version: str = "yamnet_default"
 
 
 class CSVManager:
