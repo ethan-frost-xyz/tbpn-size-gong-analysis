@@ -25,6 +25,11 @@ from ..utils.youtube_utils import (
     download_and_trim_youtube_audio,
     setup_directories,
 )
+from ..utils.local_media import (
+    LocalMediaIndex,
+    ensure_preprocessed_audio,
+    video_id_from_url,
+)
 
 
 def process_audio_with_yamnet(
@@ -207,6 +212,8 @@ def detect_from_youtube_comprehensive(
     use_version_one: bool = False,
     batch_size: int = 2000,
     consolidate_detections: bool = True,
+    use_local_media: bool = False,
+    local_only: bool = False,
 ) -> dict[str, Any]:
     """Run YouTube gong detection and return comprehensive metadata.
 
@@ -243,17 +250,38 @@ def detect_from_youtube_comprehensive(
     temp_audio_dir, csv_results_dir = setup_directories()
     cleanup_old_temp_files(temp_audio_dir)
 
-    # Create temporary audio file path
+    # Create temporary audio file path (used when downloading/transcoding)
     temp_audio = create_temp_audio_path(temp_audio_dir)
+    local_audio_used = False
 
     try:
-        # Step 1: Download and process audio
-        temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
-            url=youtube_url,
-            output_path=temp_audio,
-            start_time=start_time,
-            duration=duration,
-        )
+        # Step 1: Get audio path via local cache or download
+        video_title = ""
+        upload_date = ""
+
+        if use_local_media or local_only:
+            vid = video_id_from_url(youtube_url)
+            if not vid:
+                raise ValueError("Could not extract video_id from URL for local cache")
+            local_path, meta = ensure_preprocessed_audio(
+                video_id=vid,
+                url=youtube_url,
+                start=start_time,
+                duration=duration,
+                local_only=local_only,
+            )
+            # Prefer index metadata if available
+            video_title = meta.get("video_title", "")
+            upload_date = meta.get("upload_date", "")
+            temp_audio = local_path
+            local_audio_used = True
+        else:
+            temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
+                url=youtube_url,
+                output_path=temp_audio,
+                start_time=start_time,
+                duration=duration,
+            )
 
         # Step 2-5: Process with YAMNet
         detections, total_duration, max_gong_confidence = process_audio_with_yamnet(
@@ -367,8 +395,8 @@ def detect_from_youtube_comprehensive(
         }
 
     finally:
-        # Clean up temporary file
-        if not keep_audio and os.path.exists(temp_audio):
+        # Clean up temporary file. Never delete when using a local cached file.
+        if not local_audio_used and not keep_audio and os.path.exists(temp_audio):
             os.remove(temp_audio)
 
 

@@ -16,6 +16,24 @@ pip install -r requirements.txt
 python -m src.gong_detector.core.pipeline.detection_pipeline
 ```
 
+### Local media cache (optional)
+
+- Cache directory: `data/local_media/`
+  - `preprocessed/` — 16kHz mono WAVs named `VIDEOID_16k_mono.wav`
+  - `index.json` — metadata (title, upload_date, paths, timestamps)
+
+- Recommended bulk usage:
+  - Prefer local, fallback to download:
+    ```bash
+    PYTHONPATH=src python -m gong_detector.core.pipeline.bulk_processor --use_local_media --version_one --csv
+    ```
+  - Strict offline (error if missing locally):
+    ```bash
+    PYTHONPATH=src python -m gong_detector.core.pipeline.bulk_processor --local_only
+    ```
+
+The interactive menu (`src/gong_detector/run_gong_detector.py`) includes toggles for “Use local media” and “Local only” in both Single Video and Bulk modes.
+
 ## Development
 
 ```bash
@@ -35,5 +53,8 @@ src/gong_detector/     # Main package
 ├── training/         # Training data
 tests/                # Test suite
 data/                 # Data files
+  └── local_media/    # Optional local cache for preprocessed audio
+      ├── preprocessed/
+      └── index.json
 config/               # Configuration
 ```

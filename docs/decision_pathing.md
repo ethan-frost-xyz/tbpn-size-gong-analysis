@@ -29,6 +29,8 @@ Single Video Detection
 ├── Batch size (default: 2000)
 ├── Save positive samples (y/n, default: n)
 ├── Keep temporary audio files (y/n, default: n)
+├── Use local media (y/n, default: y)
+├── Local only (no downloads) (y/n, default: n)
 ├── Start time in seconds (optional)
 └── Duration in seconds (optional)
 ```
@@ -36,7 +38,7 @@ Single Video Detection
 ### Script Flow
 1. **Input Validation**: All numeric inputs are validated
 2. **Parameter Processing**: Optional trimming parameters converted to integers
-3. **Function Call**: `detect_from_youtube_comprehensive()`
+3. **Function Call**: `detect_from_youtube_comprehensive()` (with `use_local_media`/`local_only` when enabled)
 4. **Output**: Results summary with total duration and detection count
 
 ### Key Parameters
@@ -60,6 +62,8 @@ Bulk Processing
 ├── Confidence threshold (default: 0.94)
 ├── Use trained classifier (y/n, default: y)
 ├── Save positive samples (y/n, default: n)
+├── Use local media (y/n, default: y)
+├── Local only (no downloads) (y/n, default: n)
 └── Save results to CSV (y/n, default: n)
 ```
 
@@ -79,6 +83,8 @@ Bulk Processing
 - `--version_one`: Use trained classifier (when enabled)
 - `--save_positive_samples`: Save detected samples (when enabled)
 - `--csv`: Save results to CSV (when enabled)
+- `--use_local_media`: Prefer cached preprocessed audio
+- `--local_only`: Strict offline mode; do not download
 
 ## 3. Manual Sample Collection
 
@@ -227,8 +233,13 @@ Model Management
 ### Environment Requirements
 - **Python Dependencies**: TensorFlow, librosa, yt-dlp, etc.
 - **System Resources**: Sufficient RAM for batch processing
-- **Network Access**: For YouTube video downloads
+- **Network Access**: For YouTube video downloads (not required when `--local_only`)
 - **Disk Space**: For temporary audio files and results
+
+### Local Cache Layout
+- Base: `data/local_media/`
+  - `preprocessed/` — `VIDEOID_16k_mono.wav`
+  - `index.json` — metadata (title, upload_date, paths, timestamps)
 
 ## Decision Tree Summary
 

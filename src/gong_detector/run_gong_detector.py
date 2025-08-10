@@ -155,6 +155,8 @@ def single_video_detection() -> None:
     batch_size = get_int_input("Batch size", 2000)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     keep_audio = get_yes_no_input("Keep temporary audio files?", False)
+    use_local_media = get_yes_no_input("Use local media (cache) if available?", True)
+    local_only = get_yes_no_input("Local only (no downloads)?", False)
 
     # Optional trimming
     start_time = get_user_input("Start time in seconds (optional, press Enter to skip)")
@@ -168,6 +170,8 @@ def single_video_detection() -> None:
     print(f"Threshold: {threshold}")
     print(f"Using trained classifier: {use_version_one}")
     print(f"Batch size: {batch_size}")
+    print(f"Use local media: {use_local_media}")
+    print(f"Local only: {local_only}")
 
     # Run detection
     result = detect_from_youtube_comprehensive(
@@ -179,6 +183,8 @@ def single_video_detection() -> None:
         keep_audio=keep_audio,
         use_version_one=use_version_one,
         batch_size=batch_size,
+        use_local_media=use_local_media,
+        local_only=local_only,
     )
 
     print("\nDetection complete!")
@@ -216,11 +222,15 @@ def bulk_processing() -> None:
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     save_csv = get_yes_no_input("Save results to CSV file?", False)
+    use_local_media = get_yes_no_input("Use local media (cache) if available?", True)
+    local_only = get_yes_no_input("Local only (no downloads)?", False)
 
     print(f"\nProcessing videos from: {links_file}")
     print(f"Threshold: {threshold}")
     print(f"Using trained classifier: {use_version_one}")
     print(f"Save CSV: {save_csv}")
+    print(f"Use local media: {use_local_media}")
+    print(f"Local only: {local_only}")
 
     # Set up sys.argv for bulk processor
     sys.argv = ["bulk_processor"]
@@ -232,6 +242,10 @@ def bulk_processing() -> None:
         sys.argv.append("--save_positive_samples")
     if save_csv:
         sys.argv.append("--csv")
+    if use_local_media:
+        sys.argv.append("--use_local_media")
+    if local_only:
+        sys.argv.append("--local_only")
 
     # Run bulk processor
     bulk_processor_main()

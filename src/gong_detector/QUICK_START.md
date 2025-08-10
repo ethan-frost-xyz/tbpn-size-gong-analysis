@@ -23,8 +23,8 @@ cd src/gong_detector && python run_gong_detector.py
 
 ### **Available Options**
 
-1. **Single Video Detection** - Detect gongs in a single YouTube video
-2. **Bulk Processing** - Process multiple videos from `data/tbpn_ytlinks/tbpn_youtube_links.txt`
+1. **Single Video Detection** - Detect gongs in a single YouTube video (supports local media cache)
+2. **Bulk Processing** - Process multiple videos from `data/tbpn_ytlinks/tbpn_youtube_links.txt` (supports local media cache)
 3. **Manual Sample Collection** - Extract specific timestamps for training data
 4. **Negative Sample Collection** - Collect non-gong samples for training
 5. **Audio Conversion** - Convert YouTube URLs or local files to WAV format
@@ -32,7 +32,7 @@ cd src/gong_detector && python run_gong_detector.py
 
 ### **Features**
 
-- **Interactive Parameter Input**: All parameters are prompted interactively with sensible defaults
+- **Interactive Parameter Input**: All parameters are prompted interactively with sensible defaults (including “Use local media” and “Local only” toggles)
 - **Error Handling**: Graceful error handling with user-friendly messages
 - **Return to Menu**: After each operation, returns to the main menu
 - **Keyboard Interrupt Support**: Ctrl+C to cancel operations
@@ -74,7 +74,11 @@ python -m src.gong_detector.core.pipeline.detection_pipeline "https://youtube.co
 
 ### **Bulk Processing:**
 ```bash
-python -m src.gong_detector.core.pipeline.bulk_processor --version_one
+# Prefer local cache, fallback to download
+python -m src.gong_detector.core.pipeline.bulk_processor --use_local_media --version_one
+
+# Strict offline (error if not cached)
+python -m src.gong_detector.core.pipeline.bulk_processor --local_only
 ```
 
 ### **Sample Collection:**
@@ -98,6 +102,7 @@ python -m src.gong_detector.core.training.negative_collector "URL"
 - `training/manual_collector.py` - Interactive training sample collection
 - `training/negative_collector.py` - Non-gong sample collection for training
 - `utils/` - Audio processing, YouTube operations, and results utilities
+- `utils/local_media.py` - Local cache index and helpers
 - `results/` - CSV management and output files (includes `csv_results/`)
 - `data/tbpn_ytlinks/` - Input data files (includes `tbpn_youtube_links.txt`)
 - `models/` - Trained classifier files (classifier.pkl, config.json)
@@ -175,6 +180,7 @@ from gong_detector.core.training import collect_negative_samples
 - **Trained Classifier**: 99.3% accuracy on validation data
 - **Batch Processing**: 5-10x faster than sequential processing
 - **Conservative Detection**: High thresholds prevent false positives
+- **Offline/Cache Mode**: Reuse preprocessed audio with `data/local_media/`
 - **Training Integration**: Seamless workflow from detection to model training
 - **Performance Monitoring**: Real-time feedback on resource usage
 
