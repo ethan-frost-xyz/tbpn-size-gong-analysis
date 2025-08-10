@@ -28,14 +28,7 @@ class DetectionRecord:
     confidence: str  # Formatted to 3 decimal places
     youtube_timestamped_link: str  # YouTube URL with timestamp
 
-    # Company metadata (manual)
-    host_name: str = ""  # john or jordy or other
-    company_name: str = ""  # company name
-    funding_amount: str = ""  # in millions
-    funding_valuation: str = ""  # in millions
-    funding_round: str = ""  # seed, series a, series b, etc.
-
-    # Detection metadata
+    # Detection metadata (required)
     detection_timestamp_seconds: float
     window_start_seconds: float
     video_max_confidence: str  # Formatted to 3 decimal places
@@ -49,6 +42,13 @@ class DetectionRecord:
     upload_date: str  # YYYYMMDD format
     video_duration_seconds: float
     video_url: str
+
+    # Company metadata (manual - optional)
+    host_name: str = ""  # john or jordy or other
+    company_name: str = ""  # company name
+    funding_amount: str = ""  # in millions
+    funding_valuation: str = ""  # in millions
+    funding_round: str = ""  # seed, series a, series b, etc.
 
     # Audio loudness metrics
     detection_peak_dbfs: str = ""  # Peak dBFS at detection timestamp

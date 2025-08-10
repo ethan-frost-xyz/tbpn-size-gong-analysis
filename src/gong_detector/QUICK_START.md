@@ -7,6 +7,11 @@ The `run_gong_detector.py` script provides an interactive menu system for access
 ### **Quick Start**
 
 ```bash
+# In the project root, set up and activate a local venv (Python 3.12 recommended)
+/opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv
+source .venv/bin/activate
+
+# Launch the master menu
 cd src/gong_detector && python run_gong_detector.py
 ```
 

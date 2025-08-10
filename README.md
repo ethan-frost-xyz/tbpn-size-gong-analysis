@@ -5,7 +5,11 @@ YAMNet-based audio event detection system for identifying gong sounds in audio f
 ## Quick Start
 
 ```bash
-# Install dependencies
+# Create and activate a local virtual environment (Python 3.12 recommended)
+/opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies inside the venv
 pip install -r requirements.txt
 
 # Run detection pipeline
