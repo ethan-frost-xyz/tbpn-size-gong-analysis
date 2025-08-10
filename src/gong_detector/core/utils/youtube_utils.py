@@ -15,6 +15,7 @@ import uuid
 from typing import Optional
 
 import yt_dlp  # type: ignore
+import shutil
 
 
 def get_cookies_path() -> Optional[str]:
@@ -119,6 +120,12 @@ def _download_youtube_audio(
         "audioformat": "mp3",
         "outtmpl": output_template,
         "quiet": True,  # Reduce output noise
+        # Speed-related options
+        "http_chunk_size": 10 * 1024 * 1024,  # 10MB chunks
+        "retries": 20,
+        "fragment_retries": 20,
+        # Prefer IPv4; many VPN exits have better IPv4 peering to Google CDNs
+        "source_address": "0.0.0.0",
     }
 
     # Add cookies if available
@@ -133,6 +140,16 @@ def _download_youtube_audio(
         print(
             "See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
         )
+
+    # Use aria2c if available for multi-connection downloads (often faster on VPN)
+    try:
+        if shutil.which("aria2c") is not None:
+            ydl_opts["external_downloader"] = "aria2c"
+            # -x: max connections per server, -s: split, -k: chunk size
+            ydl_opts["external_downloader_args"] = ["-x16", "-s16", "-k", "5M"]
+    except Exception:
+        # Fallback silently if detection fails
+        pass
 
     # Merge additional yt-dlp options
     if yt_dlp_options:
