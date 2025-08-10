@@ -288,7 +288,7 @@ def detect_from_youtube_comprehensive(
             peak_dbfs, rms_dbfs = analyze_audio_slice_levels(
                 waveform,
                 display_timestamp,
-                context_seconds=5.0,
+                context_seconds=10.0,
                 sample_rate=sample_rate,
             )
 
@@ -298,7 +298,7 @@ def detect_from_youtube_comprehensive(
             audio_slice = get_slice_around_timestamp(
                 waveform,
                 display_timestamp,
-                context_seconds=5.0,
+                context_seconds=10.0,
                 sample_rate=sample_rate,
             )
 
