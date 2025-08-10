@@ -190,12 +190,25 @@ def bulk_processing() -> None:
     """Run bulk processing of multiple videos."""
     print("\n=== Bulk Processing ===\n")
 
-    # Check if links file exists
-    links_file = Path("data/tbpn_ytlinks/tbpn_youtube_links.txt")
+    # Find links file robustly
+    links_file = None
+    relative_path = "data/tbpn_ytlinks/tbpn_youtube_links.txt"
+    
+    # Check current directory first
+    if Path(relative_path).exists():
+        links_file = Path(relative_path)
+    else:
+        # Walk up from script location to find project root
+        script_dir = Path(__file__).resolve().parent
+        for parent in [script_dir] + list(script_dir.parents):
+            candidate = parent / relative_path
+            if candidate.exists():
+                links_file = candidate
+                break
 
-    if not links_file.exists():
-        print(f"Error: File '{links_file}' not found")
-        print("Please add a .txt file with YouTube URLs (one per line)")
+    if not links_file:
+        print(f"Error: Could not find '{relative_path}'")
+        print("Please ensure the file exists in the project data directory")
         return
 
     # Get parameters
