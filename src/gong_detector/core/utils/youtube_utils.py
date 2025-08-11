@@ -8,6 +8,7 @@ for the gong detection pipeline.
 import glob
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import time
@@ -16,7 +17,6 @@ from pathlib import Path
 from typing import Optional
 
 import yt_dlp  # type: ignore
-import shutil
 
 
 def get_cookies_path() -> Optional[str]:
@@ -365,10 +365,10 @@ def setup_directories() -> tuple[str, str]:
         if (parent / "data").exists() and (parent / "src").exists():
             project_root = parent
             break
-    
+
     if not project_root:
         project_root = Path.cwd()
-    
+
     # Use data directory for all temporary and output files
     temp_audio_dir = str(project_root / "data/temp_audio")
     csv_results_dir = str(project_root / "data/csv_results")

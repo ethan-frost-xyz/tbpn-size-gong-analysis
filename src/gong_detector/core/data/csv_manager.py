@@ -84,14 +84,14 @@ class CSVManager:
                 if (parent / "data").exists() and (parent / "src").exists():
                     project_root = parent
                     break
-            
+
             if project_root:
                 self.csv_results_dir = project_root / "data/csv_results"
             else:
                 self.csv_results_dir = Path(csv_results_dir)
         else:
             self.csv_results_dir = Path(csv_results_dir)
-            
+
         self.csv_results_dir.mkdir(parents=True, exist_ok=True)
         self.detection_records: list[DetectionRecord] = []
 

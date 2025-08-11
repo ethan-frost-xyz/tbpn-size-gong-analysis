@@ -199,7 +199,7 @@ def bulk_processing() -> None:
     # Find links file robustly - walk up to project root
     links_file = None
     relative_path = "data/tbpn_ytlinks/tbpn_youtube_links.txt"
-    
+
     # Walk up from script location to find project root
     script_dir = Path(__file__).resolve().parent
     for parent in [script_dir] + list(script_dir.parents):
@@ -207,7 +207,7 @@ def bulk_processing() -> None:
         if candidate.exists():
             links_file = candidate
             break
-    
+
     # Also check current working directory as fallback
     if not links_file and Path(relative_path).exists():
         links_file = Path(relative_path)
@@ -250,7 +250,7 @@ def bulk_processing() -> None:
     # Change to project root directory so bulk_processor can find data/
     project_root = links_file.parent.parent  # data/tbpn_ytlinks -> data -> project_root
     original_cwd = Path.cwd()
-    
+
     try:
         os.chdir(project_root)
         # Run bulk processor

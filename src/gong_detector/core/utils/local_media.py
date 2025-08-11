@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -69,6 +69,8 @@ def video_id_from_url(url: str) -> str:
 
 @dataclass
 class LocalMediaEntry:
+    """Record describing a locally cached media item."""
+
     video_id: str
     source_url: str
     video_title: str = ""
@@ -83,6 +85,11 @@ class LocalMediaIndex:
     """Minimal index for cached local media."""
 
     def __init__(self, base_dir: Path | str = LOCAL_MEDIA_BASE) -> None:
+        """Initialize the index, ensuring directories and loading existing data.
+
+        Args:
+            base_dir: Base directory for local media cache.
+        """
         self.base_dir = Path(base_dir)
         self.preprocessed_dir = self.base_dir / "preprocessed"
         self.index_path = self.base_dir / "index.json"
@@ -95,9 +102,10 @@ class LocalMediaIndex:
         self.load()
 
     def load(self) -> None:
+        """Load the index from disk if present; otherwise start with empty."""
         if self.index_path.exists():
             try:
-                with open(self.index_path, "r", encoding="utf-8") as f:
+                with open(self.index_path, encoding="utf-8") as f:
                     data = json.load(f)
                     if isinstance(data, dict):
                         self._index = data
@@ -110,6 +118,7 @@ class LocalMediaIndex:
             self._index = {}
 
     def save(self) -> None:
+        """Persist the current index atomically to disk."""
         self.base_dir.mkdir(parents=True, exist_ok=True)
         tmp_path = self.index_path.with_suffix(self.index_path.suffix + ".tmp")
         payload = json.dumps(self._index, indent=2, ensure_ascii=False)
@@ -118,9 +127,11 @@ class LocalMediaIndex:
         os.replace(tmp_path, self.index_path)
 
     def get(self, video_id: str) -> Optional[dict[str, Any]]:
+        """Return the metadata record for a given video id, if present."""
         return self._index.get(video_id)
 
     def upsert(self, entry: LocalMediaEntry) -> None:
+        """Insert or update an entry and set timestamps appropriately."""
         now = _utc_now_iso()
         existing = self._index.get(entry.video_id)
         record = asdict(entry)
@@ -136,6 +147,7 @@ class LocalMediaIndex:
         self.save()
 
     def touch_last_used(self, video_id: str) -> None:
+        """Update the `last_used_at` timestamp for an existing record."""
         if video_id in self._index:
             self._index[video_id]["last_used_at"] = _utc_now_iso()
             self.save()

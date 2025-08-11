@@ -6,7 +6,6 @@ Creates no files by default - only when explicitly requested.
 """
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -136,7 +135,7 @@ Examples:
     # Find links file robustly
     links_file = None
     relative_path = "data/tbpn_ytlinks/tbpn_youtube_links.txt"
-    
+
     # Check current directory first
     if Path(relative_path).exists():
         links_file = Path(relative_path)

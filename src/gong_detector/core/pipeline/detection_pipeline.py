@@ -13,6 +13,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 from ..detector.yamnet_runner import YAMNetGongDetector
+from ..utils.local_media import (
+    ensure_preprocessed_audio,
+    video_id_from_url,
+)
 from ..utils.results_utils import (
     consolidate_overlapping_detections,
     print_summary,
@@ -24,11 +28,6 @@ from ..utils.youtube_utils import (
     create_temp_audio_path,
     download_and_trim_youtube_audio,
     setup_directories,
-)
-from ..utils.local_media import (
-    LocalMediaIndex,
-    ensure_preprocessed_audio,
-    video_id_from_url,
 )
 
 
