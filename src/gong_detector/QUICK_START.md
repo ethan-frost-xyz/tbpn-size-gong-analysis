@@ -17,7 +17,7 @@ cd src/gong_detector && python run_gong_detector.py
 
 ### **Full Caching Workflow (Download All Files)**
 
-To download and cache all YouTube URLs for fast offline testing:
+To download and cache all YouTube URLs for fast offline testing and LUFS analysis:
 
 ```bash
 # From project root, activate venv
@@ -41,10 +41,11 @@ python run_gong_detector.py
 
 This will:
 - Process all 52 URLs from `data/tbpn_ytlinks/tbpn_youtube_links.txt`
-- Download and cache audio to `data/local_media/preprocessed/`
+- Download and cache raw audio to `data/local_media/raw/`
+- Download and cache preprocessed audio to `data/local_media/preprocessed/`
 - Save metadata to `data/local_media/index.json`
 - Generate CSV results in `data/csv_results/`
-- Keep cached files for future offline runs
+- Keep cached files for future offline runs and LUFS analysis
 
 ### **Fast Offline Testing (After Caching)**
 
@@ -195,6 +196,9 @@ from gong_detector.core import (
     create_folder_name_from_date, create_folder_name_from_title,
     create_temp_audio_path, sanitize_title_for_folder, setup_directories,
     
+    # LUFS loudness analysis
+    compute_lufs_segments,
+    
     # Results utilities
     format_time, print_summary, save_positive_samples, save_results_to_csv,
     
@@ -216,7 +220,8 @@ from gong_detector.core.pipeline import detect_from_youtube_comprehensive
 
 # Utility functions
 from gong_detector.core.utils import (
-    compute_peak_dbfs, download_and_trim_youtube_audio, format_time
+    compute_peak_dbfs, download_and_trim_youtube_audio, format_time,
+    compute_lufs_segments
 )
 
 # Data management
@@ -231,7 +236,8 @@ from gong_detector.core.training import collect_negative_samples
 - **Trained Classifier**: 99.3% accuracy on validation data
 - **Batch Processing**: 5-10x faster than sequential processing
 - **Conservative Detection**: High thresholds prevent false positives
-- **Offline/Cache Mode**: Reuse preprocessed audio with `data/local_media/`
+- **Dual-Cache System**: Raw and preprocessed audio cached in `data/local_media/`
+- **LUFS Analysis**: Loudness measurement using BS.1770-4 K-weighting and EBU R128 gating
 - **Training Integration**: Seamless workflow from detection to model training
 - **Performance Monitoring**: Real-time feedback on resource usage
 

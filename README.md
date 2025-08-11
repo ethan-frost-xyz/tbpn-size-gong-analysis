@@ -19,8 +19,9 @@ python -m src.gong_detector.core.pipeline.detection_pipeline
 ### Local media cache (optional)
 
 - Cache directory: `data/local_media/`
+  - `raw/` — Original audio files for LUFS analysis (preserves source format)
   - `preprocessed/` — 16kHz mono WAVs named `VIDEOID_16k_mono.wav`
-  - `index.json` — metadata (title, upload_date, paths, timestamps)
+  - `index.json` — metadata (title, upload_date, raw_path, preprocessed_path, timestamps)
 
 - Recommended bulk usage:
   - Prefer local, fallback to download:
@@ -53,7 +54,8 @@ src/gong_detector/     # Main package
 ├── training/         # Training data
 tests/                # Test suite
 data/                 # Data files
-  └── local_media/    # Optional local cache for preprocessed audio
+  └── local_media/    # Optional dual-cache for raw and preprocessed audio
+      ├── raw/        # Original audio for LUFS analysis
       ├── preprocessed/
       └── index.json
 config/               # Configuration
