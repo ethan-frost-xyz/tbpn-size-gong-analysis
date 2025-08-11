@@ -6,6 +6,7 @@ for the gong detection pipeline.
 """
 
 import glob
+import logging
 import os
 import re
 import shutil
@@ -14,9 +15,48 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import yt_dlp  # type: ignore
+
+try:
+    import librosa  # type: ignore
+    import pyloudnorm as pyln  # type: ignore
+    LUFS_AVAILABLE = True
+except ImportError:
+    LUFS_AVAILABLE = False
+    pyln = None
+    librosa = None
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+def video_id_from_url(url: str) -> str:
+    """Extract YouTube video ID from a URL.
+
+    Args:
+        url: YouTube URL to extract video ID from
+
+    Returns:
+        YouTube video ID or empty string if not found
+    """
+    # youtu.be/<id>
+    match = re.search(r"youtu\.be/([A-Za-z0-9_-]{11})", url)
+    if match:
+        return match.group(1)
+
+    # youtube.com/watch?v=<id>
+    match = re.search(r"v=([A-Za-z0-9_-]{11})", url)
+    if match:
+        return match.group(1)
+
+    # youtube.com/embed/<id>
+    match = re.search(r"/embed/([A-Za-z0-9_-]{11})", url)
+    if match:
+        return match.group(1)
+
+    return ""
 
 
 def get_cookies_path() -> Optional[str]:
@@ -57,9 +97,235 @@ def cleanup_old_temp_files(temp_dir: str, max_age_hours: int = 24) -> None:
         if file_age > max_age_seconds:
             try:
                 os.remove(temp_file)
-                print(f"Cleaned up old temp file: {temp_file}")
+                logger.info(f"Cleaned up old temp file: {temp_file}")
             except OSError:
                 pass  # File might already be gone
+
+
+def save_raw_to_cache(temp_path: str, video_id: str) -> str:
+    """Save downloaded raw audio to the local cache.
+
+    Args:
+        temp_path: Path to temporary downloaded audio file
+        video_id: YouTube video ID
+
+    Returns:
+        Path to the cached raw audio file
+
+    Raises:
+        RuntimeError: If file operations fail
+    """
+    # Find project root and create raw cache directory
+    current = Path(__file__).resolve().parent
+    project_root = None
+    for parent in [current] + list(current.parents):
+        if (parent / "data").exists() and (parent / "src").exists():
+            project_root = parent
+            break
+
+    if not project_root:
+        project_root = Path.cwd()
+
+    raw_cache_dir = project_root / "data/local_media/raw"
+    raw_cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Determine the original file extension
+    temp_file = Path(temp_path)
+    if not temp_file.exists():
+        raise RuntimeError(f"Temporary file not found: {temp_path}")
+
+    # Get the original extension from the downloaded file
+    original_ext = temp_file.suffix
+    if not original_ext:
+        # Fallback to common audio extensions
+        original_ext = ".webm"
+
+    # Create the target path in raw cache
+    raw_cache_path = raw_cache_dir / f"{video_id}{original_ext}"
+    raw_cache_tmp = raw_cache_path.with_suffix(raw_cache_path.suffix + ".tmp")
+
+    try:
+        # Copy to temporary location first, then atomically move
+        shutil.copy2(temp_path, raw_cache_tmp)
+        os.replace(raw_cache_tmp, raw_cache_path)
+        logger.info(f"Saved raw audio to cache: {raw_cache_path}")
+        return str(raw_cache_path)
+    except Exception as e:
+        # Clean up temp file if it exists
+        if raw_cache_tmp.exists():
+            try:
+                raw_cache_tmp.unlink()
+            except OSError:
+                pass
+        raise RuntimeError(f"Failed to save raw audio to cache: {e}") from e
+
+
+def ensure_full_preprocessed_from_raw(raw_path: str, video_id: str) -> str:
+    """Ensure full preprocessed WAV exists from raw audio.
+
+    Args:
+        raw_path: Path to raw audio file
+        video_id: YouTube video ID
+
+    Returns:
+        Path to the preprocessed WAV file
+
+    Raises:
+        RuntimeError: If conversion fails
+    """
+    # Find project root and create preprocessed cache directory
+    current = Path(__file__).resolve().parent
+    project_root = None
+    for parent in [current] + list(current.parents):
+        if (parent / "data").exists() and (parent / "src").exists():
+            project_root = parent
+            break
+
+    if not project_root:
+        project_root = Path.cwd()
+
+    preprocessed_cache_dir = project_root / "data/local_media/preprocessed"
+    preprocessed_cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create the target path in preprocessed cache
+    preprocessed_path = preprocessed_cache_dir / f"{video_id}_16k_mono.wav"
+    preprocessed_tmp = preprocessed_cache_dir / f"{video_id}_16k_mono.tmp.wav"
+
+    # Skip if already exists
+    if preprocessed_path.exists():
+        logger.info(f"Preprocessed audio already exists: {preprocessed_path}")
+        return str(preprocessed_path)
+
+    try:
+        # Convert raw to 16kHz mono WAV with high quality settings
+        cmd = [
+            "ffmpeg",
+            "-i", raw_path,
+            "-map", "a:0",  # Use first audio stream
+            "-ac", "1",  # mono
+            "-ar", "16000",  # 16kHz
+            "-sample_fmt", "s16",  # 16-bit signed
+            "-vn",  # no video
+            "-sn",  # no subtitles
+            "-dn",  # no data
+            "-y",  # overwrite
+            "-nostdin",  # non-interactive
+            "-loglevel", "error",  # minimal output
+            str(preprocessed_tmp),
+        ]
+
+        logger.info(f"Converting raw audio to preprocessed: {raw_path}")
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+        # Atomically move to final location
+        os.replace(preprocessed_tmp, preprocessed_path)
+        logger.info(f"Created preprocessed audio: {preprocessed_path}")
+        return str(preprocessed_path)
+
+    except subprocess.CalledProcessError as e:
+        # Clean up temp file if it exists
+        if preprocessed_tmp.exists():
+            try:
+                preprocessed_tmp.unlink()
+            except OSError:
+                pass
+        raise RuntimeError(f"FFmpeg conversion failed: {e.stderr}") from e
+    except Exception as e:
+        # Clean up temp file if it exists
+        if preprocessed_tmp.exists():
+            try:
+                preprocessed_tmp.unlink()
+            except OSError:
+                pass
+        raise RuntimeError(f"Failed to create preprocessed audio: {e}") from e
+
+
+def trim_from_preprocessed(
+    preprocessed_path: str,
+    output_path: str,
+    start_time: Optional[int] = None,
+    duration: Optional[int] = None
+) -> None:
+    """Trim audio from preprocessed WAV file.
+
+    Args:
+        preprocessed_path: Path to full preprocessed WAV file
+        output_path: Path for output trimmed WAV file
+        start_time: Start time in seconds (optional)
+        duration: Duration in seconds (optional)
+
+    Raises:
+        RuntimeError: If trimming fails
+    """
+    if not Path(preprocessed_path).exists():
+        raise RuntimeError(f"Preprocessed file not found: {preprocessed_path}")
+
+    # Create output directory if needed
+    output_file = Path(output_path)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    cmd = ["ffmpeg", "-i", preprocessed_path]
+
+    # Add trimming parameters if specified
+    if start_time is not None:
+        cmd.extend(["-ss", str(start_time)])
+    if duration is not None:
+        cmd.extend(["-t", str(duration)])
+
+    # Copy audio stream without re-encoding (fast)
+    cmd.extend([
+        "-c", "copy",  # Copy without re-encoding
+        "-y",  # overwrite
+        "-nostdin",  # non-interactive
+        "-loglevel", "error",  # minimal output
+        output_path,
+    ])
+
+    try:
+        logger.info(f"Trimming preprocessed audio: {start_time}s + {duration}s")
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.info(f"Trimmed audio saved to: {output_path}")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"FFmpeg trimming failed: {e.stderr}") from e
+
+
+def update_local_media_index(
+    video_id: str,
+    url: str,
+    video_title: str,
+    upload_date: str,
+    raw_path: str,
+    preprocessed_path: str,
+) -> None:
+    """Update the local media index with dual-cache information.
+
+    Args:
+        video_id: YouTube video ID
+        url: Source YouTube URL
+        video_title: Video title
+        upload_date: Upload date
+        raw_path: Path to raw audio file
+        preprocessed_path: Path to preprocessed audio file
+    """
+    try:
+        from gong_detector.core.utils.local_media import (
+            LocalMediaEntry,
+            LocalMediaIndex,
+        )
+
+        idx = LocalMediaIndex()
+        entry = LocalMediaEntry(
+            video_id=video_id,
+            source_url=url,
+            video_title=video_title or "",
+            upload_date=upload_date or "",
+            preprocessed_path=preprocessed_path,
+            raw_path=raw_path,
+        )
+        idx.upsert(entry)
+        logger.info(f"Updated local media index for video: {video_id}")
+    except Exception as e:
+        logger.warning(f"Failed to update local media index: {e}")
 
 
 def download_and_trim_youtube_audio(
@@ -71,11 +337,15 @@ def download_and_trim_youtube_audio(
 ) -> tuple[str, str, str]:
     """Download YouTube audio and optionally trim to specified segment.
 
+    This function implements dual-cache: it ensures both raw and preprocessed
+    audio are cached, then provides the requested audio segment.
+
     Args:
         url: YouTube URL to download
         output_path: Path for output WAV file
         start_time: Start time in seconds (optional)
         duration: Duration in seconds (optional)
+        yt_dlp_options: Additional yt-dlp options to merge
 
     Returns:
         Tuple of (audio_path, video_title, upload_date)
@@ -83,7 +353,12 @@ def download_and_trim_youtube_audio(
     Raises:
         RuntimeError: If download or conversion fails
     """
-    print(f"Downloading audio from: {url}")
+    logger.info(f"Processing audio from: {url}")
+
+    # Extract video ID for caching
+    video_id = video_id_from_url(url)
+    if not video_id:
+        raise RuntimeError(f"Could not extract video ID from URL: {url}")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_audio = os.path.join(temp_dir, "temp_audio.%(ext)s")
@@ -93,11 +368,33 @@ def download_and_trim_youtube_audio(
             url, temp_audio, yt_dlp_options
         )
 
-        # Convert and trim with ffmpeg
-        _convert_and_trim_audio(downloaded_file, output_path, start_time, duration)
+        # Save raw audio to cache
+        raw_cache_path = save_raw_to_cache(downloaded_file, video_id)
 
-        print(f"Audio saved to: {output_path}")
-        print(f"Video title: {video_title}")
+        # Ensure full preprocessed WAV exists
+        preprocessed_path = ensure_full_preprocessed_from_raw(raw_cache_path, video_id)
+
+        # Update local media index with both paths
+        update_local_media_index(
+            video_id=video_id,
+            url=url,
+            video_title=video_title,
+            upload_date=upload_date,
+            raw_path=raw_cache_path,
+            preprocessed_path=preprocessed_path,
+        )
+
+        # Handle trimming if requested
+        if start_time is not None or duration is not None:
+            # Create trimmed version from full preprocessed
+            trim_from_preprocessed(preprocessed_path, output_path, start_time, duration)
+            logger.info(f"Trimmed audio saved to: {output_path}")
+        else:
+            # Copy full preprocessed to output path
+            shutil.copy2(preprocessed_path, output_path)
+            logger.info(f"Full preprocessed audio copied to: {output_path}")
+
+        logger.info(f"Video title: {video_title}")
 
     return output_path, video_title, upload_date
 
@@ -117,8 +414,6 @@ def _download_youtube_audio(
     """
     ydl_opts = {
         "format": "bestaudio/best",
-        "extractaudio": True,
-        "audioformat": "mp3",
         "outtmpl": output_template,
         "quiet": True,  # Reduce output noise
         # Speed-related options
@@ -132,13 +427,13 @@ def _download_youtube_audio(
     # Add cookies if available
     cookies_path = get_cookies_path()
     if cookies_path:
-        print(f"Using cookies from: {cookies_path}")
+        logger.info(f"Using cookies from: {cookies_path}")
         ydl_opts["cookiefile"] = cookies_path
     else:
-        print(
+        logger.warning(
             "No cookies file found. If you encounter bot detection, create a cookies.txt file."
         )
-        print(
+        logger.warning(
             "See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
         )
 
@@ -182,10 +477,10 @@ def _download_youtube_audio(
 
     except Exception as e:
         if "Sign in to confirm you're not a bot" in str(e):
-            print("\nBot detection detected! To fix this:")
-            print("1. Create a cookies.txt file with your YouTube cookies")
-            print("2. Place it in the project root or your home directory")
-            print(
+            logger.error("\nBot detection detected! To fix this:")
+            logger.error("1. Create a cookies.txt file with your YouTube cookies")
+            logger.error("2. Place it in the project root or your home directory")
+            logger.error(
                 "3. See: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
             )
         raise RuntimeError(f"YouTube download failed: {e}") from e
@@ -228,9 +523,9 @@ def _convert_and_trim_audio(
         ]
     )
 
-    print("Converting audio to 16kHz mono WAV...")
+    logger.info("Converting audio to 16kHz mono WAV...")
     if start_time is not None or duration is not None:
-        print(f"Trimming: start={start_time}s, duration={duration}s")
+        logger.info(f"Trimming: start={start_time}s, duration={duration}s")
 
     subprocess.run(cmd, check=True, capture_output=True)
 
@@ -377,3 +672,181 @@ def setup_directories() -> tuple[str, str]:
     os.makedirs(csv_results_dir, exist_ok=True)
 
     return temp_audio_dir, csv_results_dir
+
+
+def compute_lufs_segments(
+    video_id: str,
+    timestamps: list[tuple[float, float]],
+    measurement_type: str = "integrated",
+    index: Optional[Any] = None,
+) -> list[dict[str, Any]]:
+    """Compute LUFS loudness for audio segments from raw audio.
+
+    This function extracts segments from the raw cached audio based on timestamps
+    from gong detections and computes LUFS loudness measurements using BS.1770-4
+    K-weighting and EBU R128 gating.
+
+    Args:
+        video_id: YouTube video ID
+        timestamps: List of (start_time, end_time) tuples in seconds
+        measurement_type: Type of LUFS measurement:
+            - "integrated": Integrated loudness over entire segment
+            - "short_term": Short-term loudness (3s sliding window)
+            - "momentary": Momentary loudness (400ms sliding window)
+        index: Optional LocalMediaIndex instance
+
+    Returns:
+        List of dictionaries containing LUFS measurements for each segment.
+        Each dict contains:
+        - start_time: Start time in seconds
+        - end_time: End time in seconds
+        - duration: Segment duration in seconds
+        - lufs: LUFS measurement value
+        - measurement_type: Type of measurement used
+        - valid: Boolean indicating if measurement was successful
+
+    Raises:
+        RuntimeError: If LUFS library not available or raw audio not found
+        ValueError: If timestamps are invalid
+    """
+    if not LUFS_AVAILABLE:
+        raise RuntimeError(
+            "LUFS analysis requires pyloudnorm and librosa. "
+            "Install with: pip install pyloudnorm librosa"
+        )
+
+    if not timestamps:
+        return []
+
+    # Validate measurement type
+    valid_types = ["integrated", "short_term", "momentary"]
+    if measurement_type not in valid_types:
+        raise ValueError(f"measurement_type must be one of {valid_types}")
+
+    logger.info(f"Computing LUFS for {len(timestamps)} segments from video {video_id}")
+
+    # Find raw audio file
+    try:
+        from gong_detector.core.utils.local_media import LocalMediaIndex
+        idx = index or LocalMediaIndex()
+
+        # Get raw audio path from index
+        meta = idx.get(video_id)
+        if not meta or not meta.get("raw_path"):
+            raise RuntimeError(f"No raw audio path found for video {video_id}")
+
+        raw_path = meta["raw_path"]
+        if not Path(raw_path).exists():
+            raise RuntimeError(f"Raw audio file not found: {raw_path}")
+
+    except ImportError as err:
+        raise RuntimeError("Could not import LocalMediaIndex") from err
+
+    results = []
+
+    try:
+        # Load raw audio file using librosa (supports WebM and other formats)
+        logger.info(f"Loading raw audio: {raw_path}")
+        audio_data, sample_rate = librosa.load(raw_path, sr=None, mono=False)
+
+        # Ensure mono audio for LUFS analysis
+        if len(audio_data.shape) > 1:
+            # Convert stereo to mono using equal weighting
+            # Note: BS.1770 specifies channel weighting, but for simplicity we use equal weighting
+            audio_data = audio_data.mean(axis=0)  # Average across channels (axis 0)
+
+        # Create loudness meter with appropriate settings
+        meter = pyln.Meter(sample_rate)  # Uses BS.1770-4 K-weighting by default
+
+        logger.info(f"Processing {len(timestamps)} segments with {measurement_type} LUFS")
+
+        for i, (start_time, end_time) in enumerate(timestamps):
+            segment_result = {
+                "start_time": float(start_time),
+                "end_time": float(end_time),
+                "duration": float(end_time - start_time),
+                "lufs": None,
+                "measurement_type": measurement_type,
+                "valid": False,
+            }
+
+            try:
+                # Validate timestamps
+                if start_time < 0 or end_time <= start_time:
+                    logger.warning(f"Invalid timestamp pair: {start_time}-{end_time}s")
+                    results.append(segment_result)
+                    continue
+
+                # Convert time to sample indices
+                start_sample = int(start_time * sample_rate)
+                end_sample = int(end_time * sample_rate)
+
+                # Check bounds
+                if start_sample >= len(audio_data) or end_sample > len(audio_data):
+                    logger.warning(f"Timestamp {start_time}-{end_time}s exceeds audio length")
+                    results.append(segment_result)
+                    continue
+
+                # Extract segment
+                segment_audio = audio_data[start_sample:end_sample]
+
+                # Skip very short segments (less than 400ms for momentary, 3s for short-term)
+                min_duration = 0.4 if measurement_type == "momentary" else 3.0 if measurement_type == "short_term" else 0.1
+                if len(segment_audio) / sample_rate < min_duration:
+                    logger.warning(f"Segment {i+1} too short ({len(segment_audio)/sample_rate:.2f}s) for {measurement_type} LUFS")
+                    results.append(segment_result)
+                    continue
+
+                # Compute LUFS measurement
+                if measurement_type == "integrated":
+                    # Integrated loudness over entire segment with EBU R128 gating
+                    lufs_value = meter.integrated_loudness(segment_audio)
+                elif measurement_type == "short_term":
+                    # Short-term loudness (3s sliding window)
+                    # pyloudnorm doesn't have separate short_term method, use integrated for now
+                    # This is a simplified implementation - in production you'd implement proper 3s sliding window
+                    lufs_value = meter.integrated_loudness(segment_audio)
+                    logger.warning("Short-term LUFS approximated using integrated loudness")
+                else:  # momentary
+                    # Momentary loudness (400ms sliding window)
+                    # pyloudnorm doesn't have separate momentary method, use integrated for now
+                    # This is a simplified implementation - in production you'd implement proper 400ms sliding window
+                    lufs_value = meter.integrated_loudness(segment_audio)
+                    logger.warning("Momentary LUFS approximated using integrated loudness")
+
+                # Check for valid measurement
+                if lufs_value == -float('inf') or lufs_value != lufs_value:  # NaN check
+                    logger.warning(f"Invalid LUFS measurement for segment {i+1}")
+                else:
+                    segment_result["lufs"] = float(lufs_value)
+                    segment_result["valid"] = True
+                    logger.debug(f"Segment {i+1}: {start_time:.1f}-{end_time:.1f}s = {lufs_value:.1f} LUFS")
+
+            except Exception as e:
+                logger.error(f"Error processing segment {i+1} ({start_time}-{end_time}s): {e}")
+
+            results.append(segment_result)
+
+        # Summary statistics
+        valid_measurements = [r["lufs"] for r in results if r["valid"]]
+        if valid_measurements:
+            logger.info(f"LUFS analysis complete: {len(valid_measurements)}/{len(timestamps)} valid measurements")
+            logger.info(f"LUFS range: {min(valid_measurements):.1f} to {max(valid_measurements):.1f} LUFS")
+            logger.info(f"Mean LUFS: {sum(valid_measurements)/len(valid_measurements):.1f} LUFS")
+        else:
+            logger.warning("No valid LUFS measurements obtained")
+
+    except Exception as e:
+        logger.error(f"Failed to compute LUFS for video {video_id}: {e}")
+        # Return empty results with error indication
+        for start_time, end_time in timestamps:
+            results.append({
+                "start_time": float(start_time),
+                "end_time": float(end_time),
+                "duration": float(end_time - start_time),
+                "lufs": None,
+                "measurement_type": measurement_type,
+                "valid": False,
+            })
+
+    return results

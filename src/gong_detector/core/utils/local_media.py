@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,27 +43,7 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def video_id_from_url(url: str) -> str:
-    """Extract YouTube video ID from a URL.
 
-    Supports standard and short URLs. Returns empty string if not found.
-    """
-    # youtu.be/<id>
-    match = re.search(r"youtu\.be/([A-Za-z0-9_-]{11})", url)
-    if match:
-        return match.group(1)
-
-    # youtube.com/watch?v=<id>
-    match = re.search(r"v=([A-Za-z0-9_-]{11})", url)
-    if match:
-        return match.group(1)
-
-    # youtube.com/embed/<id>
-    match = re.search(r"/embed/([A-Za-z0-9_-]{11})", url)
-    if match:
-        return match.group(1)
-
-    return ""
 
 
 @dataclass
@@ -167,68 +146,124 @@ def ensure_preprocessed_audio(
 ) -> tuple[str, dict[str, Any]]:
     """Ensure a preprocessed 16kHz mono WAV exists for the given video.
 
+    This function implements dual-cache: it ensures both raw and preprocessed
+    audio are cached, then provides the requested audio segment.
+
     Returns a tuple of (path, metadata_dict). The metadata contains keys that
     align with LocalMediaEntry fields. If metadata is unavailable (e.g.,
     running strictly offline), some fields may be empty strings.
     """
     idx = index or LocalMediaIndex()
 
-    # Clean up stray tmp file if present
-    target_path = _preprocessed_wav_path(idx.preprocessed_dir, video_id)
-    # Use a tmp path that still has .wav extension for ffmpeg container selection
-    tmp_path = target_path.with_name(target_path.stem + ".tmp" + target_path.suffix)
-    if tmp_path.exists():
-        try:
-            tmp_path.unlink()
-        except OSError:
-            pass
+    # Check if full preprocessed file exists
+    full_preprocessed_path = _preprocessed_wav_path(idx.preprocessed_dir, video_id)
 
-    # If already exists, update last_used and return
-    if target_path.exists():
-        meta = idx.get(video_id) or {}
-        idx.touch_last_used(video_id)
-        if not meta:
-            # Create minimal record to keep last_used tracking consistent
-            idx.upsert(
-                LocalMediaEntry(
-                    video_id=video_id,
-                    source_url=url,
-                    preprocessed_path=str(target_path),
-                )
-            )
+    # Check if raw file exists (for index population)
+    raw_cache_dir = idx.base_dir / "raw"
+    raw_files = list(raw_cache_dir.glob(f"{video_id}.*"))
+    raw_path = str(raw_files[0]) if raw_files else ""
+
+    # If trimming is requested, we need to create a temporary trimmed file
+    if start is not None or duration is not None:
+        # Create a temporary output path for the trimmed audio
+        import tempfile
+        temp_output = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+        temp_output.close()
+        output_path = temp_output.name
+
+        # If full preprocessed exists, trim from it
+        if full_preprocessed_path.exists():
             meta = idx.get(video_id) or {}
-        return str(target_path), meta
+            idx.touch_last_used(video_id)
 
-    # If local only, fail fast
-    if local_only:
-        raise RuntimeError(
-            "Preprocessed audio not found locally and local_only is enabled"
+            # Ensure raw_path is populated in index if we found it
+            if raw_path and (not meta or not meta.get("raw_path")):
+                meta["raw_path"] = raw_path
+                idx.upsert(
+                    LocalMediaEntry(
+                        video_id=video_id,
+                        source_url=url,
+                        preprocessed_path=str(full_preprocessed_path),
+                        raw_path=raw_path,
+                        video_title=meta.get("video_title", ""),
+                        upload_date=meta.get("upload_date", ""),
+                    )
+                )
+                meta = idx.get(video_id) or {}
+
+            # Import trim function
+            from gong_detector.core.utils.youtube_utils import trim_from_preprocessed
+            trim_from_preprocessed(str(full_preprocessed_path), output_path, start, duration)
+
+            return output_path, meta
+        else:
+            # If local only, fail fast
+            if local_only:
+                raise RuntimeError(
+                    "Preprocessed audio not found locally and local_only is enabled"
+                )
+
+            # Download and create both raw and preprocessed, then trim
+            audio_path, video_title, upload_date = download_and_trim_youtube_audio(
+                url=url,
+                output_path=output_path,
+                start_time=start,
+                duration=duration,
+            )
+
+            # Get updated metadata from index (should now include raw_path)
+            meta = idx.get(video_id) or {}
+            return output_path, meta
+    else:
+        # No trimming requested - return the full preprocessed path
+        if full_preprocessed_path.exists():
+            meta = idx.get(video_id) or {}
+            idx.touch_last_used(video_id)
+
+            # Ensure raw_path is populated in index if we found it
+            if raw_path and (not meta or not meta.get("raw_path")):
+                meta["raw_path"] = raw_path
+                idx.upsert(
+                    LocalMediaEntry(
+                        video_id=video_id,
+                        source_url=url,
+                        preprocessed_path=str(full_preprocessed_path),
+                        raw_path=raw_path,
+                        video_title=meta.get("video_title", ""),
+                        upload_date=meta.get("upload_date", ""),
+                    )
+                )
+                meta = idx.get(video_id) or {}
+
+            if not meta:
+                # Create minimal record to keep last_used tracking consistent
+                idx.upsert(
+                    LocalMediaEntry(
+                        video_id=video_id,
+                        source_url=url,
+                        preprocessed_path=str(full_preprocessed_path),
+                        raw_path=raw_path,
+                    )
+                )
+                meta = idx.get(video_id) or {}
+            return str(full_preprocessed_path), meta
+
+        # If local only, fail fast
+        if local_only:
+            raise RuntimeError(
+                "Preprocessed audio not found locally and local_only is enabled"
+            )
+
+        # Download and create both raw and preprocessed
+        audio_path, video_title, upload_date = download_and_trim_youtube_audio(
+            url=url,
+            output_path=str(full_preprocessed_path),
+            start_time=None,
+            duration=None,
         )
 
-    # Otherwise, download and preprocess into a tmp, then move atomically
-    idx.preprocessed_dir.mkdir(parents=True, exist_ok=True)
-    # Write to tmp file first
-    output_tmp = str(tmp_path)
-    audio_path, video_title, upload_date = download_and_trim_youtube_audio(
-        url=url,
-        output_path=output_tmp,
-        start_time=start,
-        duration=duration,
-    )
-
-    # Atomically move to final
-    os.replace(output_tmp, target_path)
-
-    # Update index
-    entry = LocalMediaEntry(
-        video_id=video_id,
-        source_url=url,
-        video_title=video_title or "",
-        upload_date=upload_date or "",
-        preprocessed_path=str(target_path),
-        raw_path="",
-    )
-    idx.upsert(entry)
-    return str(target_path), asdict(entry)
+        # Get updated metadata from index (should now include raw_path)
+        meta = idx.get(video_id) or {}
+        return str(full_preprocessed_path), meta
 
 
