@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import time
 import uuid
+from pathlib import Path
 from typing import Optional
 
 import yt_dlp  # type: ignore
@@ -357,9 +358,20 @@ def setup_directories() -> tuple[str, str]:
     Returns:
         Tuple of (temp_audio_dir, csv_results_dir)
     """
+    # Find project root robustly
+    current = Path(__file__).resolve().parent
+    project_root = None
+    for parent in [current] + list(current.parents):
+        if (parent / "data").exists() and (parent / "src").exists():
+            project_root = parent
+            break
+    
+    if not project_root:
+        project_root = Path.cwd()
+    
     # Use data directory for all temporary and output files
-    temp_audio_dir = "data/temp_audio"
-    csv_results_dir = "data/csv_results"
+    temp_audio_dir = str(project_root / "data/temp_audio")
+    csv_results_dir = str(project_root / "data/csv_results")
 
     os.makedirs(temp_audio_dir, exist_ok=True)
     os.makedirs(csv_results_dir, exist_ok=True)

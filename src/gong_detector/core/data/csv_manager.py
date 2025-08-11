@@ -76,8 +76,23 @@ class CSVManager:
         Args:
             csv_results_dir: Directory to store CSV files
         """
-        self.csv_results_dir = Path(csv_results_dir)
-        self.csv_results_dir.mkdir(exist_ok=True)
+        # Find project root robustly if using default path
+        if csv_results_dir == "data/csv_results":
+            current = Path(__file__).resolve().parent
+            project_root = None
+            for parent in [current] + list(current.parents):
+                if (parent / "data").exists() and (parent / "src").exists():
+                    project_root = parent
+                    break
+            
+            if project_root:
+                self.csv_results_dir = project_root / "data/csv_results"
+            else:
+                self.csv_results_dir = Path(csv_results_dir)
+        else:
+            self.csv_results_dir = Path(csv_results_dir)
+            
+        self.csv_results_dir.mkdir(parents=True, exist_ok=True)
         self.detection_records: list[DetectionRecord] = []
 
     def add_video_detections(

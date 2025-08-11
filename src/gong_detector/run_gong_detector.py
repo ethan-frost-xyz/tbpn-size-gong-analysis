@@ -43,7 +43,7 @@ class InteractiveMenu:
 
     def display(self) -> None:
         """Display the menu."""
-        os.system("clear" if os.name == "posix" else "cls")
+        # Don't clear terminal - keep output visible for debugging
         print(f"\n{'=' * 50}")
         print(f"  {self.title}")
         print(f"{'=' * 50}\n")
@@ -196,21 +196,21 @@ def bulk_processing() -> None:
     """Run bulk processing of multiple videos."""
     print("\n=== Bulk Processing ===\n")
 
-    # Find links file robustly
+    # Find links file robustly - walk up to project root
     links_file = None
     relative_path = "data/tbpn_ytlinks/tbpn_youtube_links.txt"
     
-    # Check current directory first
-    if Path(relative_path).exists():
+    # Walk up from script location to find project root
+    script_dir = Path(__file__).resolve().parent
+    for parent in [script_dir] + list(script_dir.parents):
+        candidate = parent / relative_path
+        if candidate.exists():
+            links_file = candidate
+            break
+    
+    # Also check current working directory as fallback
+    if not links_file and Path(relative_path).exists():
         links_file = Path(relative_path)
-    else:
-        # Walk up from script location to find project root
-        script_dir = Path(__file__).resolve().parent
-        for parent in [script_dir] + list(script_dir.parents):
-            candidate = parent / relative_path
-            if candidate.exists():
-                links_file = candidate
-                break
 
     if not links_file:
         print(f"Error: Could not find '{relative_path}'")
@@ -247,8 +247,17 @@ def bulk_processing() -> None:
     if local_only:
         sys.argv.append("--local_only")
 
-    # Run bulk processor
-    bulk_processor_main()
+    # Change to project root directory so bulk_processor can find data/
+    project_root = links_file.parent.parent  # data/tbpn_ytlinks -> data -> project_root
+    original_cwd = Path.cwd()
+    
+    try:
+        os.chdir(project_root)
+        # Run bulk processor
+        bulk_processor_main()
+    finally:
+        # Restore original working directory
+        os.chdir(original_cwd)
 
 
 def manual_sample_collection() -> None:

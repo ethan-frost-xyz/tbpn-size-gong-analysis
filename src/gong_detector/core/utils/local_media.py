@@ -24,7 +24,18 @@ from gong_detector.core.utils.youtube_utils import (
 )
 
 
-LOCAL_MEDIA_BASE = Path("data/local_media")
+def _find_project_root() -> Path:
+    """Find project root by walking up from this file."""
+    current = Path(__file__).resolve().parent
+    for parent in [current] + list(current.parents):
+        if (parent / "data").exists() and (parent / "src").exists():
+            return parent
+    # Fallback to current working directory
+    return Path.cwd()
+
+
+_PROJECT_ROOT = _find_project_root()
+LOCAL_MEDIA_BASE = _PROJECT_ROOT / "data/local_media"
 LOCAL_MEDIA_PREPROCESSED = LOCAL_MEDIA_BASE / "preprocessed"
 LOCAL_MEDIA_INDEX = LOCAL_MEDIA_BASE / "index.json"
 
