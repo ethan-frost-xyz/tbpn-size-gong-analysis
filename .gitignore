@@ -102,15 +102,6 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -215,12 +206,6 @@ models/
 data/raw/
 data/processed/
 
-# Sensitive files
-cookies.txt
-youtube_cookies.txt
-*.cookies
-config/cookies.txt
-
 # Development and helper scripts
 export_cookies.py
 test_cookies.py
@@ -282,3 +267,4 @@ temp_audio/
 
 # Ignore specific configuration files that might contain secrets
 config/cookies.txt 
+cookies.txt
