@@ -15,6 +15,57 @@ source .venv/bin/activate
 cd src/gong_detector && python run_gong_detector.py
 ```
 
+### **Full Caching Workflow (Download All Files)**
+
+To download and cache all YouTube URLs for fast offline testing:
+
+```bash
+# From project root, activate venv
+source .venv/bin/activate
+
+# Navigate to gong_detector directory
+cd src/gong_detector
+
+# Launch interactive menu
+python run_gong_detector.py
+
+# In the menu:
+# 1. Select "Bulk Processing" (arrow keys + Enter)
+# 2. Accept defaults for threshold (0.94) and trained classifier (y)
+# 3. Choose save options:
+#    - Save positive samples? (y/n) - choose based on need
+#    - Save results to CSV file? (y) - recommended for analysis
+#    - Use local media (cache) if available? (y) - enables caching
+#    - Local only (no downloads)? (n) - allow downloads to populate cache
+```
+
+This will:
+- Process all 52 URLs from `data/tbpn_ytlinks/tbpn_youtube_links.txt`
+- Download and cache audio to `data/local_media/preprocessed/`
+- Save metadata to `data/local_media/index.json`
+- Generate CSV results in `data/csv_results/`
+- Keep cached files for future offline runs
+
+### **Fast Offline Testing (After Caching)**
+
+Once files are cached, you can run repeated tests instantly:
+
+```bash
+# From src/gong_detector directory
+python run_gong_detector.py
+
+# In the menu, select "Bulk Processing" and choose:
+# - Use local media (cache) if available? (y)
+# - Local only (no downloads)? (y) - pure offline mode
+```
+
+Or via command line:
+```bash
+# From project root
+source .venv/bin/activate
+PYTHONPATH=src python -m gong_detector.core.pipeline.bulk_processor --local_only --version_one --csv
+```
+
 ### **Menu Navigation**
 
 - **↑/↓ Arrow Keys**: Navigate between menu options
