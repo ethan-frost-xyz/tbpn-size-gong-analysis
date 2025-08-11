@@ -22,5 +22,8 @@ ruff>=0.1.0
 # Optional audio processing (for advanced features)
 librosa>=0.10.0
 
+# LUFS loudness analysis
+pyloudnorm>=0.1.1
+
 # Development tools
 ipython>=8.0.0 
