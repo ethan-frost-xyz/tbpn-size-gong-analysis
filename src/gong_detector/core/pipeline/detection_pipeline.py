@@ -28,6 +28,7 @@ from ..utils.youtube_utils import (
     download_and_trim_youtube_audio,
     setup_directories,
     video_id_from_url,
+    compute_lufs_segments,
 )
 
 
@@ -244,6 +245,7 @@ def detect_from_youtube_comprehensive(
         - error_message: Error message if failed
         - video_loudness_metrics: Video-level loudness metrics
         - detection_loudness_metrics: Detection-level loudness metrics
+        - detection_lufs_metrics: Detection-level LUFS metrics
     """
     # Setup directories
     temp_audio_dir, csv_results_dir = setup_directories()
@@ -343,6 +345,10 @@ def detect_from_youtube_comprehensive(
                 }
             )
 
+        # LUFS computation is now handled at batch level in bulk_processor
+        # Individual detection runs will have empty LUFS metrics
+        detection_lufs_metrics = [{"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0} for _ in detections]
+
         # Save positive samples if requested
         if should_save_positive_samples and detections:
             # Use date-based folder naming for consistency
@@ -374,6 +380,7 @@ def detect_from_youtube_comprehensive(
             "error_message": "",
             "video_loudness_metrics": video_loudness_metrics,
             "detection_loudness_metrics": detection_loudness_metrics,
+            "detection_lufs_metrics": detection_lufs_metrics,
         }
 
     except Exception as e:
@@ -391,6 +398,7 @@ def detect_from_youtube_comprehensive(
             "error_message": str(e),
             "video_loudness_metrics": {},
             "detection_loudness_metrics": [],
+            "detection_lufs_metrics": [],
         }
 
     finally:
