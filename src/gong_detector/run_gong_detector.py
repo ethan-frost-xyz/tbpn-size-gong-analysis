@@ -221,7 +221,11 @@ def bulk_processing() -> None:
     threshold = get_float_input("Confidence threshold", 0.94)
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
-    save_csv = get_yes_no_input("Save results to CSV file?", False)
+    save_csv = get_yes_no_input("Save results to CSV file (includes batch LUFS analysis)?", False)
+    test_mode = get_yes_no_input("Test mode (process subset of videos)?", False)
+    test_count = None
+    if test_mode:
+        test_count = get_int_input("Number of videos to process (from start)", 10)
     use_local_media = get_yes_no_input("Use local media (cache) if available?", True)
     local_only = get_yes_no_input("Local only (no downloads)?", False)
 
@@ -229,6 +233,10 @@ def bulk_processing() -> None:
     print(f"Threshold: {threshold}")
     print(f"Using trained classifier: {use_version_one}")
     print(f"Save CSV: {save_csv}")
+    if save_csv:
+        print("📊 Batch LUFS analysis enabled - loudness will be measured relative to entire dataset")
+    if test_mode:
+        print(f"🧪 Test mode: Processing first {test_count} videos only")
     print(f"Use local media: {use_local_media}")
     print(f"Local only: {local_only}")
 
@@ -242,6 +250,8 @@ def bulk_processing() -> None:
         sys.argv.append("--save_positive_samples")
     if save_csv:
         sys.argv.append("--csv")
+    if test_mode:
+        sys.argv.extend(["--test-run", str(test_count)])
     if use_local_media:
         sys.argv.append("--use_local_media")
     if local_only:
