@@ -57,6 +57,16 @@ class DetectionRecord:
     detection_likely_clipped: str = ""  # Whether detection audio is likely clipped
     detection_peak_amplitude: str = ""  # Peak amplitude at detection timestamp
     detection_rms_amplitude: str = ""  # RMS amplitude at detection timestamp
+    
+    # LUFS loudness metrics (ITU-R BS.1770-4 / EBU R128)
+    detection_integrated_lufs: str = ""  # Integrated LUFS at detection timestamp
+    detection_shortterm_lufs: str = ""  # Short-term LUFS (3s) at detection timestamp
+    detection_momentary_lufs: str = ""  # Momentary LUFS (400ms) at detection timestamp
+    
+    # True Peak metrics (ITU-R BS.1770-4 / EBU R128)
+    detection_integrated_dbtp: str = ""  # True Peak (dBTP) for integrated window
+    detection_shortterm_dbtp: str = ""  # True Peak (dBTP) for short-term window  
+    detection_momentary_dbtp: str = ""  # True Peak (dBTP) for momentary window
 
     # Video-level audio metrics
     video_peak_dbfs: str = ""  # Peak dBFS for entire video
@@ -107,6 +117,8 @@ class CSVManager:
         detections: list[tuple[float, float, float]],
         video_loudness_metrics: Optional[dict[str, float]] = None,
         detection_loudness_metrics: Optional[list[dict[str, float]]] = None,
+        detection_lufs_metrics: Optional[list[dict[str, float]]] = None,
+        detection_dbtp_metrics: Optional[list[dict[str, float]]] = None,
     ) -> None:
         """Add all detections from a single video to the comprehensive record.
 
@@ -121,6 +133,8 @@ class CSVManager:
             detections: List of (window_start, confidence, display_timestamp) tuples
             video_loudness_metrics: Optional dict with video-level loudness metrics
             detection_loudness_metrics: Optional list of dicts with detection-level loudness metrics
+            detection_lufs_metrics: Optional list of dicts with detection-level LUFS metrics
+            detection_dbtp_metrics: Optional list of dicts with detection-level True Peak metrics
         """
         # Format upload date for human readability
         upload_date_formatted = self._format_upload_date(upload_date)
@@ -137,6 +151,20 @@ class CSVManager:
             raise ValueError(
                 "detection_loudness_metrics length must match detections length"
             )
+        
+        if detection_lufs_metrics is not None and len(
+            detection_lufs_metrics
+        ) != len(detections):
+            raise ValueError(
+                "detection_lufs_metrics length must match detections length"
+            )
+        
+        if detection_dbtp_metrics is not None and len(
+            detection_dbtp_metrics
+        ) != len(detections):
+            raise ValueError(
+                "detection_dbtp_metrics length must match detections length"
+            )
 
         # Create a record for each detection
         for i, (window_start, confidence, display_timestamp) in enumerate(detections):
@@ -148,6 +176,12 @@ class CSVManager:
             # Get detection-level loudness metrics if available
             detection_metrics = (
                 detection_loudness_metrics[i] if detection_loudness_metrics else {}
+            )
+            lufs_metrics = (
+                detection_lufs_metrics[i] if detection_lufs_metrics else {}
+            )
+            dbtp_metrics = (
+                detection_dbtp_metrics[i] if detection_dbtp_metrics else {}
             )
 
             record = DetectionRecord(
@@ -178,6 +212,14 @@ class CSVManager:
                 ),
                 detection_peak_amplitude=f"{detection_metrics.get('peak_amplitude', 0):.6f}",
                 detection_rms_amplitude=f"{detection_metrics.get('rms_amplitude', 0):.6f}",
+                # LUFS metrics
+                detection_integrated_lufs=f"{lufs_metrics.get('integrated_lufs', 0):.2f}",
+                detection_shortterm_lufs=f"{lufs_metrics.get('shortterm_lufs', 0):.2f}",
+                detection_momentary_lufs=f"{lufs_metrics.get('momentary_lufs', 0):.2f}",
+                # True Peak (dBTP) metrics
+                detection_integrated_dbtp=f"{dbtp_metrics.get('integrated_dbtp', 0):.2f}",
+                detection_shortterm_dbtp=f"{dbtp_metrics.get('shortterm_dbtp', 0):.2f}",
+                detection_momentary_dbtp=f"{dbtp_metrics.get('momentary_dbtp', 0):.2f}",
                 # Video-level loudness metrics
                 video_peak_dbfs=f"{video_loudness_metrics.get('peak_dbfs', 0):.2f}"
                 if video_loudness_metrics
