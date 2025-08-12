@@ -29,6 +29,7 @@ classifiers = [
 dependencies = [
     "tensorflow>=2.15.0",
     "tensorflow-hub>=0.14.0", 
+    "scikit-learn==1.6.1",
     "numpy>=1.24.0",
     "pandas>=2.0.0",
     "yt-dlp>=2023.7.6",
