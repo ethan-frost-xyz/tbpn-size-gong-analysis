@@ -61,7 +61,8 @@ Examples:
   python -m gong_detector.core.pipeline.bulk_processor --threshold 0.3 --max_threshold 0.8
   python -m gong_detector.core.pipeline.bulk_processor --save_positive_samples
   python -m gong_detector.core.pipeline.bulk_processor --collect_negative_samples --sample_count 10
-  python -m gong_detector.core.pipeline.bulk_processor --version_one --csv
+  python -m gong_detector.core.pipeline.bulk_processor --version_one --csv  # Includes batch LUFS
+  python -m gong_detector.core.pipeline.bulk_processor --csv --test-run 10  # Test with first 10 videos
         """,
     )
 
@@ -112,7 +113,7 @@ Examples:
     parser.add_argument(
         "--csv",
         action="store_true",
-        help="Save all detection results to comprehensive CSV file",
+        help="Save all detection results to comprehensive CSV file with batch LUFS analysis",
     )
     parser.add_argument(
         "--no_consolidate",
@@ -128,6 +129,12 @@ Examples:
         "--local_only",
         action="store_true",
         help="Strict offline mode: require local preprocessed audio; never download",
+    )
+    parser.add_argument(
+        "--test-run",
+        type=int,
+        default=None,
+        help="Test mode: process only the first X videos instead of all videos",
     )
 
     args = parser.parse_args()
@@ -156,6 +163,19 @@ Examples:
     # Read URLs from file
     try:
         urls = read_youtube_links(links_file)
+        total_urls = len(urls)
+        
+        # Apply test-run limitation if specified
+        if args.test_run is not None:
+            if args.test_run <= 0:
+                print("Error: --test-run must be a positive number")
+                sys.exit(1)
+            if args.test_run >= total_urls:
+                print(f"Warning: --test-run {args.test_run} >= total videos {total_urls}, processing all videos")
+            else:
+                urls = urls[:args.test_run]
+                print(f"🧪 TEST MODE: Processing first {len(urls)} of {total_urls} videos")
+        
         print(f"Found {len(urls)} YouTube URLs to process")
     except FileNotFoundError:
         print(f"Error: File '{links_file}' not found")
@@ -168,6 +188,11 @@ Examples:
     csv_manager = None
     if args.csv:
         csv_manager = CSVManager()
+        print("📊 CSV output enabled - batch LUFS analysis will be performed across all videos")
+
+    # Collect all detection data for batch LUFS computation
+    all_detection_data = []  # Store (video_id, timestamps) for batch LUFS
+    all_results = []  # Store results for CSV processing
 
     # Process each URL
     successful = 0
@@ -205,26 +230,156 @@ Examples:
                 print(f"✓ Collected {result['sample_count']} negative samples")
             else:
                 print(f"✓ Detected {result['detection_count']} gongs")
-                # Add to CSV if requested and not collecting negative samples
-                if csv_manager and not args.collect_negative_samples:
-                    csv_manager.add_video_detections(
-                        video_url=result["video_url"],
-                        video_title=result["video_title"],
-                        upload_date=result["upload_date"],
-                        video_duration=result["video_duration"],
-                        max_confidence=result["max_confidence"],
-                        threshold=args.threshold,
-                        max_threshold=args.max_threshold,
-                        detections=result["detections"],
-                        video_loudness_metrics=result.get("video_loudness_metrics"),
-                        detection_loudness_metrics=result.get(
-                            "detection_loudness_metrics"
-                        ),
-                    )
+                # Store results for batch LUFS processing
+                all_results.append(result)
+                
+                # Collect detection data for batch LUFS computation
+                if csv_manager and result["detections"]:
+                    from ..utils.youtube_utils import video_id_from_url
+                    video_id = video_id_from_url(result["video_url"])
+                    if video_id:
+                        # Prepare timestamps for LUFS computation with different segment lengths
+                        detection_timestamps = {
+                            "integrated": [],  # ±2 seconds (4s total) for integrated
+                            "short_term": [],  # ±1.5 seconds (3s total) for short-term  
+                            "momentary": []    # ±0.2 seconds (400ms total) for momentary
+                        }
+                        
+                        for _window_start, _confidence, display_timestamp in result["detections"]:
+                            # Integrated LUFS: 4-second window (±2s)
+                            integrated_start = max(0, display_timestamp - 2.0)
+                            integrated_end = min(result["video_duration"], display_timestamp + 2.0)
+                            detection_timestamps["integrated"].append((integrated_start, integrated_end))
+                            
+                            # Short-term LUFS: 3-second window (±1.5s)
+                            shortterm_start = max(0, display_timestamp - 1.5)
+                            shortterm_end = min(result["video_duration"], display_timestamp + 1.5)
+                            detection_timestamps["short_term"].append((shortterm_start, shortterm_end))
+                            
+                            # Momentary LUFS: 400ms window (±0.2s)
+                            momentary_start = max(0, display_timestamp - 0.2)
+                            momentary_end = min(result["video_duration"], display_timestamp + 0.2)
+                            detection_timestamps["momentary"].append((momentary_start, momentary_end))
+                        
+                        all_detection_data.append({
+                            "video_id": video_id,
+                            "timestamps": detection_timestamps,
+                            "result": result
+                        })
             successful += 1
         else:
             print(f"✗ Failed: {result['error_message']}")
             failed += 1
+
+    # Compute batch LUFS if we have CSV data and detections
+    if csv_manager and all_detection_data and not args.collect_negative_samples:
+        print(f"\nComputing batch-weighted LUFS across {len(all_detection_data)} videos with detections...")
+        
+        try:
+            from ..utils.youtube_utils import compute_batch_weighted_lufs
+            
+            # Compute batch-weighted LUFS for all videos together (all three types with different time windows)
+            print("  Computing integrated LUFS (4s windows)...")
+            integrated_data = []
+            for video_data in all_detection_data:
+                integrated_data.append({
+                    "video_id": video_data["video_id"],
+                    "timestamps": video_data["timestamps"]["integrated"],
+                    "result": video_data["result"]
+                })
+            integrated_lufs_results = compute_batch_weighted_lufs(
+                all_video_data=integrated_data,
+                measurement_type="integrated",
+                reference_lufs=-23.0
+            )
+            
+            print("  Computing short-term LUFS (3s windows)...")
+            shortterm_data = []
+            for video_data in all_detection_data:
+                shortterm_data.append({
+                    "video_id": video_data["video_id"],
+                    "timestamps": video_data["timestamps"]["short_term"],
+                    "result": video_data["result"]
+                })
+            shortterm_lufs_results = compute_batch_weighted_lufs(
+                all_video_data=shortterm_data,
+                measurement_type="short_term",
+                reference_lufs=-23.0
+            )
+            
+            print("  Computing momentary LUFS (400ms windows)...")
+            momentary_data = []
+            for video_data in all_detection_data:
+                momentary_data.append({
+                    "video_id": video_data["video_id"],
+                    "timestamps": video_data["timestamps"]["momentary"],
+                    "result": video_data["result"]
+                })
+            momentary_lufs_results = compute_batch_weighted_lufs(
+                all_video_data=momentary_data,
+                measurement_type="momentary",
+                reference_lufs=-23.0
+            )
+            
+            # Process each video's results and add to CSV
+            for video_data in all_detection_data:
+                video_id = video_data["video_id"]
+                result = video_data["result"]
+                
+                # Get batch-weighted LUFS results for this video (all three types)
+                integrated_results = integrated_lufs_results.get(video_id, [])
+                shortterm_results = shortterm_lufs_results.get(video_id, [])
+                momentary_results = momentary_lufs_results.get(video_id, [])
+                
+                # Transform LUFS results to expected format
+                detection_lufs_metrics = []
+                max_results = max(len(integrated_results), len(shortterm_results), len(momentary_results)) if any([integrated_results, shortterm_results, momentary_results]) else 0
+                
+                for i in range(max_results):
+                    # Get LUFS values for each measurement type (with fallbacks)
+                    integrated_lufs = integrated_results[i].get("lufs", 0) if i < len(integrated_results) else 0
+                    shortterm_lufs = shortterm_results[i].get("lufs", 0) if i < len(shortterm_results) else 0
+                    momentary_lufs = momentary_results[i].get("lufs", 0) if i < len(momentary_results) else 0
+                    
+                    detection_lufs_metrics.append({
+                        "integrated_lufs": integrated_lufs,
+                        "shortterm_lufs": shortterm_lufs,
+                        "momentary_lufs": momentary_lufs,
+                    })
+                
+                # Add to CSV with batch-weighted LUFS
+                csv_manager.add_video_detections(
+                    video_url=result["video_url"],
+                    video_title=result["video_title"],
+                    upload_date=result["upload_date"],
+                    video_duration=result["video_duration"],
+                    max_confidence=result["max_confidence"],
+                    threshold=args.threshold,
+                    max_threshold=args.max_threshold,
+                    detections=result["detections"],
+                    video_loudness_metrics=result.get("video_loudness_metrics"),
+                    detection_loudness_metrics=result.get("detection_loudness_metrics"),
+                    detection_lufs_metrics=detection_lufs_metrics,
+                )
+                
+        except Exception as e:
+            print(f"Warning: Batch LUFS computation failed: {e}")
+            # Fallback: Add results without batch LUFS
+            for video_data in all_detection_data:
+                result = video_data["result"]
+                csv_manager.add_video_detections(
+                    video_url=result["video_url"],
+                    video_title=result["video_title"],
+                    upload_date=result["upload_date"],
+                    video_duration=result["video_duration"],
+                    max_confidence=result["max_confidence"],
+                    threshold=args.threshold,
+                    max_threshold=args.max_threshold,
+                    detections=result["detections"],
+                    video_loudness_metrics=result.get("video_loudness_metrics"),
+                    detection_loudness_metrics=result.get("detection_loudness_metrics"),
+                    detection_lufs_metrics=result.get("detection_lufs_metrics", []),
+                )
 
     # Save CSV if requested
     if csv_manager and not args.collect_negative_samples:
