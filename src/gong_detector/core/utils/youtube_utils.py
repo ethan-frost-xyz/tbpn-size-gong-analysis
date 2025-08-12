@@ -679,12 +679,14 @@ def compute_lufs_segments(
     timestamps: list[tuple[float, float]],
     measurement_type: str = "integrated",
     index: Optional[Any] = None,
+    batch_context: Optional[dict[str, Any]] = None,
 ) -> list[dict[str, Any]]:
-    """Compute LUFS loudness for audio segments from raw audio.
+    """Compute LUFS loudness for audio segments from raw audio with batch weighting support.
 
     This function extracts segments from the raw cached audio based on timestamps
     from gong detections and computes LUFS loudness measurements using BS.1770-4
-    K-weighting and EBU R128 gating.
+    K-weighting and EBU R128 gating. Supports batch-weighted measurements across
+    multiple videos for proper relative loudness analysis.
 
     Args:
         video_id: YouTube video ID
@@ -694,6 +696,10 @@ def compute_lufs_segments(
             - "short_term": Short-term loudness (3s sliding window)
             - "momentary": Momentary loudness (400ms sliding window)
         index: Optional LocalMediaIndex instance
+        batch_context: Optional dict with batch weighting information:
+            - "all_segments": List of all audio segments from all videos
+            - "reference_lufs": Reference LUFS level for batch normalization
+            - "enable_batch_weighting": Boolean to enable batch weighting
 
     Returns:
         List of dictionaries containing LUFS measurements for each segment.
@@ -701,9 +707,11 @@ def compute_lufs_segments(
         - start_time: Start time in seconds
         - end_time: End time in seconds
         - duration: Segment duration in seconds
-        - lufs: LUFS measurement value
+        - lufs: LUFS measurement value (batch-weighted if enabled)
+        - raw_lufs: Raw LUFS measurement (before batch weighting)
         - measurement_type: Type of measurement used
         - valid: Boolean indicating if measurement was successful
+        - batch_weighted: Boolean indicating if batch weighting was applied
 
     Raises:
         RuntimeError: If LUFS library not available or raw audio not found
@@ -766,8 +774,10 @@ def compute_lufs_segments(
                 "end_time": float(end_time),
                 "duration": float(end_time - start_time),
                 "lufs": None,
+                "raw_lufs": None,
                 "measurement_type": measurement_type,
                 "valid": False,
+                "batch_weighted": False,
             }
 
             try:
@@ -818,7 +828,9 @@ def compute_lufs_segments(
                 if lufs_value == -float('inf') or lufs_value != lufs_value:  # NaN check
                     logger.warning(f"Invalid LUFS measurement for segment {i+1}")
                 else:
-                    segment_result["lufs"] = float(lufs_value)
+                    # Store raw LUFS value
+                    segment_result["raw_lufs"] = float(lufs_value)
+                    segment_result["lufs"] = float(lufs_value)  # Default to raw value
                     segment_result["valid"] = True
                     logger.debug(f"Segment {i+1}: {start_time:.1f}-{end_time:.1f}s = {lufs_value:.1f} LUFS")
 
@@ -827,12 +839,40 @@ def compute_lufs_segments(
 
             results.append(segment_result)
 
+        # Apply batch weighting if provided
+        if batch_context and batch_context.get("enable_batch_weighting", False):
+            logger.info("Applying batch weighting to LUFS measurements...")
+            reference_lufs = batch_context.get("reference_lufs", -23.0)  # EBU R128 reference
+            
+            # Get all valid measurements for batch statistics
+            valid_results = [r for r in results if r["valid"]]
+            if valid_results:
+                # Calculate batch statistics
+                all_lufs = [r["raw_lufs"] for r in valid_results]
+                batch_mean = sum(all_lufs) / len(all_lufs)
+                
+                # Apply batch weighting: adjust relative to batch mean and reference
+                batch_offset = reference_lufs - batch_mean
+                
+                for result in valid_results:
+                    # Apply batch weighting
+                    result["lufs"] = result["raw_lufs"] + batch_offset
+                    result["batch_weighted"] = True
+                
+                logger.info(f"Batch weighting applied: offset = {batch_offset:.1f} dB")
+                logger.info(f"Batch mean: {batch_mean:.1f} LUFS → Reference: {reference_lufs:.1f} LUFS")
+
         # Summary statistics
         valid_measurements = [r["lufs"] for r in results if r["valid"]]
         if valid_measurements:
             logger.info(f"LUFS analysis complete: {len(valid_measurements)}/{len(timestamps)} valid measurements")
             logger.info(f"LUFS range: {min(valid_measurements):.1f} to {max(valid_measurements):.1f} LUFS")
             logger.info(f"Mean LUFS: {sum(valid_measurements)/len(valid_measurements):.1f} LUFS")
+            
+            # Show batch weighting info if applied
+            batch_weighted_count = sum(1 for r in results if r.get("batch_weighted", False))
+            if batch_weighted_count > 0:
+                logger.info(f"Batch weighting applied to {batch_weighted_count} measurements")
         else:
             logger.warning("No valid LUFS measurements obtained")
 
@@ -850,3 +890,105 @@ def compute_lufs_segments(
             })
 
     return results
+
+
+def compute_batch_weighted_lufs(
+    all_video_data: list[dict[str, Any]],
+    measurement_type: str = "integrated",
+    reference_lufs: float = -23.0,
+) -> dict[str, list[dict[str, Any]]]:
+    """Compute batch-weighted LUFS across all videos for proper relative analysis.
+    
+    This function processes all detection segments from multiple videos together,
+    computes LUFS measurements, and applies batch weighting to normalize loudness
+    measurements relative to the entire dataset rather than individual videos.
+    
+    Args:
+        all_video_data: List of video data dicts, each containing:
+            - "video_id": YouTube video ID
+            - "timestamps": List of (start_time, end_time) tuples
+            - "result": Detection result dict
+        measurement_type: Type of LUFS measurement (integrated, short_term, momentary)
+        reference_lufs: Reference LUFS level for batch normalization (default: -23.0 LUFS)
+    
+    Returns:
+        Dictionary mapping video_id to list of LUFS measurement dicts for that video.
+        Each measurement dict contains batch-weighted LUFS values.
+    
+    Raises:
+        RuntimeError: If LUFS library not available
+        ValueError: If video data is invalid
+    """
+    if not LUFS_AVAILABLE:
+        raise RuntimeError(
+            "LUFS analysis requires pyloudnorm and librosa. "
+            "Install with: pip install pyloudnorm librosa"
+        )
+    
+    if not all_video_data:
+        return {}
+    
+    logger.info(f"Computing batch-weighted LUFS for {len(all_video_data)} videos")
+    
+    # Step 1: Collect all raw LUFS measurements across all videos
+    all_raw_lufs = []
+    video_results = {}
+    
+    try:
+        from gong_detector.core.utils.local_media import LocalMediaIndex
+        index = LocalMediaIndex()
+    except ImportError:
+        logger.warning("Could not import LocalMediaIndex, using None")
+        index = None
+    
+    # Process each video to get raw LUFS measurements
+    for video_data in all_video_data:
+        video_id = video_data["video_id"]
+        timestamps = video_data["timestamps"]
+        
+        logger.info(f"Processing video {video_id} with {len(timestamps)} detection segments")
+        
+        # Compute raw LUFS for this video (no batch weighting yet)
+        lufs_results = compute_lufs_segments(
+            video_id=video_id,
+            timestamps=timestamps,
+            measurement_type=measurement_type,
+            index=index,
+            batch_context=None,  # No batch weighting on first pass
+        )
+        
+        # Store results for this video
+        video_results[video_id] = lufs_results
+        
+        # Collect valid raw LUFS measurements for batch statistics
+        valid_lufs = [r["raw_lufs"] for r in lufs_results if r["valid"] and r["raw_lufs"] is not None]
+        all_raw_lufs.extend(valid_lufs)
+    
+    # Step 2: Calculate batch statistics
+    if not all_raw_lufs:
+        logger.warning("No valid LUFS measurements found across all videos")
+        return video_results
+    
+    batch_mean_lufs = sum(all_raw_lufs) / len(all_raw_lufs)
+    batch_offset = reference_lufs - batch_mean_lufs
+    
+    logger.info(f"Batch LUFS statistics:")
+    logger.info(f"  Total measurements: {len(all_raw_lufs)}")
+    logger.info(f"  Batch mean: {batch_mean_lufs:.1f} LUFS")
+    logger.info(f"  Reference level: {reference_lufs:.1f} LUFS")
+    logger.info(f"  Batch offset: {batch_offset:.1f} dB")
+    logger.info(f"  LUFS range: {min(all_raw_lufs):.1f} to {max(all_raw_lufs):.1f} LUFS")
+    
+    # Step 3: Apply batch weighting to all measurements
+    total_weighted = 0
+    for video_id, lufs_results in video_results.items():
+        for result in lufs_results:
+            if result["valid"] and result["raw_lufs"] is not None:
+                # Apply batch weighting
+                result["lufs"] = result["raw_lufs"] + batch_offset
+                result["batch_weighted"] = True
+                total_weighted += 1
+    
+    logger.info(f"Applied batch weighting to {total_weighted} measurements across {len(video_results)} videos")
+    
+    return video_results
