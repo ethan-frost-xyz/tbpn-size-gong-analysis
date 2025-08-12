@@ -57,12 +57,12 @@ class DetectionRecord:
     detection_likely_clipped: str = ""  # Whether detection audio is likely clipped
     detection_peak_amplitude: str = ""  # Peak amplitude at detection timestamp
     detection_rms_amplitude: str = ""  # RMS amplitude at detection timestamp
-    
+
     # LUFS loudness metrics (ITU-R BS.1770-4 / EBU R128)
     detection_integrated_lufs: str = ""  # Integrated LUFS at detection timestamp
     detection_shortterm_lufs: str = ""  # Short-term LUFS (3s) at detection timestamp
     detection_momentary_lufs: str = ""  # Momentary LUFS (400ms) at detection timestamp
-    
+
     # True Peak metrics (ITU-R BS.1770-4 / EBU R128)
     detection_integrated_dbtp: str = ""  # True Peak (dBTP) for integrated measurement
     detection_shortterm_dbtp: str = ""  # True Peak (dBTP) for short-term measurement
@@ -151,14 +151,14 @@ class CSVManager:
             raise ValueError(
                 "detection_loudness_metrics length must match detections length"
             )
-        
+
         if detection_lufs_metrics is not None and len(
             detection_lufs_metrics
         ) != len(detections):
             raise ValueError(
                 "detection_lufs_metrics length must match detections length"
             )
-        
+
         if detection_dbtp_metrics is not None and len(
             detection_dbtp_metrics
         ) != len(detections):

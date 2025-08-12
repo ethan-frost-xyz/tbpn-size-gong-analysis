@@ -221,7 +221,7 @@ def bulk_processing() -> None:
     threshold = get_float_input("Confidence threshold", 0.94)
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
-            save_csv = get_yes_no_input("Save results to CSV file (includes batch LUFS + True Peak analysis)?", False)
+    save_csv = get_yes_no_input("Save results to CSV file (includes batch LUFS + True Peak analysis)?", False)
     test_mode = get_yes_no_input("Test mode (process subset of videos)?", False)
     test_count = None
     if test_mode:

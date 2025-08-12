@@ -845,22 +845,22 @@ def compute_lufs_segments(
         if batch_context and batch_context.get("enable_batch_weighting", False):
             logger.info("Applying batch weighting to LUFS measurements...")
             reference_lufs = batch_context.get("reference_lufs", -23.0)  # EBU R128 reference
-            
+
             # Get all valid measurements for batch statistics
             valid_results = [r for r in results if r["valid"]]
             if valid_results:
                 # Calculate batch statistics
                 all_lufs = [r["raw_lufs"] for r in valid_results]
                 batch_mean = sum(all_lufs) / len(all_lufs)
-                
+
                 # Apply batch weighting: adjust relative to batch mean and reference
                 batch_offset = reference_lufs - batch_mean
-                
+
                 for result in valid_results:
                     # Apply batch weighting
                     result["lufs"] = result["raw_lufs"] + batch_offset
                     result["batch_weighted"] = True
-                
+
                 logger.info(f"Batch weighting applied: offset = {batch_offset:.1f} dB")
                 logger.info(f"Batch mean: {batch_mean:.1f} LUFS → Reference: {reference_lufs:.1f} LUFS")
 
@@ -870,7 +870,7 @@ def compute_lufs_segments(
             logger.info(f"LUFS analysis complete: {len(valid_measurements)}/{len(timestamps)} valid measurements")
             logger.info(f"LUFS range: {min(valid_measurements):.1f} to {max(valid_measurements):.1f} LUFS")
             logger.info(f"Mean LUFS: {sum(valid_measurements)/len(valid_measurements):.1f} LUFS")
-            
+
             # Show batch weighting info if applied
             batch_weighted_count = sum(1 for r in results if r.get("batch_weighted", False))
             if batch_weighted_count > 0:
@@ -900,11 +900,11 @@ def compute_batch_weighted_lufs(
     reference_lufs: float = -23.0,
 ) -> dict[str, list[dict[str, Any]]]:
     """Compute batch-weighted LUFS across all videos for proper relative analysis.
-    
+
     This function processes all detection segments from multiple videos together,
     computes LUFS measurements, and applies batch weighting to normalize loudness
     measurements relative to the entire dataset rather than individual videos.
-    
+
     Args:
         all_video_data: List of video data dicts, each containing:
             - "video_id": YouTube video ID
@@ -912,11 +912,11 @@ def compute_batch_weighted_lufs(
             - "result": Detection result dict
         measurement_type: Type of LUFS measurement (integrated, short_term, momentary)
         reference_lufs: Reference LUFS level for batch normalization (default: -23.0 LUFS)
-    
+
     Returns:
         Dictionary mapping video_id to list of LUFS measurement dicts for that video.
         Each measurement dict contains batch-weighted LUFS values.
-    
+
     Raises:
         RuntimeError: If LUFS library not available
         ValueError: If video data is invalid
@@ -926,30 +926,30 @@ def compute_batch_weighted_lufs(
             "LUFS analysis requires pyloudnorm and librosa. "
             "Install with: pip install pyloudnorm librosa"
         )
-    
+
     if not all_video_data:
         return {}
-    
+
     logger.info(f"Computing batch-weighted LUFS for {len(all_video_data)} videos")
-    
+
     # Step 1: Collect all raw LUFS measurements across all videos
     all_raw_lufs = []
     video_results = {}
-    
+
     try:
         from gong_detector.core.utils.local_media import LocalMediaIndex
         index = LocalMediaIndex()
     except ImportError:
         logger.warning("Could not import LocalMediaIndex, using None")
         index = None
-    
+
     # Process each video to get raw LUFS measurements
     for video_data in all_video_data:
         video_id = video_data["video_id"]
         timestamps = video_data["timestamps"]
-        
+
         logger.info(f"Processing video {video_id} with {len(timestamps)} detection segments")
-        
+
         # Compute raw LUFS for this video (no batch weighting yet)
         lufs_results = compute_lufs_segments(
             video_id=video_id,
@@ -958,41 +958,41 @@ def compute_batch_weighted_lufs(
             index=index,
             batch_context=None,  # No batch weighting on first pass
         )
-        
+
         # Store results for this video
         video_results[video_id] = lufs_results
-        
+
         # Collect valid raw LUFS measurements for batch statistics
         valid_lufs = [r["raw_lufs"] for r in lufs_results if r["valid"] and r["raw_lufs"] is not None]
         all_raw_lufs.extend(valid_lufs)
-    
+
     # Step 2: Calculate batch statistics
     if not all_raw_lufs:
         logger.warning("No valid LUFS measurements found across all videos")
         return video_results
-    
+
     batch_mean_lufs = sum(all_raw_lufs) / len(all_raw_lufs)
     batch_offset = reference_lufs - batch_mean_lufs
-    
-    logger.info(f"Batch LUFS statistics:")
+
+    logger.info("Batch LUFS statistics:")
     logger.info(f"  Total measurements: {len(all_raw_lufs)}")
     logger.info(f"  Batch mean: {batch_mean_lufs:.1f} LUFS")
     logger.info(f"  Reference level: {reference_lufs:.1f} LUFS")
     logger.info(f"  Batch offset: {batch_offset:.1f} dB")
     logger.info(f"  LUFS range: {min(all_raw_lufs):.1f} to {max(all_raw_lufs):.1f} LUFS")
-    
+
     # Step 3: Apply batch weighting to all measurements
     total_weighted = 0
-    for video_id, lufs_results in video_results.items():
+    for _video_id, lufs_results in video_results.items():
         for result in lufs_results:
             if result["valid"] and result["raw_lufs"] is not None:
                 # Apply batch weighting
                 result["lufs"] = result["raw_lufs"] + batch_offset
                 result["batch_weighted"] = True
                 total_weighted += 1
-    
+
     logger.info(f"Applied batch weighting to {total_weighted} measurements across {len(video_results)} videos")
-    
+
     return video_results
 
 
@@ -1071,8 +1071,7 @@ def compute_true_peak_segments(
         if len(audio_data.shape) > 1:
             audio_data = audio_data.mean(axis=0)  # Average across channels
 
-        # Create loudness meter for True Peak measurement
-        meter = pyln.Meter(sample_rate)
+        # Note: pyloudnorm meter not used for True Peak - we compute manually
 
         logger.info(f"Processing {len(timestamps)} segments with True Peak analysis")
 
@@ -1120,13 +1119,13 @@ def compute_true_peak_segments(
                     # True Peak requires oversampling - we'll use a simple approximation for now
                     # by finding the maximum absolute value and converting to dBTP
                     peak_amplitude = np.max(np.abs(segment_audio))
-                    
+
                     # Convert to dBTP (True Peak approximation)
                     if peak_amplitude > 0:
                         dbtp_value = 20.0 * np.log10(peak_amplitude)
                     else:
                         dbtp_value = -80.0  # Silence floor
-                        
+
                 except Exception as peak_error:
                     logger.warning(f"True Peak computation failed for segment {i+1}: {peak_error}")
                     dbtp_value = -80.0
@@ -1179,11 +1178,11 @@ def compute_batch_weighted_dbtp(
     reference_dbtp: float = -1.0,
 ) -> dict[str, list[dict[str, Any]]]:
     """Compute batch-weighted True Peak across all videos for proper relative analysis.
-    
+
     This function processes all detection segments from multiple videos together,
     computes True Peak measurements, and applies batch weighting to normalize
     measurements relative to the entire dataset.
-    
+
     Args:
         all_video_data: List of video data dicts, each containing:
             - "video_id": YouTube video ID
@@ -1191,11 +1190,11 @@ def compute_batch_weighted_dbtp(
             - "result": Detection result dict
         measurement_type: Type of measurement context (integrated, short_term, momentary)
         reference_dbtp: Reference True Peak level for batch normalization (default: -1.0 dBTP)
-    
+
     Returns:
         Dictionary mapping video_id to list of True Peak measurement dicts for that video.
         Each measurement dict contains batch-weighted True Peak values.
-    
+
     Raises:
         RuntimeError: If LUFS library not available
         ValueError: If video data is invalid
@@ -1205,30 +1204,30 @@ def compute_batch_weighted_dbtp(
             "True Peak analysis requires pyloudnorm and librosa. "
             "Install with: pip install pyloudnorm librosa"
         )
-    
+
     if not all_video_data:
         return {}
-    
+
     logger.info(f"Computing batch-weighted True Peak for {len(all_video_data)} videos")
-    
+
     # Step 1: Collect all raw True Peak measurements across all videos
     all_raw_dbtp = []
     video_results = {}
-    
+
     try:
         from gong_detector.core.utils.local_media import LocalMediaIndex
         index = LocalMediaIndex()
     except ImportError:
         logger.warning("Could not import LocalMediaIndex, using None")
         index = None
-    
+
     # Process each video to get raw True Peak measurements
     for video_data in all_video_data:
         video_id = video_data["video_id"]
         timestamps = video_data["timestamps"]
-        
+
         logger.info(f"Processing video {video_id} with {len(timestamps)} detection segments")
-        
+
         # Compute raw True Peak for this video (no batch weighting yet)
         dbtp_results = compute_true_peak_segments(
             video_id=video_id,
@@ -1237,39 +1236,39 @@ def compute_batch_weighted_dbtp(
             index=index,
             batch_context=None,  # No batch weighting on first pass
         )
-        
+
         # Store results for this video
         video_results[video_id] = dbtp_results
-        
+
         # Collect valid raw True Peak measurements for batch statistics
         valid_dbtp = [r["raw_dbtp"] for r in dbtp_results if r["valid"] and r["raw_dbtp"] is not None]
         all_raw_dbtp.extend(valid_dbtp)
-    
+
     # Step 2: Calculate batch statistics
     if not all_raw_dbtp:
         logger.warning("No valid True Peak measurements found across all videos")
         return video_results
-    
+
     batch_mean_dbtp = sum(all_raw_dbtp) / len(all_raw_dbtp)
     batch_offset = reference_dbtp - batch_mean_dbtp
-    
-    logger.info(f"Batch True Peak statistics:")
+
+    logger.info("Batch True Peak statistics:")
     logger.info(f"  Total measurements: {len(all_raw_dbtp)}")
     logger.info(f"  Batch mean: {batch_mean_dbtp:.1f} dBTP")
     logger.info(f"  Reference level: {reference_dbtp:.1f} dBTP")
     logger.info(f"  Batch offset: {batch_offset:.1f} dB")
     logger.info(f"  True Peak range: {min(all_raw_dbtp):.1f} to {max(all_raw_dbtp):.1f} dBTP")
-    
+
     # Step 3: Apply batch weighting to all measurements
     total_weighted = 0
-    for video_id, dbtp_results in video_results.items():
+    for _video_id, dbtp_results in video_results.items():
         for result in dbtp_results:
             if result["valid"] and result["raw_dbtp"] is not None:
                 # Apply batch weighting
                 result["dbtp"] = result["raw_dbtp"] + batch_offset
                 result["batch_weighted"] = True
                 total_weighted += 1
-    
+
     logger.info(f"Applied batch weighting to {total_weighted} measurements across {len(video_results)} videos")
-    
+
     return video_results

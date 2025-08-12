@@ -164,7 +164,7 @@ Examples:
     try:
         urls = read_youtube_links(links_file)
         total_urls = len(urls)
-        
+
         # Apply test-run limitation if specified
         if args.test_run is not None:
             if args.test_run <= 0:
@@ -175,7 +175,7 @@ Examples:
             else:
                 urls = urls[:args.test_run]
                 print(f"🧪 TEST MODE: Processing first {len(urls)} of {total_urls} videos")
-        
+
         print(f"Found {len(urls)} YouTube URLs to process")
     except FileNotFoundError:
         print(f"Error: File '{links_file}' not found")
@@ -232,7 +232,7 @@ Examples:
                 print(f"✓ Detected {result['detection_count']} gongs")
                 # Store results for batch LUFS processing
                 all_results.append(result)
-                
+
                 # Collect detection data for batch LUFS computation
                 if csv_manager and result["detections"]:
                     from ..utils.youtube_utils import video_id_from_url
@@ -241,26 +241,26 @@ Examples:
                         # Prepare timestamps for LUFS computation with different segment lengths
                         detection_timestamps = {
                             "integrated": [],  # ±2 seconds (4s total) for integrated
-                            "short_term": [],  # ±1.5 seconds (3s total) for short-term  
+                            "short_term": [],  # ±1.5 seconds (3s total) for short-term
                             "momentary": []    # ±0.2 seconds (400ms total) for momentary
                         }
-                        
+
                         for _window_start, _confidence, display_timestamp in result["detections"]:
                             # Integrated LUFS: 4-second window (±2s)
                             integrated_start = max(0, display_timestamp - 2.0)
                             integrated_end = min(result["video_duration"], display_timestamp + 2.0)
                             detection_timestamps["integrated"].append((integrated_start, integrated_end))
-                            
+
                             # Short-term LUFS: 3-second window (±1.5s)
                             shortterm_start = max(0, display_timestamp - 1.5)
                             shortterm_end = min(result["video_duration"], display_timestamp + 1.5)
                             detection_timestamps["short_term"].append((shortterm_start, shortterm_end))
-                            
+
                             # Momentary LUFS: 400ms window (±0.2s)
                             momentary_start = max(0, display_timestamp - 0.2)
                             momentary_end = min(result["video_duration"], display_timestamp + 0.2)
                             detection_timestamps["momentary"].append((momentary_start, momentary_end))
-                        
+
                         all_detection_data.append({
                             "video_id": video_id,
                             "timestamps": detection_timestamps,
@@ -274,10 +274,13 @@ Examples:
     # Compute batch LUFS if we have CSV data and detections
     if csv_manager and all_detection_data and not args.collect_negative_samples:
         print(f"\nComputing batch-weighted LUFS across {len(all_detection_data)} videos with detections...")
-        
+
         try:
-            from ..utils.youtube_utils import compute_batch_weighted_lufs, compute_batch_weighted_dbtp
-            
+            from ..utils.youtube_utils import (
+                compute_batch_weighted_dbtp,
+                compute_batch_weighted_lufs,
+            )
+
             # Compute batch-weighted LUFS for all videos together (all three types with different time windows)
             print("  Computing integrated LUFS (4s windows)...")
             integrated_data = []
@@ -292,7 +295,7 @@ Examples:
                 measurement_type="integrated",
                 reference_lufs=-23.0
             )
-            
+
             print("  Computing short-term LUFS (3s windows)...")
             shortterm_data = []
             for video_data in all_detection_data:
@@ -306,7 +309,7 @@ Examples:
                 measurement_type="short_term",
                 reference_lufs=-23.0
             )
-            
+
             print("  Computing momentary LUFS (400ms windows)...")
             momentary_data = []
             for video_data in all_detection_data:
@@ -320,7 +323,7 @@ Examples:
                 measurement_type="momentary",
                 reference_lufs=-23.0
             )
-            
+
             # Compute batch-weighted True Peak (dBTP) for all videos together (all three types)
             print("  Computing integrated True Peak (4s windows)...")
             integrated_dbtp_results = compute_batch_weighted_dbtp(
@@ -328,36 +331,36 @@ Examples:
                 measurement_type="integrated",
                 reference_dbtp=-1.0  # EBU R128 True Peak limit
             )
-            
+
             print("  Computing short-term True Peak (3s windows)...")
             shortterm_dbtp_results = compute_batch_weighted_dbtp(
                 all_video_data=shortterm_data,
                 measurement_type="short_term",
                 reference_dbtp=-1.0
             )
-            
+
             print("  Computing momentary True Peak (400ms windows)...")
             momentary_dbtp_results = compute_batch_weighted_dbtp(
                 all_video_data=momentary_data,
                 measurement_type="momentary",
                 reference_dbtp=-1.0
             )
-            
+
             # Process each video's results and add to CSV
             for video_data in all_detection_data:
                 video_id = video_data["video_id"]
                 result = video_data["result"]
-                
+
                 # Get batch-weighted LUFS results for this video (all three types)
                 integrated_results = integrated_lufs_results.get(video_id, [])
                 shortterm_results = shortterm_lufs_results.get(video_id, [])
                 momentary_results = momentary_lufs_results.get(video_id, [])
-                
+
                 # Get batch-weighted True Peak results for this video (all three types)
                 integrated_dbtp_results = integrated_dbtp_results.get(video_id, [])
                 shortterm_dbtp_results = shortterm_dbtp_results.get(video_id, [])
                 momentary_dbtp_results = momentary_dbtp_results.get(video_id, [])
-                
+
                 # Transform LUFS and True Peak results to expected format
                 detection_lufs_metrics = []
                 detection_dbtp_metrics = []
@@ -365,30 +368,30 @@ Examples:
                     len(integrated_results), len(shortterm_results), len(momentary_results),
                     len(integrated_dbtp_results), len(shortterm_dbtp_results), len(momentary_dbtp_results)
                 ) if any([integrated_results, shortterm_results, momentary_results, integrated_dbtp_results, shortterm_dbtp_results, momentary_dbtp_results]) else 0
-                
+
                 for i in range(max_results):
                     # Get LUFS values for each measurement type (with fallbacks)
                     integrated_lufs = integrated_results[i].get("lufs", 0) if i < len(integrated_results) else 0
                     shortterm_lufs = shortterm_results[i].get("lufs", 0) if i < len(shortterm_results) else 0
                     momentary_lufs = momentary_results[i].get("lufs", 0) if i < len(momentary_results) else 0
-                    
+
                     detection_lufs_metrics.append({
                         "integrated_lufs": integrated_lufs,
                         "shortterm_lufs": shortterm_lufs,
                         "momentary_lufs": momentary_lufs,
                     })
-                    
+
                     # Get True Peak values for each measurement type (with fallbacks)
                     integrated_dbtp = integrated_dbtp_results[i].get("dbtp", 0) if i < len(integrated_dbtp_results) else 0
                     shortterm_dbtp = shortterm_dbtp_results[i].get("dbtp", 0) if i < len(shortterm_dbtp_results) else 0
                     momentary_dbtp = momentary_dbtp_results[i].get("dbtp", 0) if i < len(momentary_dbtp_results) else 0
-                    
+
                     detection_dbtp_metrics.append({
                         "integrated_dbtp": integrated_dbtp,
                         "shortterm_dbtp": shortterm_dbtp,
                         "momentary_dbtp": momentary_dbtp,
                     })
-                
+
                 # Add to CSV with batch-weighted LUFS and True Peak
                 csv_manager.add_video_detections(
                     video_url=result["video_url"],
@@ -404,7 +407,7 @@ Examples:
                     detection_lufs_metrics=detection_lufs_metrics,
                     detection_dbtp_metrics=detection_dbtp_metrics,
                 )
-                
+
         except Exception as e:
             print(f"Warning: Batch LUFS computation failed: {e}")
             # Fallback: Add results without batch LUFS

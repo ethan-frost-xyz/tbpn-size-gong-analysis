@@ -28,7 +28,6 @@ from ..utils.youtube_utils import (
     download_and_trim_youtube_audio,
     setup_directories,
     video_id_from_url,
-    compute_lufs_segments,
 )
 
 
