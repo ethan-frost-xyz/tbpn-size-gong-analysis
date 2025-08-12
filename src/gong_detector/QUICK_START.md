@@ -4,6 +4,8 @@
 
 The `run_gong_detector.py` script provides an interactive menu system for accessing all gong detector functionality. It's located in the `src/gong_detector/` directory and serves as the main entry point for all gong detection tools.
 
+**New: EBU R128 Compliance** - The system now provides complete broadcast-standard audio analysis with LUFS loudness and True Peak (dBTP) measurements.
+
 ### **Quick Start**
 
 ```bash
@@ -34,7 +36,7 @@ python run_gong_detector.py
 # 2. Accept defaults for threshold (0.94) and trained classifier (y)
 # 3. Choose save options:
 #    - Save positive samples? (y/n) - choose based on need
-#    - Save results to CSV file? (y) - recommended for analysis
+#    - Save results to CSV file? (y) - recommended for analysis (includes LUFS + True Peak)
 #    - Use local media (cache) if available? (y) - enables caching
 #    - Local only (no downloads)? (n) - allow downloads to populate cache
 ```
@@ -44,8 +46,8 @@ This will:
 - Download and cache raw audio to `data/local_media/raw/`
 - Download and cache preprocessed audio to `data/local_media/preprocessed/`
 - Save metadata to `data/local_media/index.json`
-- Generate CSV results in `data/csv_results/`
-- Keep cached files for future offline runs and LUFS analysis
+- Generate CSV results in `data/csv_results/` (with LUFS + True Peak analysis)
+- Keep cached files for future offline runs and audio analysis
 
 ### **Fast Offline Testing (After Caching)**
 
@@ -196,8 +198,8 @@ from gong_detector.core import (
     create_folder_name_from_date, create_folder_name_from_title,
     create_temp_audio_path, sanitize_title_for_folder, setup_directories,
     
-    # LUFS loudness analysis
-    compute_lufs_segments,
+    # EBU R128 audio analysis
+    compute_lufs_segments, compute_true_peak_segments,
     
     # Results utilities
     format_time, print_summary, save_positive_samples, save_results_to_csv,
@@ -221,7 +223,7 @@ from gong_detector.core.pipeline import detect_from_youtube_comprehensive
 # Utility functions
 from gong_detector.core.utils import (
     compute_peak_dbfs, download_and_trim_youtube_audio, format_time,
-    compute_lufs_segments
+    compute_lufs_segments, compute_true_peak_segments
 )
 
 # Data management
@@ -237,7 +239,7 @@ from gong_detector.core.training import collect_negative_samples
 - **Batch Processing**: 5-10x faster than sequential processing
 - **Conservative Detection**: High thresholds prevent false positives
 - **Dual-Cache System**: Raw and preprocessed audio cached in `data/local_media/`
-- **LUFS Analysis**: Loudness measurement using BS.1770-4 K-weighting and EBU R128 gating
+- **EBU R128 Analysis**: Complete broadcast-standard audio analysis with LUFS loudness and True Peak (dBTP) measurements
 - **Training Integration**: Seamless workflow from detection to model training
 - **Performance Monitoring**: Real-time feedback on resource usage
 
@@ -246,4 +248,5 @@ from gong_detector.core.training import collect_negative_samples
 ✅ **Fixed routing issues**: All pipeline scripts now work with correct module paths  
 ✅ **Fixed classifier loading**: Models now load from correct `core/models/` directory  
 ✅ **Fixed file paths**: YouTube links file moved to `core/data/` directory  
-✅ **Tested all commands**: Bulk processing, individual detection, and training scripts all working
+✅ **Tested all commands**: Bulk processing, individual detection, and training scripts all working  
+✅ **EBU R128 compliance**: LUFS + True Peak measurements integrated across full pipeline

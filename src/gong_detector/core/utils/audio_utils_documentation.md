@@ -44,10 +44,15 @@ Audio utilities for gong detection, providing functions for audio analysis, conv
 
 ## youtube_utils.py
 
-### LUFS Analysis Functions
+### EBU R128 Analysis Functions
 
-**Loudness Measurement**
-- `compute_lufs_segments(video_id, timestamps, measurement_type, index)` - Compute LUFS loudness for audio segments from raw audio using BS.1770-4 K-weighting and EBU R128 gating
+**Loudness Measurement (LUFS)**
+- `compute_lufs_segments(video_id, timestamps, measurement_type, index)` - Compute LUFS loudness for audio segments using BS.1770-4 K-weighting and EBU R128 gating
+- `compute_batch_weighted_lufs(all_video_data, measurement_type, reference_lufs)` - Batch-weighted LUFS across multiple videos
+
+**True Peak Measurement (dBTP)**
+- `compute_true_peak_segments(video_id, timestamps, measurement_type, index)` - Compute True Peak (dBTP) for audio segments
+- `compute_batch_weighted_dbtp(all_video_data, measurement_type, reference_dbtp)` - Batch-weighted True Peak across multiple videos
 
 **Dual-Cache Management**
 - `save_raw_to_cache(temp_path, video_id)` - Save raw audio to cache
@@ -60,6 +65,7 @@ Audio utilities for gong detection, providing functions for audio analysis, conv
 - Mono audio output at 16kHz
 - Cookie support for bot detection bypass
 - Error handling for common issues
+- **EBU R128 compliance** (LUFS + True Peak)
 
 ### Requirements
 - ffmpeg (for audio conversion)
@@ -93,6 +99,14 @@ lufs_results = compute_lufs_segments("VIDEO_ID", timestamps, "integrated")
 for result in lufs_results:
     if result["valid"]:
         print(f"Segment {result['start_time']}-{result['end_time']}s: {result['lufs']:.1f} LUFS")
+
+# Compute True Peak (dBTP)
+from gong_detector.core.utils.youtube_utils import compute_true_peak_segments
+
+dbtp_results = compute_true_peak_segments("VIDEO_ID", timestamps, "integrated")
+for result in dbtp_results:
+    if result["valid"]:
+        print(f"Segment {result['start_time']}-{result['end_time']}s: {result['dbtp']:.1f} dBTP")
 ```
 
 ## Error Handling
