@@ -246,6 +246,7 @@ def detect_from_youtube_comprehensive(
         - video_loudness_metrics: Video-level loudness metrics
         - detection_loudness_metrics: Detection-level loudness metrics
         - detection_lufs_metrics: Detection-level LUFS metrics
+        - detection_dbtp_metrics: Detection-level True Peak metrics
     """
     # Setup directories
     temp_audio_dir, csv_results_dir = setup_directories()
@@ -345,9 +346,10 @@ def detect_from_youtube_comprehensive(
                 }
             )
 
-        # LUFS computation is now handled at batch level in bulk_processor
-        # Individual detection runs will have empty LUFS metrics
+        # LUFS and True Peak computation is now handled at batch level in bulk_processor
+        # Individual detection runs will have empty LUFS and True Peak metrics
         detection_lufs_metrics = [{"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0} for _ in detections]
+        detection_dbtp_metrics = [{"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0} for _ in detections]
 
         # Save positive samples if requested
         if should_save_positive_samples and detections:
@@ -381,6 +383,7 @@ def detect_from_youtube_comprehensive(
             "video_loudness_metrics": video_loudness_metrics,
             "detection_loudness_metrics": detection_loudness_metrics,
             "detection_lufs_metrics": detection_lufs_metrics,
+            "detection_dbtp_metrics": detection_dbtp_metrics,
         }
 
     except Exception as e:
@@ -399,6 +402,7 @@ def detect_from_youtube_comprehensive(
             "video_loudness_metrics": {},
             "detection_loudness_metrics": [],
             "detection_lufs_metrics": [],
+            "detection_dbtp_metrics": [],
         }
 
     finally:

@@ -64,9 +64,9 @@ class DetectionRecord:
     detection_momentary_lufs: str = ""  # Momentary LUFS (400ms) at detection timestamp
     
     # True Peak metrics (ITU-R BS.1770-4 / EBU R128)
-    detection_integrated_dbtp: str = ""  # True Peak (dBTP) for integrated window
-    detection_shortterm_dbtp: str = ""  # True Peak (dBTP) for short-term window  
-    detection_momentary_dbtp: str = ""  # True Peak (dBTP) for momentary window
+    detection_integrated_dbtp: str = ""  # True Peak (dBTP) for integrated measurement
+    detection_shortterm_dbtp: str = ""  # True Peak (dBTP) for short-term measurement
+    detection_momentary_dbtp: str = ""  # True Peak (dBTP) for momentary measurement
 
     # Video-level audio metrics
     video_peak_dbfs: str = ""  # Peak dBFS for entire video

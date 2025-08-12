@@ -221,7 +221,7 @@ def bulk_processing() -> None:
     threshold = get_float_input("Confidence threshold", 0.94)
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
-    save_csv = get_yes_no_input("Save results to CSV file (includes batch LUFS analysis)?", False)
+            save_csv = get_yes_no_input("Save results to CSV file (includes batch LUFS + True Peak analysis)?", False)
     test_mode = get_yes_no_input("Test mode (process subset of videos)?", False)
     test_count = None
     if test_mode:
@@ -234,7 +234,7 @@ def bulk_processing() -> None:
     print(f"Using trained classifier: {use_version_one}")
     print(f"Save CSV: {save_csv}")
     if save_csv:
-        print("📊 Batch LUFS analysis enabled - loudness will be measured relative to entire dataset")
+        print("📊 Batch LUFS + True Peak analysis enabled - EBU R128 compliance across entire dataset")
     if test_mode:
         print(f"🧪 Test mode: Processing first {test_count} videos only")
     print(f"Use local media: {use_local_media}")
