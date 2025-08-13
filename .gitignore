@@ -212,6 +212,7 @@ data/processed/
 # Development and helper scripts
 export_cookies.py
 test_cookies.py
+backfill_raw_cache.py
 
 # Legacy files (now moved to docs/)
 notes_self.txt
