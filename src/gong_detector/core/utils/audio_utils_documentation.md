@@ -3,6 +3,13 @@
 ## Overview
 Audio utilities for gong detection, providing functions for audio analysis, conversion, processing, and loudness measurement.
 
+**🔄 REFACTORING UPDATE**: The `youtube_utils.py` module has been refactored into smaller, focused modules:
+- `youtube/` - YouTube downloading, caching, and processing
+- `loudness/` - LUFS and True Peak analysis
+- `file_utils.py` - File system operations
+
+Existing imports continue to work for backward compatibility.
+
 ## audio_utils.py
 
 ### Core Functions
@@ -42,22 +49,51 @@ Audio utilities for gong detection, providing functions for audio analysis, conv
 - `validate_audio_file(file_path)` - Check if file is valid audio
 - `get_audio_info(file_path)` - Get audio file metadata using ffprobe
 
-## youtube_utils.py
+## Modular Structure (New)
 
-### EBU R128 Analysis Functions
+### youtube/ Package
 
-**Loudness Measurement (LUFS)**
-- `compute_lufs_segments(video_id, timestamps, measurement_type, index)` - Compute LUFS loudness for audio segments using BS.1770-4 K-weighting and EBU R128 gating
-- `compute_batch_weighted_lufs(all_video_data, measurement_type, reference_lufs)` - Batch-weighted LUFS across multiple videos
+**downloader.py**
+- `download_youtube_audio(url, output_template, yt_dlp_options)` - Download audio from YouTube using yt-dlp
+- `download_and_process_youtube_audio(url, output_path, start_time, duration)` - High-level download and process function
+- `get_cookies_path()` - Get path to cookies file for bot detection bypass
 
-**True Peak Measurement (dBTP)**
-- `compute_true_peak_segments(video_id, timestamps, measurement_type, index)` - Compute True Peak (dBTP) for audio segments
-- `compute_batch_weighted_dbtp(all_video_data, measurement_type, reference_dbtp)` - Batch-weighted True Peak across multiple videos
-
-**Dual-Cache Management**
+**cache_manager.py**
 - `save_raw_to_cache(temp_path, video_id)` - Save raw audio to cache
 - `ensure_full_preprocessed_from_raw(raw_path, video_id)` - Convert raw to preprocessed audio
+
+**audio_processor.py**
 - `trim_from_preprocessed(preprocessed_path, output_path, start_time, duration)` - Trim segments from preprocessed audio
+- `convert_and_trim_audio(input_file, output_path, start_time, duration)` - Convert and trim audio
+
+**metadata_utils.py**
+- `video_id_from_url(url)` - Extract YouTube video ID from URL
+- `create_folder_name_from_title(video_title)` - Create folder name from video title
+- `create_folder_name_from_date(upload_date)` - Create folder name from upload date
+- `sanitize_title_for_folder(title)` - Sanitize title for filesystem use
+
+### loudness/ Package
+
+**lufs_analyzer.py**
+- `compute_lufs_segments(video_id, timestamps, measurement_type, index)` - Compute LUFS loudness for audio segments using BS.1770-4 K-weighting and EBU R128 gating
+
+**true_peak_analyzer.py**
+- `compute_true_peak_segments(video_id, timestamps, measurement_type, index)` - Compute True Peak (dBTP) for audio segments
+
+**batch_processor.py**
+- `compute_batch_weighted_lufs(all_video_data, measurement_type, reference_lufs)` - Batch-weighted LUFS across multiple videos
+- `compute_batch_weighted_dbtp(all_video_data, measurement_type, reference_dbtp)` - Batch-weighted True Peak across multiple videos
+
+### file_utils.py
+
+**File System Operations**
+- `setup_directories()` - Create necessary directories and return paths
+- `cleanup_old_temp_files(temp_dir, max_age_hours)` - Clean up old temporary audio files
+- `create_temp_audio_path(temp_dir)` - Create unique temporary audio file path
+
+## youtube_utils.py (Backward Compatibility)
+
+**⚠️ DEPRECATED**: This module now imports from the new modular structure for backward compatibility. New code should use the specific modules above.
 
 ### Features
 - YouTube download with yt-dlp
@@ -91,8 +127,9 @@ from gong_detector.core.utils.convert_audio import convert_youtube_audio
 
 wav_path = convert_youtube_audio("https://youtube.com/watch?v=...", "output.wav")
 
+# NEW MODULAR APPROACH (Recommended)
 # Compute LUFS loudness
-from gong_detector.core.utils.youtube_utils import compute_lufs_segments
+from gong_detector.core.utils.loudness import compute_lufs_segments
 
 timestamps = [(10.0, 15.0), (60.0, 65.0)]  # 5-second segments
 lufs_results = compute_lufs_segments("VIDEO_ID", timestamps, "integrated")
@@ -101,12 +138,26 @@ for result in lufs_results:
         print(f"Segment {result['start_time']}-{result['end_time']}s: {result['lufs']:.1f} LUFS")
 
 # Compute True Peak (dBTP)
-from gong_detector.core.utils.youtube_utils import compute_true_peak_segments
+from gong_detector.core.utils.loudness import compute_true_peak_segments
 
 dbtp_results = compute_true_peak_segments("VIDEO_ID", timestamps, "integrated")
 for result in dbtp_results:
     if result["valid"]:
         print(f"Segment {result['start_time']}-{result['end_time']}s: {result['dbtp']:.1f} dBTP")
+
+# YouTube downloading with new modular approach
+from gong_detector.core.utils.youtube import download_and_process_youtube_audio
+
+audio_path, title, date = download_and_process_youtube_audio(
+    "https://youtube.com/watch?v=...", 
+    "output.wav",
+    start_time=10,
+    duration=30
+)
+
+# BACKWARD COMPATIBLE APPROACH (Still works)
+from gong_detector.core.utils.youtube_utils import compute_lufs_segments, download_and_trim_youtube_audio
+# ... same function calls as before
 ```
 
 ## Error Handling

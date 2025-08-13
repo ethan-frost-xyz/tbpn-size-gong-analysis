@@ -1,5 +1,7 @@
 """Utility functions for audio processing, YouTube operations, and results handling."""
 
+# New modular imports (for future migration)
+from . import file_utils, loudness, youtube
 from .audio_utils import (
     DEFAULT_SAMPLE_RATE,
     SILENCE_FLOOR_DBFS,
