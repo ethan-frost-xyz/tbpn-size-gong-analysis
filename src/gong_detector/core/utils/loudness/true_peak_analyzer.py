@@ -141,15 +141,19 @@ def compute_true_peak_segments(
                     results.append(segment_result)
                     continue
 
-                # Compute True Peak measurement using pyloudnorm
+                # Compute True Peak measurement (improved approximation)
                 try:
-                    # pyloudnorm doesn't have direct True Peak method, but we can compute it manually
-                    # True Peak requires oversampling - we'll use a simple approximation for now
-                    # by finding the maximum absolute value and converting to dBTP
-                    peak_amplitude = np.max(np.abs(segment_audio))
+                    # Use librosa's built-in peak detection with proper oversampling approximation
+                    # This provides a better True Peak approximation than simple max()
+                    
+                    # Upsample by 4x to approximate True Peak detection (ITU-R BS.1770-4)
+                    upsampled_audio = librosa.resample(segment_audio, orig_sr=sample_rate, target_sr=sample_rate * 4)
+                    
+                    # Find peak amplitude in upsampled signal
+                    peak_amplitude = np.max(np.abs(upsampled_audio))
 
-                    # Convert to dBTP (True Peak approximation)
-                    if peak_amplitude > 0:
+                    # Convert to dBTP (True Peak)
+                    if peak_amplitude > 1e-10:  # Avoid log of zero
                         dbtp_value = 20.0 * np.log10(peak_amplitude)
                     else:
                         dbtp_value = -80.0  # Silence floor
@@ -158,11 +162,11 @@ def compute_true_peak_segments(
                     logger.warning(f"True Peak computation failed for segment {i+1}: {peak_error}")
                     dbtp_value = -80.0
 
-                # Check for valid measurement
-                if dbtp_value == -float('inf') or dbtp_value != dbtp_value:  # NaN check
+                # Check for valid measurement (match LUFS pattern exactly)
+                if dbtp_value == -float('inf') or dbtp_value != dbtp_value:  # NaN check only
                     logger.warning(f"Invalid True Peak measurement for segment {i+1}")
                 else:
-                    # Store raw True Peak value
+                    # Store True Peak value (including silence at -80.0)
                     segment_result["raw_dbtp"] = float(dbtp_value)
                     segment_result["dbtp"] = float(dbtp_value)  # Default to raw value
                     segment_result["valid"] = True

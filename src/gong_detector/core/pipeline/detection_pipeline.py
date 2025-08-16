@@ -402,7 +402,7 @@ def detect_from_youtube_comprehensive(
                             "momentary_lufs": momentary_lufs_val,
                         })
                         
-                        # Get True Peak values (with fallbacks to 0)
+                        # Get True Peak values (match LUFS pattern exactly)
                         integrated_dbtp_val = integrated_dbtp[i].get("dbtp", 0) if i < len(integrated_dbtp) and integrated_dbtp[i].get("valid", False) else 0
                         shortterm_dbtp_val = shortterm_dbtp[i].get("dbtp", 0) if i < len(shortterm_dbtp) and shortterm_dbtp[i].get("valid", False) else 0
                         momentary_dbtp_val = momentary_dbtp[i].get("dbtp", 0) if i < len(momentary_dbtp) and momentary_dbtp[i].get("valid", False) else 0

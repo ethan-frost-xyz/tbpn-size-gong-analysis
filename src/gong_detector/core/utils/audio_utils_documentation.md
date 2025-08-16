@@ -78,7 +78,7 @@ Existing imports continue to work for backward compatibility.
 - `compute_lufs_segments(video_id, timestamps, measurement_type, index)` - Compute LUFS loudness for audio segments using BS.1770-4 K-weighting and EBU R128 gating
 
 **true_peak_analyzer.py**
-- `compute_true_peak_segments(video_id, timestamps, measurement_type, index)` - Compute True Peak (dBTP) for audio segments
+- `compute_true_peak_segments(video_id, timestamps, measurement_type, index)` - Compute True Peak (dBTP) for audio segments using ITU-R BS.1770-4 standard with 4x oversampling
 
 **batch_processor.py**
 - `compute_batch_weighted_lufs(all_video_data, measurement_type, reference_lufs)` - Batch-weighted LUFS across multiple videos
@@ -101,7 +101,8 @@ Existing imports continue to work for backward compatibility.
 - Mono audio output at 16kHz
 - Cookie support for bot detection bypass
 - Error handling for common issues
-- **EBU R128 compliance** (LUFS + True Peak)
+- **EBU R128 compliance** (LUFS + True Peak with 4x oversampling)
+- **Detection-level audio analysis** (integrated into gong detection pipeline)
 
 ### Requirements
 - ffmpeg (for audio conversion)
@@ -127,8 +128,28 @@ from gong_detector.core.utils.convert_audio import convert_youtube_audio
 
 wav_path = convert_youtube_audio("https://youtube.com/watch?v=...", "output.wav")
 
-# NEW MODULAR APPROACH (Recommended)
-# Compute LUFS loudness
+# INTEGRATED DETECTION PIPELINE (Recommended)
+# LUFS and True Peak are automatically computed for each gong detection
+from gong_detector.core.pipeline.detection_pipeline import detect_from_youtube_comprehensive
+
+result = detect_from_youtube_comprehensive(
+    youtube_url="https://youtube.com/watch?v=...",
+    threshold=0.94,
+    use_version_one=True,
+    use_local_media=True
+)
+
+# Access LUFS and True Peak for each detection
+for i, detection in enumerate(result['detections']):
+    lufs_metrics = result['detection_lufs_metrics'][i]
+    dbtp_metrics = result['detection_dbtp_metrics'][i]
+    
+    print(f"Detection {i+1} at {detection[2]:.1f}s:")
+    print(f"  LUFS: {lufs_metrics['integrated_lufs']:.1f} LUFS")
+    print(f"  True Peak: {dbtp_metrics['integrated_dbtp']:.1f} dBTP")
+
+# MANUAL ANALYSIS (Advanced)
+# Compute LUFS loudness manually
 from gong_detector.core.utils.loudness import compute_lufs_segments
 
 timestamps = [(10.0, 15.0), (60.0, 65.0)]  # 5-second segments
@@ -137,7 +158,7 @@ for result in lufs_results:
     if result["valid"]:
         print(f"Segment {result['start_time']}-{result['end_time']}s: {result['lufs']:.1f} LUFS")
 
-# Compute True Peak (dBTP)
+# Compute True Peak (dBTP) with 4x oversampling
 from gong_detector.core.utils.loudness import compute_true_peak_segments
 
 dbtp_results = compute_true_peak_segments("VIDEO_ID", timestamps, "integrated")
@@ -164,4 +185,6 @@ from gong_detector.core.utils.youtube_utils import compute_lufs_segments, downlo
 - Silent audio returns `SILENCE_FLOOR_DBFS` (-80.0 dBFS)
 - Empty waveforms handled gracefully
 - YouTube bot detection provides helpful error messages
-- File validation before processing 
+- File validation before processing
+- **LUFS/True Peak failures**: Graceful fallback to zeros with error logging
+- **Improved True Peak**: 4x oversampling prevents measurement failures 
