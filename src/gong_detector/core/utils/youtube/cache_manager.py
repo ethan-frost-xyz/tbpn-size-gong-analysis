@@ -15,14 +15,18 @@ logger = logging.getLogger(__name__)
 
 
 def save_raw_to_cache(temp_path: str, video_id: str) -> str:
-    """Save downloaded raw audio to the local cache.
+    """Save downloaded raw audio to the local cache as high-quality WAV.
+
+    Converts the downloaded audio (typically WebM) to uncompressed WAV format
+    for optimal compatibility with loudness analysis tools and to avoid
+    deprecated librosa fallback methods.
 
     Args:
         temp_path: Path to temporary downloaded audio file
         video_id: YouTube video ID
 
     Returns:
-        Path to the cached raw audio file
+        Path to the cached raw audio file (WAV format)
 
     Raises:
         RuntimeError: If file operations fail
@@ -41,27 +45,51 @@ def save_raw_to_cache(temp_path: str, video_id: str) -> str:
     raw_cache_dir = project_root / "data/local_media/raw"
     raw_cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # Determine the original file extension
+    # Validate input file
     temp_file = Path(temp_path)
     if not temp_file.exists():
         raise RuntimeError(f"Temporary file not found: {temp_path}")
 
-    # Get the original extension from the downloaded file
-    original_ext = temp_file.suffix
-    if not original_ext:
-        # Fallback to common audio extensions
-        original_ext = ".webm"
-
-    # Create the target path in raw cache
-    raw_cache_path = raw_cache_dir / f"{video_id}{original_ext}"
-    raw_cache_tmp = raw_cache_path.with_suffix(raw_cache_path.suffix + ".tmp")
+    # Always save raw cache as WAV for maximum compatibility
+    # This eliminates soundfile compatibility issues and deprecated librosa warnings
+    raw_cache_path = raw_cache_dir / f"{video_id}.wav"
+    raw_cache_tmp = raw_cache_dir / f"{video_id}.tmp.wav"
 
     try:
-        # Copy to temporary location first, then atomically move
-        shutil.copy2(temp_path, raw_cache_tmp)
+        # Convert to storage-optimized WAV for LUFS analysis
+        # 16kHz 16-bit PCM provides sufficient quality for loudness measurements while minimizing storage
+        cmd = [
+            "ffmpeg",
+            "-i", str(temp_path),
+            "-map", "a:0",  # Use first audio stream
+            "-acodec", "pcm_s16le",  # 16-bit PCM (sufficient dynamic range for LUFS)
+            "-ar", "16000",  # 16kHz sample rate (adequate for loudness analysis, saves storage)
+            "-af", "aresample=resampler=soxr:precision=28:cheby=1",  # High-quality resampling
+            "-vn",  # no video
+            "-sn",  # no subtitles
+            "-dn",  # no data
+            "-y",  # overwrite
+            "-nostdin",  # non-interactive
+            "-loglevel", "error",  # minimal output
+            str(raw_cache_tmp),
+        ]
+
+        logger.info(f"Converting downloaded audio to storage-optimized 16kHz WAV: {temp_path}")
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+        # Atomically move to final location
         os.replace(raw_cache_tmp, raw_cache_path)
-        logger.info(f"Saved raw audio to cache: {raw_cache_path}")
+        logger.info(f"Saved raw audio to cache as WAV: {raw_cache_path}")
         return str(raw_cache_path)
+
+    except subprocess.CalledProcessError as e:
+        # Clean up temp file if it exists
+        if raw_cache_tmp.exists():
+            try:
+                raw_cache_tmp.unlink()
+            except OSError:
+                pass
+        raise RuntimeError(f"FFmpeg conversion to WAV failed: {e.stderr}") from e
     except Exception as e:
         # Clean up temp file if it exists
         if raw_cache_tmp.exists():

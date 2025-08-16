@@ -11,8 +11,11 @@ This package provides EBU R128 compliant loudness analysis including:
 from .batch_processor import compute_batch_weighted_dbtp, compute_batch_weighted_lufs
 from .lufs_analyzer import compute_lufs_segments
 from .true_peak_analyzer import compute_true_peak_segments
+from .unified_analyzer import compute_all_loudness_metrics
 
 __all__ = [
+    # Unified analysis (recommended for new code)
+    "compute_all_loudness_metrics",
     # LUFS analysis
     "compute_lufs_segments",
     "compute_batch_weighted_lufs",

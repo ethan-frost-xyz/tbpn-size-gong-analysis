@@ -349,70 +349,20 @@ def detect_from_youtube_comprehensive(
         detection_lufs_metrics = []
         detection_dbtp_metrics = []
         
-        # Import LUFS functions
-        from ..utils.youtube_utils import compute_lufs_segments, compute_true_peak_segments
+        # Import unified loudness analyzer (optimized single-pass processing)
+        from ..utils.loudness import compute_all_loudness_metrics
         
         if detections:
             try:
-                
                 # Get video ID for local media access
                 video_id = video_id_from_url(youtube_url)
                 if video_id:
-                    # Prepare timestamps for LUFS computation with different segment lengths
-                    integrated_timestamps = []  # ±2 seconds (4s total) for integrated
-                    shortterm_timestamps = []   # ±1.5 seconds (3s total) for short-term  
-                    momentary_timestamps = []   # ±0.2 seconds (400ms total) for momentary
-                    
-                    for _window_start, _confidence, display_timestamp in detections:
-                        # Integrated LUFS: 4-second window (±2s)
-                        integrated_start = max(0, display_timestamp - 2.0)
-                        integrated_end = min(total_duration, display_timestamp + 2.0)
-                        integrated_timestamps.append((integrated_start, integrated_end))
-                        
-                        # Short-term LUFS: 3-second window (±1.5s)
-                        shortterm_start = max(0, display_timestamp - 1.5)
-                        shortterm_end = min(total_duration, display_timestamp + 1.5)
-                        shortterm_timestamps.append((shortterm_start, shortterm_end))
-                        
-                        # Momentary LUFS: 400ms window (±0.2s)
-                        momentary_start = max(0, display_timestamp - 0.2)
-                        momentary_end = min(total_duration, display_timestamp + 0.2)
-                        momentary_timestamps.append((momentary_start, momentary_end))
-                    
-                    # Compute LUFS measurements for all three types
-                    integrated_lufs = compute_lufs_segments(video_id, integrated_timestamps, "integrated")
-                    shortterm_lufs = compute_lufs_segments(video_id, shortterm_timestamps, "short_term")
-                    momentary_lufs = compute_lufs_segments(video_id, momentary_timestamps, "momentary")
-                    
-                    # Compute True Peak measurements for all three types
-                    integrated_dbtp = compute_true_peak_segments(video_id, integrated_timestamps, "integrated")
-                    shortterm_dbtp = compute_true_peak_segments(video_id, shortterm_timestamps, "short_term")
-                    momentary_dbtp = compute_true_peak_segments(video_id, momentary_timestamps, "momentary")
-                    
-                    # Combine results for each detection
-                    for i in range(len(detections)):
-                        # Get LUFS values (with fallbacks to 0)
-                        integrated_lufs_val = integrated_lufs[i].get("lufs", 0) if i < len(integrated_lufs) and integrated_lufs[i].get("valid", False) else 0
-                        shortterm_lufs_val = shortterm_lufs[i].get("lufs", 0) if i < len(shortterm_lufs) and shortterm_lufs[i].get("valid", False) else 0
-                        momentary_lufs_val = momentary_lufs[i].get("lufs", 0) if i < len(momentary_lufs) and momentary_lufs[i].get("valid", False) else 0
-                        
-                        detection_lufs_metrics.append({
-                            "integrated_lufs": integrated_lufs_val,
-                            "shortterm_lufs": shortterm_lufs_val,
-                            "momentary_lufs": momentary_lufs_val,
-                        })
-                        
-                        # Get True Peak values (match LUFS pattern exactly)
-                        integrated_dbtp_val = integrated_dbtp[i].get("dbtp", 0) if i < len(integrated_dbtp) and integrated_dbtp[i].get("valid", False) else 0
-                        shortterm_dbtp_val = shortterm_dbtp[i].get("dbtp", 0) if i < len(shortterm_dbtp) and shortterm_dbtp[i].get("valid", False) else 0
-                        momentary_dbtp_val = momentary_dbtp[i].get("dbtp", 0) if i < len(momentary_dbtp) and momentary_dbtp[i].get("valid", False) else 0
-                        
-                        detection_dbtp_metrics.append({
-                            "integrated_dbtp": integrated_dbtp_val,
-                            "shortterm_dbtp": shortterm_dbtp_val,
-                            "momentary_dbtp": momentary_dbtp_val,
-                        })
-                        
+                    # Compute all LUFS and True Peak metrics in single audio pass
+                    # This replaces 6 separate function calls with 1 optimized call
+                    detection_lufs_metrics, detection_dbtp_metrics = compute_all_loudness_metrics(
+                        video_id=video_id,
+                        detections=detections
+                    )
                     print(f"✓ Computed LUFS and True Peak for {len(detections)} detections")
                 else:
                     # Fallback to zeros if no video ID

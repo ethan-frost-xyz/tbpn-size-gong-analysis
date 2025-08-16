@@ -42,7 +42,7 @@ python run_gong_detector.py
 ```
 
 This will:
-- Process all 52 URLs from `data/tbpn_ytlinks/tbpn_youtube_links.txt`
+- Process all URLs from `data/tbpn_ytlinks/tbpn_youtube_links.txt`
 - Download and cache raw audio to `data/local_media/raw/`
 - Download and cache preprocessed audio to `data/local_media/preprocessed/`
 - Save metadata to `data/local_media/index.json`
