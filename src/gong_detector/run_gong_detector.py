@@ -6,8 +6,12 @@ Interactive menu system for accessing all gong detector functionality.
 
 import os
 import sys
+import warnings
 from pathlib import Path
 from typing import Callable, Optional
+
+# Suppress TensorFlow Hub pkg_resources deprecation warning (cosmetic only)
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
