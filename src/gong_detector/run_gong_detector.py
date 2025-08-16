@@ -17,14 +17,20 @@ warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import from local modules
-from gong_detector.core.detector.yamnet_runner import YAMNetGongDetector
-from gong_detector.core.pipeline.bulk_processor import main as bulk_processor_main
-from gong_detector.core.pipeline.detection_pipeline import (
+from gong_detector.core.detector.yamnet_runner import YAMNetGongDetector  # noqa: E402
+from gong_detector.core.pipeline.bulk_processor import (  # noqa: E402
+    main as bulk_processor_main,
+)
+from gong_detector.core.pipeline.detection_pipeline import (  # noqa: E402
     detect_from_youtube_comprehensive,
 )
-from gong_detector.core.training.manual_collector import process_single_sample
-from gong_detector.core.training.negative_collector import collect_negative_samples
-from gong_detector.core.utils.convert_audio import convert_youtube_audio
+from gong_detector.core.training.manual_collector import (  # noqa: E402
+    process_single_sample,
+)
+from gong_detector.core.training.negative_collector import (  # noqa: E402
+    collect_negative_samples,
+)
+from gong_detector.core.utils.convert_audio import convert_youtube_audio  # noqa: E402
 
 
 class MenuItem:
