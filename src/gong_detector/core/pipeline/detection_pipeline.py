@@ -101,32 +101,51 @@ def process_audio_with_yamnet(
     # Configure logging for this module
     logger = logging.getLogger(__name__)
 
+    # Filter out detections within first 180 seconds (intro content)
+    print("\nStep 5a: Filtering early detections (first 180 seconds)...")
+    early_threshold = 180.0  # 3 minutes
+    original_count = len(detections)
+    
+    # Filter detections based on display timestamp (3rd element)
+    detections = [
+        detection for detection in detections 
+        if detection[2] >= early_threshold
+    ]
+    
+    filtered_count = len(detections)
+    early_removed = original_count - filtered_count
+    
+    if early_removed > 0:
+        print(f"✓ Filtered out {early_removed} early detections (< {early_threshold}s)")
+    else:
+        print("✓ No early detections found to filter")
+
     # Consolidate overlapping detections (remove duplicates from sliding window)
     if consolidate_detections:
-        print("\nStep 5: Consolidating overlapping detections...")
-        original_count = len(detections)
+        print("\nStep 5b: Consolidating overlapping detections...")
+        pre_consolidation_count = len(detections)
 
         try:
             detections = consolidate_overlapping_detections(detections)
             consolidated_count = len(detections)
 
-            if original_count != consolidated_count:
-                reduction = original_count - consolidated_count
+            if pre_consolidation_count != consolidated_count:
+                overlap_reduction = pre_consolidation_count - consolidated_count
                 print(
-                    f"✓ Consolidated {original_count} → {consolidated_count} "
-                    f"detections (removed {reduction} overlaps)"
+                    f"✓ Consolidated {pre_consolidation_count} → {consolidated_count} "
+                    f"detections (removed {overlap_reduction} overlaps)"
                 )
                 # Print final consolidated results
-                print("\nFinal consolidated detections:")
+                print("\nFinal processed detections:")
                 detector.print_detections(detections)
             else:
                 print("✓ No overlapping detections found")
 
         except (ValueError, TypeError) as e:
             logger.error(f"Consolidation failed: {e}")
-            print(f"⚠ Consolidation failed, using original detections: {e}")
+            print(f"⚠ Consolidation failed, using filtered detections: {e}")
     else:
-        print("\nStep 5: Skipping detection consolidation (disabled)")
+        print("\nStep 5b: Skipping detection consolidation (disabled)")
 
     max_gong_confidence = scores[:, 172].max()
 
