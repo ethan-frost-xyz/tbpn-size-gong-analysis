@@ -1,12 +1,12 @@
 # Core ML dependencies
-tensorflow>=2.15.0
-tensorflow-hub>=0.14.0
+tensorflow==2.19.0
+tensorflow-hub==0.16.1
 scikit-learn==1.6.1
 
 # Audio processing
-numpy>=1.24.0
-pandas>=2.0.0
-soundfile>=0.12.0
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0,<3.0.0
+soundfile==0.13.1
 
 # YouTube downloading
 yt-dlp>=2023.7.6
@@ -20,11 +20,14 @@ pytest-cov>=4.0.0
 pytest-mock>=3.10.0
 ruff>=0.1.0
 
-# Optional audio processing (for advanced features)
-librosa>=0.10.0
+# Audio processing (pinned to avoid breaking changes)
+librosa==0.11.0
 
 # LUFS loudness analysis
-pyloudnorm>=0.1.1
+pyloudnorm==0.1.1
+
+# System dependencies (prevent deprecation warnings)
+setuptools<81
 
 # Development tools
 ipython>=8.0.0 

@@ -187,4 +187,19 @@ from gong_detector.core.utils.youtube_utils import compute_lufs_segments, downlo
 - YouTube bot detection provides helpful error messages
 - File validation before processing
 - **LUFS/True Peak failures**: Graceful fallback to zeros with error logging
+
+## Known Warnings & Compatibility
+
+**Audio Loading Warnings (Normal):**
+- `PySoundFile failed. Trying audioread instead` - Librosa fallback chain for audio formats
+- `__audioread_load Deprecated` - Librosa v0.11.0 deprecation (non-breaking until v1.0)
+
+**LUFS Analysis Warnings (Normal):**
+- `Short-term LUFS approximated using integrated loudness` - When precise measurements unavailable
+- `Momentary LUFS approximated using integrated loudness` - When precise measurements unavailable
+
+**Dependency Notes:**
+- librosa==0.11.0 pinned to avoid v1.0 breaking changes
+- setuptools<81 prevents pkg_resources deprecation warnings
+- All audio processing remains functional despite warnings
 - **Improved True Peak**: 4x oversampling prevents measurement failures 
