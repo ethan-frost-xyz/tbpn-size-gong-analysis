@@ -390,7 +390,7 @@ def main() -> None:
     ]
 
     # Create and run menu
-    menu = InteractiveMenu("GONG DETECTOR MASTER MENU", menu_items)
+    menu = InteractiveMenu("GONG ABUSE DETECTOR", menu_items)
     menu.run()
 
 
