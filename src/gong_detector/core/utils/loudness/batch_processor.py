@@ -68,8 +68,8 @@ def compute_batch_weighted_lufs(
         logger.warning("Could not import LocalMediaIndex, using None")
         index = None
 
-    # Import the LUFS analyzer
-    from .lufs_analyzer import compute_lufs_segments
+    # Import the unified analyzer (optimized, soundfile-only)
+    from .unified_analyzer import compute_all_loudness_metrics
 
     # Process each video to get raw LUFS measurements
     for video_data in all_video_data:
@@ -78,14 +78,64 @@ def compute_batch_weighted_lufs(
 
         logger.info(f"Processing video {video_id} with {len(timestamps)} detection segments")
 
-        # Compute raw LUFS for this video (no batch weighting yet)
-        lufs_results = compute_lufs_segments(
-            video_id=video_id,
-            timestamps=timestamps,
-            measurement_type=measurement_type,
-            index=index,
-            batch_context=None,  # No batch weighting on first pass
-        )
+        # Convert timestamps to detection format for unified analyzer
+        # Each timestamp is (start_time, end_time), convert to (window_start, confidence, display_timestamp)
+        mock_detections = []
+        for start_time, end_time in timestamps:
+            # Use center of segment as display timestamp
+            display_timestamp = (start_time + end_time) / 2.0
+            mock_detections.append((start_time, 1.0, display_timestamp))  # confidence=1.0 for batch processing
+
+        try:
+            # Compute all LUFS metrics using unified analyzer (single audio load)
+            lufs_metrics, _ = compute_all_loudness_metrics(
+                video_id=video_id,
+                detections=mock_detections,
+                index=index
+            )
+            
+            # Convert unified analyzer output to batch processor format
+            lufs_results = []
+            for i, (start_time, end_time) in enumerate(timestamps):
+                if i < len(lufs_metrics):
+                    # Extract the appropriate measurement type
+                    if measurement_type == "integrated":
+                        raw_lufs = lufs_metrics[i]["integrated_lufs"]
+                    elif measurement_type == "short_term":
+                        raw_lufs = lufs_metrics[i]["shortterm_lufs"]
+                    elif measurement_type == "momentary":
+                        raw_lufs = lufs_metrics[i]["momentary_lufs"]
+                    else:
+                        raw_lufs = lufs_metrics[i]["integrated_lufs"]  # fallback
+                    
+                    lufs_results.append({
+                        "valid": raw_lufs != 0,  # Unified analyzer returns 0 for failures
+                        "raw_lufs": raw_lufs if raw_lufs != 0 else None,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "measurement_type": measurement_type
+                    })
+                else:
+                    # Fallback for missing results
+                    lufs_results.append({
+                        "valid": False,
+                        "raw_lufs": None,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "measurement_type": measurement_type
+                    })
+        except Exception as e:
+            logger.warning(f"Unified LUFS analysis failed for video {video_id}: {e}")
+            # Fallback to empty results
+            lufs_results = []
+            for start_time, end_time in timestamps:
+                lufs_results.append({
+                    "valid": False,
+                    "raw_lufs": None,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "measurement_type": measurement_type
+                })
 
         # Store results for this video
         video_results[video_id] = lufs_results
@@ -173,8 +223,8 @@ def compute_batch_weighted_dbtp(
         logger.warning("Could not import LocalMediaIndex, using None")
         index = None
 
-    # Import the True Peak analyzer
-    from .true_peak_analyzer import compute_true_peak_segments
+    # Import the unified analyzer (optimized, soundfile-only)
+    from .unified_analyzer import compute_all_loudness_metrics
 
     # Process each video to get raw True Peak measurements
     for video_data in all_video_data:
@@ -183,14 +233,64 @@ def compute_batch_weighted_dbtp(
 
         logger.info(f"Processing video {video_id} with {len(timestamps)} detection segments")
 
-        # Compute raw True Peak for this video (no batch weighting yet)
-        dbtp_results = compute_true_peak_segments(
-            video_id=video_id,
-            timestamps=timestamps,
-            measurement_type=measurement_type,
-            index=index,
-            batch_context=None,  # No batch weighting on first pass
-        )
+        # Convert timestamps to detection format for unified analyzer
+        # Each timestamp is (start_time, end_time), convert to (window_start, confidence, display_timestamp)
+        mock_detections = []
+        for start_time, end_time in timestamps:
+            # Use center of segment as display timestamp
+            display_timestamp = (start_time + end_time) / 2.0
+            mock_detections.append((start_time, 1.0, display_timestamp))  # confidence=1.0 for batch processing
+
+        try:
+            # Compute all True Peak metrics using unified analyzer (single audio load)
+            _, dbtp_metrics = compute_all_loudness_metrics(
+                video_id=video_id,
+                detections=mock_detections,
+                index=index
+            )
+            
+            # Convert unified analyzer output to batch processor format
+            dbtp_results = []
+            for i, (start_time, end_time) in enumerate(timestamps):
+                if i < len(dbtp_metrics):
+                    # Extract the appropriate measurement type
+                    if measurement_type == "integrated":
+                        raw_dbtp = dbtp_metrics[i]["integrated_dbtp"]
+                    elif measurement_type == "short_term":
+                        raw_dbtp = dbtp_metrics[i]["shortterm_dbtp"]
+                    elif measurement_type == "momentary":
+                        raw_dbtp = dbtp_metrics[i]["momentary_dbtp"]
+                    else:
+                        raw_dbtp = dbtp_metrics[i]["integrated_dbtp"]  # fallback
+                    
+                    dbtp_results.append({
+                        "valid": raw_dbtp != 0,  # Unified analyzer returns 0 for failures
+                        "raw_dbtp": raw_dbtp if raw_dbtp != 0 else None,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "measurement_type": measurement_type
+                    })
+                else:
+                    # Fallback for missing results
+                    dbtp_results.append({
+                        "valid": False,
+                        "raw_dbtp": None,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "measurement_type": measurement_type
+                    })
+        except Exception as e:
+            logger.warning(f"Unified True Peak analysis failed for video {video_id}: {e}")
+            # Fallback to empty results
+            dbtp_results = []
+            for start_time, end_time in timestamps:
+                dbtp_results.append({
+                    "valid": False,
+                    "raw_dbtp": None,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "measurement_type": measurement_type
+                })
 
         # Store results for this video
         video_results[video_id] = dbtp_results
