@@ -209,24 +209,29 @@ def compute_all_loudness_metrics(
                 if len(integrated_audio) > 0:
                     try:
                         # Compute True Peak using 4x oversampling for accuracy
-                        integrated_resampled = librosa.resample(integrated_audio, orig_sr=sample_rate, target_sr=sample_rate * 4)
+                        # Use scipy.signal.resample instead of librosa to avoid deprecation warnings
+                        from scipy import signal
+                        integrated_resampled = signal.resample(integrated_audio, len(integrated_audio) * 4)
                         dbtp_metrics["integrated_dbtp"] = float(20 * np.log10(np.max(np.abs(integrated_resampled))))
+                        logger.debug(f"Detection {i}: Integrated True Peak = {dbtp_metrics['integrated_dbtp']:.2f} dBTP")
                     except Exception as e:
                         logger.debug(f"Integrated True Peak failed for detection {i}: {e}")
                         dbtp_metrics["integrated_dbtp"] = 0.0
 
                 if len(shortterm_audio) > 0:
                     try:
-                        shortterm_resampled = librosa.resample(shortterm_audio, orig_sr=sample_rate, target_sr=sample_rate * 4)
+                        shortterm_resampled = signal.resample(shortterm_audio, len(shortterm_audio) * 4)
                         dbtp_metrics["shortterm_dbtp"] = float(20 * np.log10(np.max(np.abs(shortterm_resampled))))
+                        logger.debug(f"Detection {i}: Short-term True Peak = {dbtp_metrics['shortterm_dbtp']:.2f} dBTP")
                     except Exception as e:
                         logger.debug(f"Short-term True Peak failed for detection {i}: {e}")
                         dbtp_metrics["shortterm_dbtp"] = 0.0
 
                 if len(momentary_audio) > 0:
                     try:
-                        momentary_resampled = librosa.resample(momentary_audio, orig_sr=sample_rate, target_sr=sample_rate * 4)
+                        momentary_resampled = signal.resample(momentary_audio, len(momentary_audio) * 4)
                         dbtp_metrics["momentary_dbtp"] = float(20 * np.log10(np.max(np.abs(momentary_resampled))))
+                        logger.debug(f"Detection {i}: Momentary True Peak = {dbtp_metrics['momentary_dbtp']:.2f} dBTP")
                     except Exception as e:
                         logger.debug(f"Momentary True Peak failed for detection {i}: {e}")
                         dbtp_metrics["momentary_dbtp"] = 0.0
