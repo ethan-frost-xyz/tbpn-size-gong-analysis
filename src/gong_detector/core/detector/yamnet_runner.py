@@ -33,9 +33,7 @@ class YAMNetGongDetector:
             use_trained_classifier: Whether to use the trained classifier for enhanced detection
             batch_size: Batch size for classifier predictions (larger = faster but more memory)
         """
-        # Configure TensorFlow for optimal GPU/CPU performance
-        self._configure_tensorflow()
-
+        # Initialize basic attributes first
         self.model: Optional[hub.KerasLayer] = None
         self.class_names: Optional[list[str]] = None
         self.gong_class_index: int = 172  # YAMNet class index for "gong"
@@ -46,6 +44,9 @@ class YAMNetGongDetector:
         self.trained_classifier: Optional[object] = None
         self.classifier_config: Optional[dict] = None
         self.batch_size: int = batch_size
+
+        # Configure TensorFlow for optimal GPU/CPU performance (after batch_size is set)
+        self._configure_tensorflow()
 
     def _configure_tensorflow(self) -> None:
         """Configure TensorFlow for optimal GPU/CPU performance on Mac M4."""
