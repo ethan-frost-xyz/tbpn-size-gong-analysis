@@ -20,8 +20,6 @@ from .file_utils import (
 from .loudness import (
     compute_batch_weighted_dbtp,
     compute_batch_weighted_lufs,
-    compute_lufs_segments,
-    compute_true_peak_segments,
 )
 from .youtube import (
     create_folder_name_from_date,
@@ -50,9 +48,7 @@ __all__ = [
     "cleanup_old_temp_files",
     "create_temp_audio_path",
     "setup_directories",
-    # Loudness analysis
-    "compute_lufs_segments",
+    # Loudness analysis (batch processing only - use unified_analyzer for individual analysis)
     "compute_batch_weighted_lufs",
-    "compute_true_peak_segments",
     "compute_batch_weighted_dbtp",
 ]

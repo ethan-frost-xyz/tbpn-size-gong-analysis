@@ -74,15 +74,13 @@ Existing imports continue to work for backward compatibility.
 
 ### loudness/ Package
 
-**unified_analyzer.py** ⭐ **NEW - RECOMMENDED**
-- `compute_all_loudness_metrics(video_id, detections, index, batch_context)` - **Unified single-pass computation** of all LUFS and True Peak metrics for maximum efficiency
+**unified_analyzer.py** ⭐ **RECOMMENDED - Modern Implementation**
+- `compute_all_loudness_metrics(video_id, detections, index)` - **Unified single-pass computation** of all LUFS and True Peak metrics for maximum efficiency (soundfile-only, no deprecation warnings)
 - `load_raw_audio_modern(file_path)` - Modern audio loading with soundfile-first approach, avoiding deprecated librosa methods
 
-**lufs_analyzer.py** (Legacy - still supported)
-- `compute_lufs_segments(video_id, timestamps, measurement_type, index)` - Compute LUFS loudness for audio segments using BS.1770-4 K-weighting and EBU R128 gating
-
-**true_peak_analyzer.py** (Legacy - still supported)
-- `compute_true_peak_segments(video_id, timestamps, measurement_type, index)` - Compute True Peak (dBTP) for audio segments using ITU-R BS.1770-4 standard with 4x oversampling
+**Legacy analyzers removed** (lufs_analyzer.py, true_peak_analyzer.py)
+- ❌ `compute_lufs_segments()` and `compute_true_peak_segments()` have been removed
+- ✅ Use `compute_all_loudness_metrics()` for optimal performance and no warnings
 
 **batch_processor.py**
 - `compute_batch_weighted_lufs(all_video_data, measurement_type, reference_lufs)` - Batch-weighted LUFS across multiple videos
@@ -169,19 +167,19 @@ for i, (lufs, dbtp) in enumerate(zip(lufs_metrics, dbtp_metrics)):
     print(f"  Short-term dBTP: {dbtp['shortterm_dbtp']:.1f} dBTP")
     print(f"  Momentary dBTP: {dbtp['momentary_dbtp']:.1f} dBTP")
 
-# LEGACY ANALYSIS (Still supported but less efficient)
-# Compute LUFS loudness manually (6 separate audio loads)
-from gong_detector.core.utils.loudness import compute_lufs_segments, compute_true_peak_segments
+# LEGACY ANALYSIS (REMOVED - use unified analyzer instead)
+# ❌ compute_lufs_segments() and compute_true_peak_segments() have been removed
+# ✅ Use compute_all_loudness_metrics() for optimal performance:
+from gong_detector.core.utils.loudness import compute_all_loudness_metrics
 
-timestamps = [(10.0, 15.0), (60.0, 65.0)]  # 5-second segments
-lufs_results = compute_lufs_segments("VIDEO_ID", timestamps, "integrated")
-dbtp_results = compute_true_peak_segments("VIDEO_ID", timestamps, "integrated")
+# Convert timestamps to detection format: (window_start, confidence, display_timestamp)
+detections = [(10.0, 1.0, 12.5), (60.0, 1.0, 62.5)]  # Center of 5-second segments
+lufs_results, dbtp_results = compute_all_loudness_metrics("VIDEO_ID", detections)
 
-for lufs_result, dbtp_result in zip(lufs_results, dbtp_results):
-    if lufs_result["valid"] and dbtp_result["valid"]:
-        print(f"Segment {lufs_result['start_time']}-{lufs_result['end_time']}s:")
-        print(f"  LUFS: {lufs_result['lufs']:.1f} LUFS")
-        print(f"  True Peak: {dbtp_result['dbtp']:.1f} dBTP")
+for i, (lufs_result, dbtp_result) in enumerate(zip(lufs_results, dbtp_results)):
+    print(f"Detection {i+1}:")
+    print(f"  Integrated LUFS: {lufs_result['integrated_lufs']:.1f} LUFS")
+    print(f"  Integrated dBTP: {dbtp_result['integrated_dbtp']:.1f} dBTP")
 
 # YouTube downloading with new modular approach
 from gong_detector.core.utils.youtube import download_and_process_youtube_audio
@@ -193,9 +191,10 @@ audio_path, title, date = download_and_process_youtube_audio(
     duration=30
 )
 
-# BACKWARD COMPATIBLE APPROACH (Still works)
-from gong_detector.core.utils.youtube_utils import compute_lufs_segments, download_and_trim_youtube_audio
-# ... same function calls as before
+# BACKWARD COMPATIBLE APPROACH (Updated)
+from gong_detector.core.utils.youtube_utils import download_and_trim_youtube_audio
+from gong_detector.core.utils.loudness import compute_all_loudness_metrics
+# Note: compute_lufs_segments no longer available via youtube_utils
 ```
 
 ## Error Handling
