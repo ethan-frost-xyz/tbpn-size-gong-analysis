@@ -28,36 +28,36 @@ def migrate_webm_to_wav() -> None:
     """Convert all WebM files in raw cache to WAV format."""
     project_root = find_project_root()
     raw_cache_dir = project_root / "data/local_media/raw"
-    
+
     if not raw_cache_dir.exists():
         logger.info("Raw cache directory does not exist, nothing to migrate")
         return
-    
+
     # Find all WebM files
     webm_files = list(raw_cache_dir.glob("*.webm"))
-    
+
     if not webm_files:
         logger.info("No WebM files found in raw cache")
         return
-    
+
     logger.info(f"Found {len(webm_files)} WebM files to convert")
-    
+
     converted_count = 0
     failed_count = 0
-    
+
     for webm_file in webm_files:
         video_id = webm_file.stem
         wav_file = raw_cache_dir / f"{video_id}.wav"
         wav_tmp = raw_cache_dir / f"{video_id}.tmp.wav"
-        
+
         # Skip if WAV already exists
         if wav_file.exists():
             logger.info(f"WAV already exists for {video_id}, skipping")
             continue
-        
+
         try:
             logger.info(f"Converting {webm_file.name} to WAV...")
-            
+
             # Convert to storage-optimized WAV for LUFS analysis
             # 16kHz 16-bit PCM provides sufficient quality for loudness measurements while minimizing storage
             cmd = [
@@ -75,53 +75,53 @@ def migrate_webm_to_wav() -> None:
                 "-loglevel", "error",  # minimal output
                 str(wav_tmp),
             ]
-            
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            
+
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+
             # Atomically move to final location
             os.replace(wav_tmp, wav_file)
-            
+
             # Verify the WAV file was created successfully
             if wav_file.exists() and wav_file.stat().st_size > 0:
                 logger.info(f"✓ Successfully converted {video_id}")
-                
+
                 # Optionally remove the original WebM file to save space
                 # Uncomment the next line if you want to delete WebM files after conversion
                 # webm_file.unlink()
-                
+
                 converted_count += 1
             else:
                 logger.error(f"✗ Conversion failed for {video_id}: output file is empty or missing")
                 failed_count += 1
-                
+
         except subprocess.CalledProcessError as e:
             logger.error(f"✗ FFmpeg conversion failed for {video_id}: {e.stderr}")
             failed_count += 1
-            
+
             # Clean up temp file if it exists
             if wav_tmp.exists():
                 try:
                     wav_tmp.unlink()
                 except OSError:
                     pass
-                    
+
         except Exception as e:
             logger.error(f"✗ Unexpected error converting {video_id}: {e}")
             failed_count += 1
-            
+
             # Clean up temp file if it exists
             if wav_tmp.exists():
                 try:
                     wav_tmp.unlink()
                 except OSError:
                     pass
-    
+
     logger.info(f"Migration complete: {converted_count} converted, {failed_count} failed")
-    
+
     if converted_count > 0:
         logger.info("✓ Raw cache migration successful!")
         logger.info("Note: Original WebM files are preserved. You can delete them manually if desired.")
-    
+
     if failed_count > 0:
         logger.warning(f"⚠ {failed_count} files failed to convert. Check the logs above for details.")
 

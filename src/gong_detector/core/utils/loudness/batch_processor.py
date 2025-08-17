@@ -93,7 +93,7 @@ def compute_batch_weighted_lufs(
                 detections=mock_detections,
                 index=index
             )
-            
+
             # Convert unified analyzer output to batch processor format
             lufs_results = []
             for i, (start_time, end_time) in enumerate(timestamps):
@@ -107,7 +107,7 @@ def compute_batch_weighted_lufs(
                         raw_lufs = lufs_metrics[i]["momentary_lufs"]
                     else:
                         raw_lufs = lufs_metrics[i]["integrated_lufs"]  # fallback
-                    
+
                     lufs_results.append({
                         "valid": raw_lufs != 0,  # Unified analyzer returns 0 for failures
                         "raw_lufs": raw_lufs if raw_lufs != 0 else None,
@@ -248,7 +248,7 @@ def compute_batch_weighted_dbtp(
                 detections=mock_detections,
                 index=index
             )
-            
+
             # Convert unified analyzer output to batch processor format
             dbtp_results = []
             for i, (start_time, end_time) in enumerate(timestamps):
@@ -262,7 +262,7 @@ def compute_batch_weighted_dbtp(
                         raw_dbtp = dbtp_metrics[i]["momentary_dbtp"]
                     else:
                         raw_dbtp = dbtp_metrics[i]["integrated_dbtp"]  # fallback
-                    
+
                     dbtp_results.append({
                         "valid": raw_dbtp != 0,  # Unified analyzer returns 0 for failures
                         "raw_dbtp": raw_dbtp if raw_dbtp != 0 else None,

@@ -6,7 +6,6 @@ preprocessed WAV files exist, implementing the dual-cache strategy.
 
 import logging
 import os
-import shutil
 import subprocess
 from pathlib import Path
 

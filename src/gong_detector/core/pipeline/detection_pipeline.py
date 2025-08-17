@@ -105,16 +105,16 @@ def process_audio_with_yamnet(
     print("\nStep 5a: Filtering early detections (first 180 seconds)...")
     early_threshold = 180.0  # 3 minutes
     original_count = len(detections)
-    
+
     # Filter detections based on display timestamp (3rd element)
     detections = [
-        detection for detection in detections 
+        detection for detection in detections
         if detection[2] >= early_threshold
     ]
-    
+
     filtered_count = len(detections)
     early_removed = original_count - filtered_count
-    
+
     if early_removed > 0:
         print(f"✓ Filtered out {early_removed} early detections (< {early_threshold}s)")
     else:
@@ -367,10 +367,10 @@ def detect_from_youtube_comprehensive(
         # Compute LUFS and True Peak metrics for each detection
         detection_lufs_metrics = []
         detection_dbtp_metrics = []
-        
+
         # Import unified loudness analyzer (optimized single-pass processing)
         from ..utils.loudness import compute_all_loudness_metrics
-        
+
         if detections:
             try:
                 # Get video ID for local media access
@@ -387,7 +387,7 @@ def detect_from_youtube_comprehensive(
                     # Fallback to zeros if no video ID
                     detection_lufs_metrics = [{"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0} for _ in detections]
                     detection_dbtp_metrics = [{"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0} for _ in detections]
-                    
+
             except Exception as e:
                 print(f"⚠ LUFS computation failed: {e}")
                 # Fallback to zeros on error
