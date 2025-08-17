@@ -1,5 +1,5 @@
 # TBPN Gong Detection System
-
+i am keeping this here but i hate it
 YAMNet-based audio event detection system for identifying gong sounds in YouTube videos with **EBU R128 compliance** (LUFS + True Peak measurements).
 
 ## Quick Start
@@ -24,9 +24,9 @@ python -m src.gong_detector.core.pipeline.detection_pipeline "YOUTUBE_URL"
   - **LUFS loudness** (ITU-R BS.1770-4)
   - **True Peak (dBTP)** measurements
   - **Batch weighting** across entire dataset
-- **⚡ Performance**: Batch processing, multi-threading, dual-cache system
-- **🔄 Interactive Menu**: User-friendly interface with all functionality
-- **📁 Local Caching**: Offline processing with raw + preprocessed audio cache
+- **Performance**: Batch processing, multi-threading, dual-cache system
+- **Interactive Menu**: User-friendly interface with all functionality
+- **Local Caching**: Offline processing with raw + preprocessed audio cache
 
 ## Project Structure
 
@@ -164,12 +164,3 @@ black src/
 **Optional:**
 - GPU acceleration (TensorFlow)
 - Local media cache (for offline processing)
-
-## Recent Updates
-
-✅ **EBU R128 Compliance**: Complete LUFS + True Peak integration  
-✅ **Batch Weighting**: Measurements normalized across entire dataset  
-✅ **Interactive Menu**: User-friendly interface with all features  
-✅ **Dual-Cache System**: Raw + preprocessed audio for offline processing  
-✅ **Comprehensive CSV**: 39 fields with broadcast-standard analysis  
-✅ **Performance Optimized**: Batch processing, multi-threading, memory efficient
