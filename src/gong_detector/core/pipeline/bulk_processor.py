@@ -107,8 +107,8 @@ Examples:
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=2000,
-        help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
+        default=4000,
+        help="Batch size for classifier predictions (larger = faster but more memory, default: 4000)",
     )
     parser.add_argument(
         "--csv",

@@ -36,7 +36,7 @@ def process_audio_with_yamnet(
     threshold: float,
     max_threshold: Optional[float] = None,
     use_version_one: bool = False,
-    batch_size: int = 1000,
+    batch_size: int = 4000,
     consolidate_detections: bool = True,
 ) -> tuple[list[tuple[float, float, float]], float, float]:
     """Process audio file with YAMNet detector.
@@ -68,6 +68,9 @@ def process_audio_with_yamnet(
             f"✓ Performance optimized: {perf_info['tensorflow_threads']['inter_op']} inter-op threads, {perf_info['tensorflow_threads']['intra_op']} intra-op threads"
         )
         print(f"✓ Batch processing: {perf_info['batch_size']} embeddings per batch")
+        print(f"✓ Hardware: {perf_info['available_devices']['cpu']} CPU(s), {perf_info['available_devices']['gpu']} GPU(s)")
+        if perf_info['available_devices']['gpu'] > 0:
+            print(f"✓ GPU acceleration: {perf_info['mixed_precision']} precision")
 
     # Process audio
     print("\nStep 3: Processing audio...")
@@ -207,8 +210,8 @@ Examples:
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=2000,
-        help="Batch size for classifier predictions (larger = faster but more memory, default: 2000)",
+        default=4000,
+        help="Batch size for classifier predictions (larger = faster but more memory, default: 4000)",
     )
     parser.add_argument(
         "--no_consolidate",
@@ -228,7 +231,7 @@ def detect_from_youtube_comprehensive(
     should_save_positive_samples: bool = False,
     keep_audio: bool = False,
     use_version_one: bool = False,
-    batch_size: int = 2000,
+    batch_size: int = 4000,
     consolidate_detections: bool = True,
     use_local_media: bool = False,
     local_only: bool = False,

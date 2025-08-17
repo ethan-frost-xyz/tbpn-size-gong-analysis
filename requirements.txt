@@ -1,6 +1,7 @@
 # Core ML dependencies
-tensorflow==2.19.0
-tensorflow-hub==0.16.1
+tensorflow==2.16.2
+tensorflow-hub==0.15.0
+tensorflow-metal>=1.2.0  # GPU acceleration for Mac M-series chips
 scikit-learn==1.6.1
 
 # Audio processing

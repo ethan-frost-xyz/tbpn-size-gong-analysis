@@ -7,7 +7,7 @@ Each row represents one detection event with rich contextual information.
 
 import csv
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -35,15 +35,15 @@ class DetectionRecord:
     funding_valuation: str = ""
     funding_round: str = ""
 
-    # Detection metadata (required)
-    detection_timestamp_seconds: float
-    window_start_seconds: float
-    video_max_confidence: str  # Formatted to 3 decimal places
-    detection_threshold: str  # Formatted to 3 decimal places
-    max_threshold: str  # Formatted to 3 decimal places (empty if not used)
-    processing_date: str  # ISO format YYYY-MM-DD
-    processing_time: str  # ISO format HH:MM:SS
-    detection_id: str
+    # Detection metadata (required) - using field() to allow after defaults
+    detection_timestamp_seconds: float = field(default=0.0)
+    window_start_seconds: float = field(default=0.0)
+    video_max_confidence: str = field(default="")  # Formatted to 3 decimal places
+    detection_threshold: str = field(default="")  # Formatted to 3 decimal places
+    max_threshold: str = field(default="")  # Formatted to 3 decimal places (empty if not used)
+    processing_date: str = field(default="")  # ISO format YYYY-MM-DD
+    processing_time: str = field(default="")  # ISO format HH:MM:SS
+    detection_id: str = field(default="")
 
     # LUFS loudness metrics (ITU-R BS.1770-4 / EBU R128)
     detection_integrated_lufs: str = ""  # Integrated LUFS at detection timestamp
@@ -72,10 +72,10 @@ class DetectionRecord:
     video_rms_amplitude: str = ""  # RMS amplitude for entire video
     
     # Other useless fields
-    upload_date_formatted: str  # YYYY-MM-DD format
-    upload_date: str  # YYYYMMDD format
-    video_duration_seconds: float
-    video_url: str
+    upload_date_formatted: str = field(default="")  # YYYY-MM-DD format
+    upload_date: str = field(default="")  # YYYYMMDD format
+    video_duration_seconds: float = field(default=0.0)
+    video_url: str = field(default="")
 
 class CSVManager:
     """Manages comprehensive CSV generation for gong detection results."""

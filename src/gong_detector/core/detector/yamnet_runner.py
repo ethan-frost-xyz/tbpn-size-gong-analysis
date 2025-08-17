@@ -19,7 +19,7 @@ class YAMNetGongDetector:
     """YAMNet-based gong sound detector for audio analysis."""
 
     def __init__(
-        self, use_trained_classifier: bool = False, batch_size: int = 1000
+        self, use_trained_classifier: bool = False, batch_size: int = 4000
     ) -> None:
         """Initialize the YAMNet gong detector.
 
@@ -27,7 +27,7 @@ class YAMNetGongDetector:
             use_trained_classifier: Whether to use the trained classifier for enhanced detection
             batch_size: Batch size for classifier predictions (larger = faster but more memory)
         """
-        # Configure TensorFlow for optimal CPU usage
+        # Configure TensorFlow for optimal GPU/CPU performance
         self._configure_tensorflow()
 
         self.model: Optional[hub.KerasLayer] = None
@@ -42,29 +42,42 @@ class YAMNetGongDetector:
         self.batch_size: int = batch_size
 
     def _configure_tensorflow(self) -> None:
-        """Configure TensorFlow for optimal CPU performance."""
-        # Enable multi-threading
-        tf.config.threading.set_inter_op_parallelism_threads(
-            8
-        )  # Use 8 threads for inter-op
-        tf.config.threading.set_intra_op_parallelism_threads(
-            4
-        )  # Use 4 threads for intra-op
-
-        # Enable memory growth to prevent memory issues
-        gpus = tf.config.experimental.list_physical_devices("GPU")
+        """Configure TensorFlow for optimal GPU/CPU performance on Mac M4."""
+        # Configure GPU if available (Mac M4 Metal)
+        gpus = tf.config.list_physical_devices("GPU")
         if gpus:
             try:
+                # Enable memory growth for GPU
                 for gpu in gpus:
                     tf.config.experimental.set_memory_growth(gpu, True)
+                print(f"✓ GPU acceleration enabled: {len(gpus)} GPU(s) detected (Mac M4 Metal)")
+                
+                # Optimize for Mac M4 GPU
+                tf.config.threading.set_inter_op_parallelism_threads(0)  # Use all available cores
+                tf.config.threading.set_intra_op_parallelism_threads(0)  # Use all available cores
+                
             except RuntimeError as e:
-                print(f"GPU memory growth setting failed: {e}")
+                print(f"GPU setup failed, falling back to CPU: {e}")
+                self._configure_cpu_fallback()
+        else:
+            print("No GPU detected, using CPU optimization")
+            self._configure_cpu_fallback()
 
-        # Enable mixed precision for faster computation (if supported)
+        # Enable mixed precision for faster computation (supported on M4)
         try:
             tf.keras.mixed_precision.set_global_policy("mixed_float16")
+            print("✓ Mixed precision enabled (float16)")
         except Exception:
-            pass  # Mixed precision not available, continue with default
+            print("Mixed precision not available, using float32")
+            
+        # Optimize memory allocation
+        tf.config.experimental.enable_tensor_float_32_execution(True)  # Enable TF32 on supported hardware
+
+    def _configure_cpu_fallback(self) -> None:
+        """Configure CPU-specific optimizations for M4 chip."""
+        # M4 has 10 CPU cores (4 performance + 6 efficiency), optimize accordingly
+        tf.config.threading.set_inter_op_parallelism_threads(0)  # Use all available cores
+        tf.config.threading.set_intra_op_parallelism_threads(0)  # Use all available cores
 
     def load_model(self) -> None:
         """Load the YAMNet model from TensorFlow Hub."""
@@ -235,12 +248,11 @@ class YAMNetGongDetector:
         print("Running YAMNet inference...")
 
         try:
-            # Use float32 for optimal performance on CPU
+            # Use float32 for optimal performance (compatible with mixed precision)
             waveform_tensor = tf.constant(waveform, dtype=tf.float32)
 
-            # Run inference with optimized settings
-            with tf.device("/CPU:0"):  # Explicitly use CPU for better control
-                scores, embeddings, spectrogram = self.model(waveform_tensor)
+            # Run inference with GPU acceleration (if available)
+            scores, embeddings, spectrogram = self.model(waveform_tensor)
 
             print(f"Inference complete. Generated {scores.shape[0]} predictions")
             print("Each prediction covers ~0.96 seconds of audio")
@@ -339,48 +351,52 @@ class YAMNetGongDetector:
 
         detections: list[tuple[float, float, float]] = []
 
-        # Process embeddings in batches for better performance
+        # Process embeddings in batches for maximum performance
         for batch_start in range(0, len(embeddings), self.batch_size):
             batch_end = min(batch_start + self.batch_size, len(embeddings))
             batch_embeddings = embeddings[batch_start:batch_end]
 
-            # Reshape all embeddings in batch for classifier prediction
+            # Reshape all embeddings in batch for classifier prediction (optimized)
             batch_embeddings_reshaped = batch_embeddings.reshape(
                 -1, batch_embeddings.shape[1]
             )
 
-            # Get predictions and confidences for entire batch
-            predictions = self.trained_classifier.predict(batch_embeddings_reshaped)
-            probabilities = self.trained_classifier.predict_proba(
-                batch_embeddings_reshaped
-            )
+            # Use TensorFlow ops for GPU acceleration if available
+            with tf.device(''):  # Let TensorFlow choose best device (GPU if available)
+                # Get predictions and confidences for entire batch
+                predictions = self.trained_classifier.predict(batch_embeddings_reshaped)
+                probabilities = self.trained_classifier.predict_proba(
+                    batch_embeddings_reshaped
+                )
             confidences = probabilities[
                 :, 1
             ]  # Probability for positive class (gong = 1)
 
-            # Process each prediction in the batch
-            for i, (prediction, confidence) in enumerate(zip(predictions, confidences)):
-                global_index = batch_start + i
-
-                # Only consider positive predictions (gong = 1)
-                if prediction != 1:
-                    continue
-
-                # Check minimum threshold
-                if confidence <= confidence_threshold:
-                    continue
-                # Check maximum threshold if specified
-                if (
-                    max_confidence_threshold is not None
-                    and confidence >= max_confidence_threshold
-                ):
-                    continue
-
-                window_start = global_index * hop_length
-                display_timestamp = window_start + (
-                    window_duration / 2
-                )  # Center of window
-                detections.append((window_start, float(confidence), display_timestamp))
+            # Vectorized processing for better performance
+            # Create masks for filtering
+            positive_mask = predictions == 1
+            min_threshold_mask = confidences > confidence_threshold
+            
+            if max_confidence_threshold is not None:
+                max_threshold_mask = confidences < max_confidence_threshold
+                valid_mask = positive_mask & min_threshold_mask & max_threshold_mask
+            else:
+                valid_mask = positive_mask & min_threshold_mask
+            
+            # Get valid indices and confidences
+            valid_indices = np.where(valid_mask)[0]
+            valid_confidences = confidences[valid_mask]
+            
+            # Vectorized calculation of timestamps
+            global_indices = batch_start + valid_indices
+            window_starts = global_indices * hop_length
+            display_timestamps = window_starts + (window_duration / 2)
+            
+            # Add all valid detections at once
+            for i, (window_start, confidence, display_timestamp) in enumerate(
+                zip(window_starts, valid_confidences, display_timestamps)
+            ):
+                detections.append((float(window_start), float(confidence), float(display_timestamp)))
 
         print(f"Found {len(detections)} gong detections with trained classifier")
         return detections
@@ -400,6 +416,19 @@ class YAMNetGongDetector:
         Returns:
             Dictionary with performance settings
         """
+        gpus = tf.config.list_physical_devices("GPU")
+        gpu_details = []
+        if gpus:
+            for gpu in gpus:
+                try:
+                    gpu_details.append({
+                        "name": gpu.name,
+                        "device_type": gpu.device_type,
+                        "memory_growth": True
+                    })
+                except:
+                    gpu_details.append({"name": "GPU", "device_type": "GPU", "memory_growth": True})
+        
         return {
             "batch_size": self.batch_size,
             "use_trained_classifier": self.use_trained_classifier,
@@ -409,8 +438,10 @@ class YAMNetGongDetector:
             },
             "available_devices": {
                 "cpu": len(tf.config.list_physical_devices("CPU")),
-                "gpu": len(tf.config.list_physical_devices("GPU")),
+                "gpu": len(gpus),
+                "gpu_details": gpu_details,
             },
+            "mixed_precision": tf.keras.mixed_precision.global_policy().name,
         }
 
     def _calculate_hop_length(
