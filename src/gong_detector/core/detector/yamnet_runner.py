@@ -63,8 +63,8 @@ class YAMNetGongDetector:
                 
                 # Enable mixed precision for faster computation (supported on M4)
                 tf.keras.mixed_precision.set_global_policy("mixed_float16")
-                print(f"✓ GPU acceleration enabled: {len(gpus)} GPU(s) detected (Mac M4 Metal)")
-                print("✓ Mixed precision enabled (float16)")
+                print(f"[OK] GPU acceleration enabled: {len(gpus)} GPU(s) detected (Mac M4 Metal)")
+                print("[OK] Mixed precision enabled (float16)")
                 
             except RuntimeError as e:
                 print(f"GPU setup failed, falling back to CPU: {e}")
@@ -96,7 +96,7 @@ class YAMNetGongDetector:
         
         # Only show memory warnings if there are issues
         if available_gb < 4:
-            print(f"⚠ Low memory: {available_gb:.1f}GB available. Consider closing other applications.")
+            print(f"[WARNING] Low memory: {available_gb:.1f}GB available. Consider closing other applications.")
         elif available_gb < 8:
             print(f"System memory: {total_gb:.1f}GB total, {available_gb:.1f}GB available")
         
@@ -107,7 +107,7 @@ class YAMNetGongDetector:
                 for gpu in gpus:
                     tf.config.experimental.set_memory_growth(gpu, True)
             except RuntimeError:
-                print("⚠ GPU memory configuration failed")
+                print("[WARNING] GPU memory configuration failed")
 
     def load_model(self) -> None:
         """Load the YAMNet model from TensorFlow Hub."""
@@ -159,10 +159,10 @@ class YAMNetGongDetector:
                 self.classifier_config = json.load(f)
 
             print(
-                f"✓ Loaded {self.classifier_config['model_type']} with {self.classifier_config['feature_count']} features"
+                f"[OK] Loaded {self.classifier_config['model_type']} with {self.classifier_config['feature_count']} features"
             )
             print(
-                f"✓ Training accuracy: {self.classifier_config['performance']['accuracy']:.3f}"
+                f"[OK] Training accuracy: {self.classifier_config['performance']['accuracy']:.3f}"
             )
 
         except Exception as e:
@@ -280,7 +280,7 @@ class YAMNetGongDetector:
         max_samples = max_duration_seconds * self.target_sample_rate
         
         if len(waveform) > max_samples:
-            print(f"⚠ Large audio detected ({len(waveform) / self.target_sample_rate:.1f}s)")
+            print(f"[INFO] Large audio detected ({len(waveform) / self.target_sample_rate:.1f}s)")
             print(f"Processing in chunks of {max_duration_seconds}s for memory safety...")
             return self._run_chunked_inference(waveform, max_samples)
         
@@ -303,14 +303,14 @@ class YAMNetGongDetector:
 
         except tf.errors.ResourceExhaustedError as e:
             if "OOM" in str(e):
-                print(f"⚠ GPU out of memory. Falling back to CPU for this inference...")
+                print(f"[WARNING] GPU out of memory. Falling back to CPU for this inference...")
                 print(f"Audio duration: {len(waveform) / self.target_sample_rate:.1f}s")
                 # Try CPU fallback
                 try:
                     with tf.device("/CPU:0"):
                         waveform_tensor = tf.constant(waveform, dtype=tf.float32)
                         scores, embeddings, spectrogram = self.model(waveform_tensor)
-                        print("✓ CPU fallback successful")
+                        print("[OK] CPU fallback successful")
                         return scores.numpy(), embeddings.numpy(), spectrogram.numpy()
                 except Exception as cpu_e:
                     raise RuntimeError(
@@ -358,7 +358,7 @@ class YAMNetGongDetector:
                 gc.collect()
                 
             except Exception as e:
-                print(f"⚠ Chunk {i+1} failed: {e}")
+                print(f"[WARNING] Chunk {i+1} failed: {e}")
                 continue
         
         if not all_scores:
@@ -369,7 +369,7 @@ class YAMNetGongDetector:
         final_embeddings = np.concatenate(all_embeddings, axis=0)
         final_spectrograms = np.concatenate(all_spectrograms, axis=0)
         
-        print(f"✓ Chunked processing complete. Total predictions: {final_scores.shape[0]}")
+        print(f"[OK] Chunked processing complete. Total predictions: {final_scores.shape[0]}")
         return final_scores, final_embeddings, final_spectrograms
 
     def detect_gongs(

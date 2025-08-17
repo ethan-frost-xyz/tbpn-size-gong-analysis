@@ -65,12 +65,12 @@ def process_audio_with_yamnet(
         # Print performance configuration
         perf_info = detector.get_performance_info()
         print(
-            f"✓ Performance optimized: {perf_info['tensorflow_threads']['inter_op']} inter-op threads, {perf_info['tensorflow_threads']['intra_op']} intra-op threads"
+            f"[OK] Performance optimized: {perf_info['tensorflow_threads']['inter_op']} inter-op threads, {perf_info['tensorflow_threads']['intra_op']} intra-op threads"
         )
-        print(f"✓ Batch processing: {perf_info['batch_size']} embeddings per batch")
-        print(f"✓ Hardware: {perf_info['available_devices']['cpu']} CPU(s), {perf_info['available_devices']['gpu']} GPU(s)")
+        print(f"[OK] Batch processing: {perf_info['batch_size']} embeddings per batch")
+        print(f"[OK] Hardware: {perf_info['available_devices']['cpu']} CPU(s), {perf_info['available_devices']['gpu']} GPU(s)")
         if perf_info['available_devices']['gpu'] > 0:
-            print(f"✓ GPU acceleration: {perf_info['mixed_precision']} precision")
+            print(f"[OK] GPU acceleration: {perf_info['mixed_precision']} precision")
 
     # Process audio
     print("\nStep 3: Processing audio...")

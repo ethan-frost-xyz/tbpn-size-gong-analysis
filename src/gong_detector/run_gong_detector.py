@@ -166,7 +166,7 @@ def single_video_detection() -> None:
         memory = psutil.virtual_memory()
         available_gb = memory.available / (1024**3)
         if available_gb < 4:
-            print(f"⚠ Warning: Low memory available ({available_gb:.1f}GB)")
+            print(f"[WARNING] Low memory available ({available_gb:.1f}GB)")
             print("Consider closing other applications before processing large videos")
             print()
     except ImportError:
@@ -371,11 +371,11 @@ def model_management() -> None:
     try:
         detector = YAMNetGongDetector()
         detector.load_model()
-        print("✓ Model loaded successfully!")
+        print("[OK] Model loaded successfully!")
 
         # Show model info
         perf_info = detector.get_performance_info()
-        print("✓ Performance configuration:")
+        print("[OK] Performance configuration:")
         print(f"  - Inter-op threads: {perf_info['tensorflow_threads']['inter_op']}")
         print(f"  - Intra-op threads: {perf_info['tensorflow_threads']['intra_op']}")
         print(f"  - Batch size: {perf_info['batch_size']}")
@@ -383,12 +383,12 @@ def model_management() -> None:
         # Try to load trained classifier
         try:
             detector.load_trained_classifier()
-            print("✓ Trained classifier loaded successfully!")
+            print("[OK] Trained classifier loaded successfully!")
         except Exception as e:
-            print(f"⚠ Trained classifier not available: {e}")
+            print(f"[WARNING] Trained classifier not available: {e}")
 
     except Exception as e:
-        print(f"✗ Model loading failed: {e}")
+        print(f"[ERROR] Model loading failed: {e}")
 
 
 def main() -> None:
