@@ -6,6 +6,7 @@ Interactive menu system for accessing all gong detector functionality.
 
 import os
 import sys
+import time
 import warnings
 from pathlib import Path
 from typing import Callable, Optional
@@ -285,10 +286,31 @@ def bulk_processing() -> None:
     project_root = links_file.parent.parent  # data/tbpn_ytlinks -> data -> project_root
     original_cwd = Path.cwd()
 
+    # Start timing for interactive menu display
+    start_time = time.time()
+    
     try:
         os.chdir(project_root)
         # Run bulk processor
         bulk_processor_main()
+        
+        # Calculate and display timing
+        end_time = time.time()
+        total_time_seconds = end_time - start_time
+        
+        # Format time display
+        total_seconds = int(total_time_seconds)
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        secs = total_seconds % 60
+        
+        if hours > 0:
+            time_str = f"{hours}h {minutes}m {secs}s"
+        else:
+            time_str = f"{minutes}m {secs}s"
+        
+        print(f"\n[OK] Bulk processing completed in {time_str}")
+        
     finally:
         # Restore original working directory
         os.chdir(original_cwd)

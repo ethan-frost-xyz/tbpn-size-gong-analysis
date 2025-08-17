@@ -7,11 +7,32 @@ Creates no files by default - only when explicitly requested.
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from ..data import CSVManager
 from ..training.negative_collector import collect_negative_samples
 from .detection_pipeline import detect_from_youtube_comprehensive
+
+
+def format_time(seconds: float) -> str:
+    """Format seconds as human-readable time string.
+    
+    Args:
+        seconds: Time in seconds
+        
+    Returns:
+        Formatted string like "5m 23s" or "1h 15m 30s"
+    """
+    total_seconds = int(seconds)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    secs = total_seconds % 60
+    
+    if hours > 0:
+        return f"{hours}h {minutes}m {secs}s"
+    else:
+        return f"{minutes}m {secs}s"
 
 
 def read_youtube_links(file_path: Path) -> list[str]:
@@ -193,6 +214,9 @@ Examples:
     # Store results for CSV processing
     all_results = []  # Store results for CSV processing
 
+    # Start timing
+    start_time = time.time()
+
     # Process each URL
     successful = 0
     failed = 0
@@ -226,9 +250,9 @@ Examples:
 
         if result["success"]:
             if args.collect_negative_samples:
-                print(f"✓ Collected {result['sample_count']} negative samples")
+                print(f"[OK] Collected {result['sample_count']} negative samples")
             else:
-                print(f"✓ Detected {result['detection_count']} gongs")
+                print(f"[OK] Detected {result['detection_count']} gongs")
                 # Store results for CSV processing
                 all_results.append(result)
 
@@ -249,25 +273,24 @@ Examples:
                             detection_lufs_metrics=result.get("detection_lufs_metrics", []),
                             detection_dbtp_metrics=result.get("detection_dbtp_metrics", []),
                         )
-                        print(f"✓ Added {len(result['detections'])} detections to CSV")
+                        print(f"[OK] Added {len(result['detections'])} detections to CSV")
                     except Exception as e:
-                        print(f"⚠ CSV write failed for this video: {e}")
+                        print(f"[WARNING] CSV write failed for this video: {e}")
             successful += 1
         else:
-            print(f"✗ Failed: {result['error_message']}")
+            print(f"[ERROR] Failed: {result['error_message']}")
             failed += 1
 
     # All videos processed - CSV already written incrementally
     if csv_manager and not args.collect_negative_samples:
-        print(f"\n✓ Processed {len(all_results)} videos with incremental CSV writing")
-        print("  Note: Each video's LUFS/True Peak computed individually for optimal memory usage")
+        print(f"\n[OK] Processed {len(all_results)} videos with incremental CSV writing")
 
     # Save CSV if requested
     if csv_manager and not args.collect_negative_samples:
         try:
             csv_path = csv_manager.save_comprehensive_csv("bulk_run")
             stats = csv_manager.get_summary_stats()
-            print(f"\n✓ CSV saved to: {csv_path}")
+            print(f"\n[OK] CSV saved to: {csv_path}")
             print(f"  Total detections: {stats.get('total_detections', 0)}")
             print(f"  Unique videos: {stats.get('unique_videos', 0)}")
             print(f"  Average confidence: {stats.get('average_confidence', 0):.3f}")
@@ -283,7 +306,14 @@ Examples:
                     f"    Crest factor: {stats.get('avg_detection_crest_factor', 0):.1f}"
                 )
         except Exception as e:
-            print(f"✗ CSV save failed: {e}")
+            print(f"[ERROR] CSV save failed: {e}")
+
+    # Calculate timing
+    end_time = time.time()
+    total_time_seconds = end_time - start_time
+    
+    # Calculate average time per video (only successful ones)
+    avg_time_seconds = total_time_seconds / successful if successful > 0 else 0
 
     # Print final summary
     print(f"\n{'=' * 60}")
@@ -292,6 +322,9 @@ Examples:
     print(f"Total URLs: {len(urls)}")
     print(f"Successful: {successful}")
     print(f"Failed: {failed}")
+    print(f"Total time: {format_time(total_time_seconds)}")
+    if successful > 0:
+        print(f"Average time per video: {format_time(avg_time_seconds)}")
 
     if failed > 0:
         sys.exit(1)
