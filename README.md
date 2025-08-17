@@ -19,8 +19,8 @@ python -m src.gong_detector.core.pipeline.detection_pipeline "YOUTUBE_URL"
 
 ## Key Features
 
-- **🎯 Gong Detection**: YAMNet-based detection with trained classifier (99.3% accuracy)
-- **📊 EBU R128 Analysis**: Complete broadcast-standard audio analysis
+- **Gong Detection**: YAMNet-based detection with trained classifier (99.3% accuracy)
+- **EBU R128 Analysis**: Complete broadcast-standard audio analysis
   - **LUFS loudness** (ITU-R BS.1770-4)
   - **True Peak (dBTP)** measurements
   - **Batch weighting** across entire dataset

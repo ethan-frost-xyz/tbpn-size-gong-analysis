@@ -125,7 +125,7 @@ def process_single_sample(
 
 def main() -> None:
     """Run interactive manual sample collection."""
-    print("🎵 Manual Sample Collector")
+    print("Manual Sample Collector")
     print(
         "Enter YouTube link and timestamp (e.g., 'https://youtube.com/watch?v=ABC123 120')"
     )

@@ -174,7 +174,7 @@ Examples:
                 print(f"Warning: --test-run {args.test_run} >= total videos {total_urls}, processing all videos")
             else:
                 urls = urls[:args.test_run]
-                print(f"🧪 TEST MODE: Processing first {len(urls)} of {total_urls} videos")
+                print(f"TEST MODE: Processing first {len(urls)} of {total_urls} videos")
 
         print(f"Found {len(urls)} YouTube URLs to process")
     except FileNotFoundError:
@@ -188,7 +188,7 @@ Examples:
     csv_manager = None
     if args.csv:
         csv_manager = CSVManager()
-        print("📊 CSV output enabled - batch LUFS + True Peak analysis will be performed across all videos")
+        print("CSV output enabled - batch LUFS + True Peak analysis will be performed across all videos")
 
     # Collect all detection data for batch LUFS computation
     all_detection_data = []  # Store (video_id, timestamps) for batch LUFS

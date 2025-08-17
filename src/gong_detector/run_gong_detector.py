@@ -244,9 +244,9 @@ def bulk_processing() -> None:
     print(f"Using trained classifier: {use_version_one}")
     print(f"Save CSV: {save_csv}")
     if save_csv:
-        print("📊 Batch LUFS + True Peak analysis enabled - EBU R128 compliance across entire dataset")
+        print("Batch LUFS + True Peak analysis enabled - EBU R128 compliance across entire dataset")
     if test_mode:
-        print(f"🧪 Test mode: Processing first {test_count} videos only")
+        print(f"Test mode: Processing first {test_count} videos only")
     print(f"Use local media: {use_local_media}")
     print(f"Local only: {local_only}")
 
