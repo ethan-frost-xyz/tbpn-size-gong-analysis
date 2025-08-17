@@ -28,7 +28,10 @@ librosa==0.11.0
 pyloudnorm==0.1.1
 
 # System dependencies (prevent deprecation warnings)
-setuptools<81
+setuptools==75.1.0  # Pin to stable version that works with TensorFlow Hub
 
 # Development tools
-ipython>=8.0.0 
+ipython>=8.0.0
+
+# System monitoring
+psutil>=5.9.0 
