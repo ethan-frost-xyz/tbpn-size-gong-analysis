@@ -11,8 +11,14 @@ from typing import Optional
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+
+# Configure TensorFlow logging before import to reduce spam
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # 0=all, 1=info, 2=warnings, 3=errors only
 import tensorflow as tf  # type: ignore
 import tensorflow_hub as hub  # type: ignore
+
+# Set TensorFlow logging to only show errors and warnings
+tf.get_logger().setLevel('WARNING')
 
 
 class YAMNetGongDetector:
@@ -50,11 +56,15 @@ class YAMNetGongDetector:
                 # Enable memory growth for GPU
                 for gpu in gpus:
                     tf.config.experimental.set_memory_growth(gpu, True)
-                print(f"✓ GPU acceleration enabled: {len(gpus)} GPU(s) detected (Mac M4 Metal)")
                 
                 # Optimize for Mac M4 GPU
                 tf.config.threading.set_inter_op_parallelism_threads(0)  # Use all available cores
                 tf.config.threading.set_intra_op_parallelism_threads(0)  # Use all available cores
+                
+                # Enable mixed precision for faster computation (supported on M4)
+                tf.keras.mixed_precision.set_global_policy("mixed_float16")
+                print(f"✓ GPU acceleration enabled: {len(gpus)} GPU(s) detected (Mac M4 Metal)")
+                print("✓ Mixed precision enabled (float16)")
                 
             except RuntimeError as e:
                 print(f"GPU setup failed, falling back to CPU: {e}")
@@ -62,22 +72,42 @@ class YAMNetGongDetector:
         else:
             print("No GPU detected, using CPU optimization")
             self._configure_cpu_fallback()
-
-        # Enable mixed precision for faster computation (supported on M4)
-        try:
-            tf.keras.mixed_precision.set_global_policy("mixed_float16")
-            print("✓ Mixed precision enabled (float16)")
-        except Exception:
-            print("Mixed precision not available, using float32")
             
         # Optimize memory allocation
         tf.config.experimental.enable_tensor_float_32_execution(True)  # Enable TF32 on supported hardware
+        
+        # Set memory limits to prevent system crashes
+        self._configure_memory_limits()
 
     def _configure_cpu_fallback(self) -> None:
         """Configure CPU-specific optimizations for M4 chip."""
         # M4 has 10 CPU cores (4 performance + 6 efficiency), optimize accordingly
         tf.config.threading.set_inter_op_parallelism_threads(0)  # Use all available cores
         tf.config.threading.set_intra_op_parallelism_threads(0)  # Use all available cores
+
+    def _configure_memory_limits(self) -> None:
+        """Configure memory limits to prevent system crashes."""
+        import psutil
+        
+        # Get system memory info
+        memory = psutil.virtual_memory()
+        total_gb = memory.total / (1024**3)
+        available_gb = memory.available / (1024**3)
+        
+        # Only show memory warnings if there are issues
+        if available_gb < 4:
+            print(f"⚠ Low memory: {available_gb:.1f}GB available. Consider closing other applications.")
+        elif available_gb < 8:
+            print(f"System memory: {total_gb:.1f}GB total, {available_gb:.1f}GB available")
+        
+        # Configure GPU memory if available (silent unless there are issues)
+        gpus = tf.config.list_physical_devices("GPU")
+        if gpus:
+            try:
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+            except RuntimeError:
+                print("⚠ GPU memory configuration failed")
 
     def load_model(self) -> None:
         """Load the YAMNet model from TensorFlow Hub."""
@@ -273,10 +303,20 @@ class YAMNetGongDetector:
 
         except tf.errors.ResourceExhaustedError as e:
             if "OOM" in str(e):
-                raise RuntimeError(
-                    f"GPU out of memory. Try reducing audio length or use CPU-only mode. "
-                    f"Audio duration: {len(waveform) / self.target_sample_rate:.1f}s"
-                ) from e
+                print(f"⚠ GPU out of memory. Falling back to CPU for this inference...")
+                print(f"Audio duration: {len(waveform) / self.target_sample_rate:.1f}s")
+                # Try CPU fallback
+                try:
+                    with tf.device("/CPU:0"):
+                        waveform_tensor = tf.constant(waveform, dtype=tf.float32)
+                        scores, embeddings, spectrogram = self.model(waveform_tensor)
+                        print("✓ CPU fallback successful")
+                        return scores.numpy(), embeddings.numpy(), spectrogram.numpy()
+                except Exception as cpu_e:
+                    raise RuntimeError(
+                        f"Both GPU and CPU inference failed. Audio too large. "
+                        f"Try processing shorter segments. GPU error: {e}, CPU error: {cpu_e}"
+                    ) from e
             raise RuntimeError(f"YAMNet inference failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"YAMNet inference failed: {e}") from e

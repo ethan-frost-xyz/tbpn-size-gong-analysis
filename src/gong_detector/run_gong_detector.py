@@ -10,8 +10,10 @@ import warnings
 from pathlib import Path
 from typing import Callable, Optional
 
-# Suppress TensorFlow Hub pkg_resources deprecation warning (cosmetic only)
+# Suppress known harmless warnings from dependencies
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
+warnings.filterwarnings("ignore", category=UserWarning, module="tensorflow_hub")
+warnings.filterwarnings("ignore", message=".*pkg_resources.*", category=UserWarning)
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -157,12 +159,24 @@ def get_yes_no_input(prompt: str, default: bool = False) -> bool:
 def single_video_detection() -> None:
     """Run single video gong detection."""
     print("\n=== Single Video Gong Detection ===\n")
+    
+    # System safety check
+    try:
+        import psutil
+        memory = psutil.virtual_memory()
+        available_gb = memory.available / (1024**3)
+        if available_gb < 4:
+            print(f"⚠ Warning: Low memory available ({available_gb:.1f}GB)")
+            print("Consider closing other applications before processing large videos")
+            print()
+    except ImportError:
+        pass
 
     # Get parameters
     youtube_url = get_user_input("Enter YouTube URL")
     threshold = get_float_input("Confidence threshold", 0.94)
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
-    batch_size = get_int_input("Batch size", 2000)
+    batch_size = get_int_input("Batch size", 4000)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     keep_audio = get_yes_no_input("Keep temporary audio files?", False)
     use_local_media = get_yes_no_input("Use local media (cache) if available?", True)
