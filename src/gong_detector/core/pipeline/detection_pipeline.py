@@ -53,6 +53,28 @@ def process_audio_with_yamnet(
         Tuple of (consolidated_detections, total_duration, max_gong_confidence)
         Note: detections are automatically consolidated to remove sliding-window overlaps
     """
+    # Memory safety check before processing
+    try:
+        import psutil
+        import os
+        memory = psutil.virtual_memory()
+        available_gb = memory.available / (1024**3)
+        
+        # Get audio file size to estimate processing requirements
+        audio_size_mb = os.path.getsize(temp_audio) / (1024**2)
+        
+        if available_gb < 3:
+            print(f"[ERROR] Insufficient memory for processing ({available_gb:.1f}GB available)")
+            print("Please close other applications and try again")
+            return [], 0.0, 0.0
+        elif available_gb < 6 and audio_size_mb > 100:
+            print(f"[WARNING] Low memory ({available_gb:.1f}GB) for large audio file ({audio_size_mb:.1f}MB)")
+            print("Processing will use conservative settings")
+            # Reduce batch size for this session
+            batch_size = min(batch_size, 1000)
+    except ImportError:
+        pass
+    
     # Initialize YAMNet detector with optimized settings
     print("\nStep 2: Loading YAMNet model...")
     detector = YAMNetGongDetector(
@@ -62,15 +84,7 @@ def process_audio_with_yamnet(
 
     if use_version_one:
         detector.load_trained_classifier()
-        # Print performance configuration
-        perf_info = detector.get_performance_info()
-        print(
-            f"[OK] Performance optimized: {perf_info['tensorflow_threads']['inter_op']} inter-op threads, {perf_info['tensorflow_threads']['intra_op']} intra-op threads"
-        )
-        print(f"[OK] Batch processing: {perf_info['batch_size']} embeddings per batch")
-        print(f"[OK] Hardware: {perf_info['available_devices']['cpu']} CPU(s), {perf_info['available_devices']['gpu']} GPU(s)")
-        if perf_info['available_devices']['gpu'] > 0:
-            print(f"[OK] GPU acceleration: {perf_info['mixed_precision']} precision")
+
 
     # Process audio
     print("\nStep 3: Processing audio...")

@@ -220,11 +220,66 @@ Examples:
     # Process each URL
     successful = 0
     failed = 0
+    
+    # Memory monitoring for bulk processing
+    def check_memory_status() -> tuple[float, bool]:
+        """Check current memory usage and return (available_gb, should_continue)."""
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            available_gb = memory.available / (1024**3)
+            used_percent = memory.percent
+            
+            # Stop if memory usage is critically high
+            if used_percent > 90 or available_gb < 2:
+                print(f"[CRITICAL] Memory usage too high: {used_percent:.1f}% used, {available_gb:.1f}GB available")
+                print("Stopping bulk processing to prevent system crash")
+                return available_gb, False
+            elif used_percent > 80 or available_gb < 4:
+                print(f"[WARNING] High memory usage: {used_percent:.1f}% used, {available_gb:.1f}GB available")
+                return available_gb, True
+            
+            return available_gb, True
+        except ImportError:
+            return 8.0, True  # Assume OK if psutil not available
+    
+    def force_memory_cleanup() -> None:
+        """Force garbage collection and memory cleanup."""
+        import gc
+        import os
+        
+        # Force garbage collection
+        gc.collect()
+        
+        # Try to force TensorFlow memory cleanup if available
+        try:
+            import tensorflow as tf
+            tf.keras.backend.clear_session()
+        except ImportError:
+            pass
+        
+        # Force OS-level memory cleanup on macOS
+        if os.name == 'posix':
+            try:
+                os.system('purge > /dev/null 2>&1 &')  # macOS memory purge in background
+            except:
+                pass
 
     for i, url in enumerate(urls, 1):
         print(f"\n{'=' * 60}")
         print(f"Processing {i}/{len(urls)}: {url}")
         print(f"{'=' * 60}")
+        
+        # Check memory before processing each video
+        available_gb, should_continue = check_memory_status()
+        if not should_continue:
+            print(f"[ERROR] Stopping due to insufficient memory after {successful} successful videos")
+            break
+        
+        # Force cleanup before processing if memory is getting low
+        if available_gb < 6:
+            print(f"[INFO] Running memory cleanup (available: {available_gb:.1f}GB)")
+            force_memory_cleanup()
 
         if args.collect_negative_samples:
             result = collect_negative_samples(
@@ -280,7 +335,16 @@ Examples:
         else:
             print(f"[ERROR] Failed: {result['error_message']}")
             failed += 1
+        
+        # Force memory cleanup after each video to prevent accumulation
+        if i % 3 == 0 or available_gb < 8:  # Every 3 videos or when memory is low
+            print(f"[INFO] Running periodic memory cleanup after video {i}")
+            force_memory_cleanup()
 
+    # Final memory cleanup
+    print("\n[INFO] Running final memory cleanup...")
+    force_memory_cleanup()
+    
     # All videos processed - CSV already written incrementally
     if csv_manager and not args.collect_negative_samples:
         print(f"\n[OK] Processed {len(all_results)} videos with incremental CSV writing")

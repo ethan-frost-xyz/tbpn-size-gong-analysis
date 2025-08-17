@@ -161,23 +161,36 @@ def single_video_detection() -> None:
     """Run single video gong detection."""
     print("\n=== Single Video Gong Detection ===\n")
     
-    # System safety check
+    # System safety check with graceful degradation
     try:
         import psutil
         memory = psutil.virtual_memory()
         available_gb = memory.available / (1024**3)
+        total_gb = memory.total / (1024**3)
+        
+        # Suggest safer defaults for low memory systems
+        suggested_batch_size = 4000
+        if total_gb <= 8:
+            suggested_batch_size = 1000
+            print(f"[INFO] Low memory system ({total_gb:.1f}GB) - suggesting smaller batch size")
+        elif total_gb <= 16:
+            suggested_batch_size = 2000
+            print(f"[INFO] Medium memory system ({total_gb:.1f}GB) - suggesting moderate batch size")
+        
         if available_gb < 4:
             print(f"[WARNING] Low memory available ({available_gb:.1f}GB)")
             print("Consider closing other applications before processing large videos")
+            print("The system will automatically use smaller batch sizes and chunk processing")
             print()
     except ImportError:
+        suggested_batch_size = 2000  # Conservative default
         pass
 
     # Get parameters
     youtube_url = get_user_input("Enter YouTube URL")
     threshold = get_float_input("Confidence threshold", 0.94)
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
-    batch_size = get_int_input("Batch size", 4000)
+    batch_size = get_int_input("Batch size", suggested_batch_size)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     keep_audio = get_yes_no_input("Keep temporary audio files?", False)
     use_local_media = get_yes_no_input("Use local media (cache) if available?", True)
@@ -220,6 +233,23 @@ def single_video_detection() -> None:
 def bulk_processing() -> None:
     """Run bulk processing of multiple videos."""
     print("\n=== Bulk Processing ===\n")
+    
+    # Memory-aware bulk processing setup
+    try:
+        import psutil
+        memory = psutil.virtual_memory()
+        total_gb = memory.total / (1024**3)
+        available_gb = memory.available / (1024**3)
+        
+        if total_gb <= 8:
+            print(f"[INFO] Low memory system ({total_gb:.1f}GB) detected")
+            print("Bulk processing will use conservative settings and frequent cleanup")
+        elif available_gb < 6:
+            print(f"[WARNING] Low available memory ({available_gb:.1f}GB)")
+            print("Consider closing other applications for optimal performance")
+        print()
+    except ImportError:
+        pass
 
     # Find links file robustly - walk up to project root
     links_file = None

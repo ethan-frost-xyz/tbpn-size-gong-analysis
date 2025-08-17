@@ -94,7 +94,21 @@ class YAMNetGongDetector:
         total_gb = memory.total / (1024**3)
         available_gb = memory.available / (1024**3)
         
-        # Only show memory warnings if there are issues
+        # Store memory info for runtime checks
+        self._system_memory_gb = total_gb
+        self._safe_memory_threshold_gb = max(4.0, total_gb * 0.25)  # Reserve 25% or 4GB minimum
+        
+        # Adjust batch size based on available memory
+        if total_gb <= 8:
+            # Low memory system - use smaller batch size
+            self.batch_size = min(self.batch_size, 1000)
+            print(f"[INFO] Low memory system ({total_gb:.1f}GB) - reduced batch size to {self.batch_size}")
+        elif total_gb <= 16:
+            # Medium memory system - moderate batch size
+            self.batch_size = min(self.batch_size, 2000)
+            print(f"[INFO] Medium memory system ({total_gb:.1f}GB) - batch size limited to {self.batch_size}")
+        
+        # Show memory warnings if there are issues
         if available_gb < 4:
             print(f"[WARNING] Low memory: {available_gb:.1f}GB available. Consider closing other applications.")
         elif available_gb < 8:
@@ -160,9 +174,6 @@ class YAMNetGongDetector:
 
             print(
                 f"[OK] Loaded {self.classifier_config['model_type']} with {self.classifier_config['feature_count']} features"
-            )
-            print(
-                f"[OK] Training accuracy: {self.classifier_config['performance']['accuracy']:.3f}"
             )
 
         except Exception as e:
@@ -275,12 +286,27 @@ class YAMNetGongDetector:
         if self.model is None:
             raise RuntimeError("Model not loaded. Call load_model() first.")
 
-        # Memory protection: chunk large audio files
-        max_duration_seconds = 1800  # 30 minutes max per chunk (safe for 16GB RAM)
+        # Memory protection: chunk large audio files based on system memory
+        audio_duration_seconds = len(waveform) / self.target_sample_rate
+        
+        # Dynamic chunk size based on system memory
+        if hasattr(self, '_system_memory_gb'):
+            if self._system_memory_gb <= 8:
+                max_duration_seconds = 600  # 10 minutes for low memory systems
+            elif self._system_memory_gb <= 16:
+                max_duration_seconds = 1200  # 20 minutes for medium memory systems
+            else:
+                max_duration_seconds = 1800  # 30 minutes for high memory systems
+        else:
+            max_duration_seconds = 1200  # Conservative default
+        
         max_samples = max_duration_seconds * self.target_sample_rate
         
+        # Check memory before processing
+        self._check_memory_before_processing(audio_duration_seconds)
+        
         if len(waveform) > max_samples:
-            print(f"[INFO] Large audio detected ({len(waveform) / self.target_sample_rate:.1f}s)")
+            print(f"[INFO] Large audio detected ({audio_duration_seconds:.1f}s)")
             print(f"Processing in chunks of {max_duration_seconds}s for memory safety...")
             return self._run_chunked_inference(waveform, max_samples)
         
@@ -371,6 +397,32 @@ class YAMNetGongDetector:
         
         print(f"[OK] Chunked processing complete. Total predictions: {final_scores.shape[0]}")
         return final_scores, final_embeddings, final_spectrograms
+    
+    def _check_memory_before_processing(self, audio_duration_seconds: float) -> None:
+        """Check system memory before processing and warn if insufficient."""
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            available_gb = memory.available / (1024**3)
+            
+            # Estimate memory usage (rough calculation)
+            # Audio: 16kHz * 4 bytes * duration * 3 (waveform + scores + embeddings)
+            estimated_memory_gb = (audio_duration_seconds * 16000 * 4 * 3) / (1024**3)
+            
+            if hasattr(self, '_safe_memory_threshold_gb'):
+                if available_gb < self._safe_memory_threshold_gb:
+                    print(f"[WARNING] Low available memory ({available_gb:.1f}GB)")
+                    print(f"Estimated processing needs: {estimated_memory_gb:.1f}GB")
+                    print("Consider closing other applications or processing shorter audio segments")
+                    
+                    # Auto-reduce batch size for this processing
+                    if self.batch_size > 500:
+                        old_batch_size = self.batch_size
+                        self.batch_size = 500
+                        print(f"[AUTO] Reduced batch size from {old_batch_size} to {self.batch_size} for this session")
+                        
+        except ImportError:
+            pass  # psutil not available, skip memory check
 
     def detect_gongs(
         self,
