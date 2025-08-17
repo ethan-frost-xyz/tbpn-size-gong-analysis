@@ -357,17 +357,17 @@ Examples:
                 momentary_results = momentary_lufs_results.get(video_id, [])
 
                 # Get batch-weighted True Peak results for this video (all three types)
-                integrated_dbtp_results = integrated_dbtp_results.get(video_id, [])
-                shortterm_dbtp_results = shortterm_dbtp_results.get(video_id, [])
-                momentary_dbtp_results = momentary_dbtp_results.get(video_id, [])
+                integrated_dbtp_video_results = integrated_dbtp_results.get(video_id, [])
+                shortterm_dbtp_video_results = shortterm_dbtp_results.get(video_id, [])
+                momentary_dbtp_video_results = momentary_dbtp_results.get(video_id, [])
 
                 # Transform LUFS and True Peak results to expected format
                 detection_lufs_metrics = []
                 detection_dbtp_metrics = []
                 max_results = max(
                     len(integrated_results), len(shortterm_results), len(momentary_results),
-                    len(integrated_dbtp_results), len(shortterm_dbtp_results), len(momentary_dbtp_results)
-                ) if any([integrated_results, shortterm_results, momentary_results, integrated_dbtp_results, shortterm_dbtp_results, momentary_dbtp_results]) else 0
+                    len(integrated_dbtp_video_results), len(shortterm_dbtp_video_results), len(momentary_dbtp_video_results)
+                ) if any([integrated_results, shortterm_results, momentary_results, integrated_dbtp_video_results, shortterm_dbtp_video_results, momentary_dbtp_video_results]) else 0
 
                 for i in range(max_results):
                     # Get LUFS values for each measurement type (with fallbacks)
@@ -382,9 +382,9 @@ Examples:
                     })
 
                     # Get True Peak values for each measurement type (with fallbacks)
-                    integrated_dbtp = integrated_dbtp_results[i].get("dbtp", 0) if i < len(integrated_dbtp_results) else 0
-                    shortterm_dbtp = shortterm_dbtp_results[i].get("dbtp", 0) if i < len(shortterm_dbtp_results) else 0
-                    momentary_dbtp = momentary_dbtp_results[i].get("dbtp", 0) if i < len(momentary_dbtp_results) else 0
+                    integrated_dbtp = integrated_dbtp_video_results[i].get("dbtp", 0) if i < len(integrated_dbtp_video_results) else 0
+                    shortterm_dbtp = shortterm_dbtp_video_results[i].get("dbtp", 0) if i < len(shortterm_dbtp_video_results) else 0
+                    momentary_dbtp = momentary_dbtp_video_results[i].get("dbtp", 0) if i < len(momentary_dbtp_video_results) else 0
 
                     detection_dbtp_metrics.append({
                         "integrated_dbtp": integrated_dbtp,
