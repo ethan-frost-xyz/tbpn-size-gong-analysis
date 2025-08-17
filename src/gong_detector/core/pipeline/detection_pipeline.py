@@ -119,9 +119,9 @@ def process_audio_with_yamnet(
     early_removed = original_count - filtered_count
 
     if early_removed > 0:
-        print(f"✓ Filtered out {early_removed} early detections (< {early_threshold}s)")
+        print(f"[OK] Filtered out {early_removed} early detections (< {early_threshold}s)")
     else:
-        print("✓ No early detections found to filter")
+        print("[OK] No early detections found to filter")
 
     # Consolidate overlapping detections (remove duplicates from sliding window)
     if consolidate_detections:
@@ -142,11 +142,11 @@ def process_audio_with_yamnet(
                 print("\nFinal processed detections:")
                 detector.print_detections(detections)
             else:
-                print("✓ No overlapping detections found")
+                print("[OK] No overlapping detections found")
 
         except (ValueError, TypeError) as e:
             logger.error(f"Consolidation failed: {e}")
-            print(f"⚠ Consolidation failed, using filtered detections: {e}")
+            print(f"[WARNING] Consolidation failed, using filtered detections: {e}")
     else:
         print("\nStep 5b: Skipping detection consolidation (disabled)")
 
@@ -385,14 +385,14 @@ def detect_from_youtube_comprehensive(
                         video_id=video_id,
                         detections=detections
                     )
-                    print(f"✓ Computed LUFS and True Peak for {len(detections)} detections")
+                    print(f"[OK] Computed LUFS and True Peak for {len(detections)} detections")
                 else:
                     # Fallback to zeros if no video ID
                     detection_lufs_metrics = [{"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0} for _ in detections]
                     detection_dbtp_metrics = [{"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0} for _ in detections]
 
             except Exception as e:
-                print(f"⚠ LUFS computation failed: {e}")
+                print(f"[WARNING] LUFS computation failed: {e}")
                 # Fallback to zeros on error
                 detection_lufs_metrics = [{"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0} for _ in detections]
                 detection_dbtp_metrics = [{"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0} for _ in detections]
