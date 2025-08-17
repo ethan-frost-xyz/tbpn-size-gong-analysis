@@ -231,7 +231,7 @@ class YAMNetGongDetector:
     def run_inference(
         self, waveform: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Run YAMNet inference on audio waveform.
+        """Run YAMNet inference on audio waveform with memory protection.
 
         Args:
             waveform: Audio waveform as numpy array
@@ -245,8 +245,20 @@ class YAMNetGongDetector:
         if self.model is None:
             raise RuntimeError("Model not loaded. Call load_model() first.")
 
+        # Memory protection: chunk large audio files
+        max_duration_seconds = 1800  # 30 minutes max per chunk (safe for 16GB RAM)
+        max_samples = max_duration_seconds * self.target_sample_rate
+        
+        if len(waveform) > max_samples:
+            print(f"⚠ Large audio detected ({len(waveform) / self.target_sample_rate:.1f}s)")
+            print(f"Processing in chunks of {max_duration_seconds}s for memory safety...")
+            return self._run_chunked_inference(waveform, max_samples)
+        
         print("Running YAMNet inference...")
+        return self._run_single_inference(waveform)
 
+    def _run_single_inference(self, waveform: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Run inference on a single chunk."""
         try:
             # Use float32 for optimal performance (compatible with mixed precision)
             waveform_tensor = tf.constant(waveform, dtype=tf.float32)
@@ -259,8 +271,66 @@ class YAMNetGongDetector:
 
             return scores.numpy(), embeddings.numpy(), spectrogram.numpy()
 
+        except tf.errors.ResourceExhaustedError as e:
+            if "OOM" in str(e):
+                raise RuntimeError(
+                    f"GPU out of memory. Try reducing audio length or use CPU-only mode. "
+                    f"Audio duration: {len(waveform) / self.target_sample_rate:.1f}s"
+                ) from e
+            raise RuntimeError(f"YAMNet inference failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"YAMNet inference failed: {e}") from e
+
+    def _run_chunked_inference(
+        self, waveform: np.ndarray, chunk_size: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Run inference on large audio in chunks to prevent OOM."""
+        all_scores = []
+        all_embeddings = []
+        all_spectrograms = []
+        
+        num_chunks = int(np.ceil(len(waveform) / chunk_size))
+        overlap_samples = int(0.96 * self.target_sample_rate)  # YAMNet window size
+        
+        for i in range(num_chunks):
+            start_idx = i * chunk_size
+            end_idx = min(start_idx + chunk_size + overlap_samples, len(waveform))
+            chunk = waveform[start_idx:end_idx]
+            
+            print(f"Processing chunk {i+1}/{num_chunks} ({len(chunk) / self.target_sample_rate:.1f}s)")
+            
+            try:
+                scores, embeddings, spectrogram = self._run_single_inference(chunk)
+                
+                # Remove overlap from all but first chunk
+                if i > 0:
+                    overlap_frames = int(overlap_samples / (self.target_sample_rate * 0.48))  # 0.48s hop
+                    scores = scores[overlap_frames:]
+                    embeddings = embeddings[overlap_frames:]
+                    spectrogram = spectrogram[overlap_frames:]
+                
+                all_scores.append(scores)
+                all_embeddings.append(embeddings)
+                all_spectrograms.append(spectrogram)
+                
+                # Force garbage collection between chunks
+                import gc
+                gc.collect()
+                
+            except Exception as e:
+                print(f"⚠ Chunk {i+1} failed: {e}")
+                continue
+        
+        if not all_scores:
+            raise RuntimeError("All chunks failed to process")
+        
+        # Concatenate all results
+        final_scores = np.concatenate(all_scores, axis=0)
+        final_embeddings = np.concatenate(all_embeddings, axis=0)
+        final_spectrograms = np.concatenate(all_spectrograms, axis=0)
+        
+        print(f"✓ Chunked processing complete. Total predictions: {final_scores.shape[0]}")
+        return final_scores, final_embeddings, final_spectrograms
 
     def detect_gongs(
         self,
