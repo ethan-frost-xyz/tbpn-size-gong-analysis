@@ -55,26 +55,32 @@ def process_audio_with_yamnet(
     """
     # Memory safety check before processing
     try:
-        import psutil
         import os
+
+        import psutil
+
         memory = psutil.virtual_memory()
         available_gb = memory.available / (1024**3)
-        
+
         # Get audio file size to estimate processing requirements
         audio_size_mb = os.path.getsize(temp_audio) / (1024**2)
-        
+
         if available_gb < 3:
-            print(f"[ERROR] Insufficient memory for processing ({available_gb:.1f}GB available)")
+            print(
+                f"[ERROR] Insufficient memory for processing ({available_gb:.1f}GB available)"
+            )
             print("Please close other applications and try again")
             return [], 0.0, 0.0
         elif available_gb < 6 and audio_size_mb > 100:
-            print(f"[WARNING] Low memory ({available_gb:.1f}GB) for large audio file ({audio_size_mb:.1f}MB)")
+            print(
+                f"[WARNING] Low memory ({available_gb:.1f}GB) for large audio file ({audio_size_mb:.1f}MB)"
+            )
             print("Processing will use conservative settings")
             # Reduce batch size for this session
             batch_size = min(batch_size, 1000)
     except ImportError:
         pass
-    
+
     # Initialize YAMNet detector with optimized settings
     print("\nStep 2: Loading YAMNet model...")
     detector = YAMNetGongDetector(
@@ -84,7 +90,6 @@ def process_audio_with_yamnet(
 
     if use_version_one:
         detector.load_trained_classifier()
-
 
     # Process audio
     print("\nStep 3: Processing audio...")
@@ -125,15 +130,16 @@ def process_audio_with_yamnet(
 
     # Filter detections based on display timestamp (3rd element)
     detections = [
-        detection for detection in detections
-        if detection[2] >= early_threshold
+        detection for detection in detections if detection[2] >= early_threshold
     ]
 
     filtered_count = len(detections)
     early_removed = original_count - filtered_count
 
     if early_removed > 0:
-        print(f"[OK] Filtered out {early_removed} early detections (< {early_threshold}s)")
+        print(
+            f"[OK] Filtered out {early_removed} early detections (< {early_threshold}s)"
+        )
     else:
         print("[OK] No early detections found to filter")
 
@@ -395,21 +401,36 @@ def detect_from_youtube_comprehensive(
                 if video_id:
                     # Compute all LUFS and True Peak metrics in single audio pass
                     # This replaces 6 separate function calls with 1 optimized call
-                    detection_lufs_metrics, detection_dbtp_metrics = compute_all_loudness_metrics(
-                        video_id=video_id,
-                        detections=detections
+                    detection_lufs_metrics, detection_dbtp_metrics = (
+                        compute_all_loudness_metrics(
+                            video_id=video_id, detections=detections
+                        )
                     )
-                    print(f"[OK] Computed LUFS and True Peak for {len(detections)} detections")
+                    print(
+                        f"[OK] Computed LUFS and True Peak for {len(detections)} detections"
+                    )
                 else:
                     # Fallback to zeros if no video ID
-                    detection_lufs_metrics = [{"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0} for _ in detections]
-                    detection_dbtp_metrics = [{"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0} for _ in detections]
+                    detection_lufs_metrics = [
+                        {"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0}
+                        for _ in detections
+                    ]
+                    detection_dbtp_metrics = [
+                        {"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0}
+                        for _ in detections
+                    ]
 
             except Exception as e:
                 print(f"[WARNING] LUFS computation failed: {e}")
                 # Fallback to zeros on error
-                detection_lufs_metrics = [{"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0} for _ in detections]
-                detection_dbtp_metrics = [{"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0} for _ in detections]
+                detection_lufs_metrics = [
+                    {"integrated_lufs": 0, "shortterm_lufs": 0, "momentary_lufs": 0}
+                    for _ in detections
+                ]
+                detection_dbtp_metrics = [
+                    {"integrated_dbtp": 0, "shortterm_dbtp": 0, "momentary_dbtp": 0}
+                    for _ in detections
+                ]
         else:
             # No detections, empty metrics
             detection_lufs_metrics = []

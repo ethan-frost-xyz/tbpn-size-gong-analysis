@@ -160,27 +160,34 @@ def get_yes_no_input(prompt: str, default: bool = False) -> bool:
 def single_video_detection() -> None:
     """Run single video gong detection."""
     print("\n=== Single Video Gong Detection ===\n")
-    
+
     # System safety check with graceful degradation
     try:
         import psutil
+
         memory = psutil.virtual_memory()
         available_gb = memory.available / (1024**3)
         total_gb = memory.total / (1024**3)
-        
+
         # Suggest safer defaults for low memory systems
         suggested_batch_size = 4000
         if total_gb <= 8:
             suggested_batch_size = 1000
-            print(f"[INFO] Low memory system ({total_gb:.1f}GB) - suggesting smaller batch size")
+            print(
+                f"[INFO] Low memory system ({total_gb:.1f}GB) - suggesting smaller batch size"
+            )
         elif total_gb <= 16:
             suggested_batch_size = 2000
-            print(f"[INFO] Medium memory system ({total_gb:.1f}GB) - suggesting moderate batch size")
-        
+            print(
+                f"[INFO] Medium memory system ({total_gb:.1f}GB) - suggesting moderate batch size"
+            )
+
         if available_gb < 4:
             print(f"[WARNING] Low memory available ({available_gb:.1f}GB)")
             print("Consider closing other applications before processing large videos")
-            print("The system will automatically use smaller batch sizes and chunk processing")
+            print(
+                "The system will automatically use smaller batch sizes and chunk processing"
+            )
             print()
     except ImportError:
         suggested_batch_size = 2000  # Conservative default
@@ -233,14 +240,15 @@ def single_video_detection() -> None:
 def bulk_processing() -> None:
     """Run bulk processing of multiple videos."""
     print("\n=== Bulk Processing ===\n")
-    
+
     # Memory-aware bulk processing setup
     try:
         import psutil
+
         memory = psutil.virtual_memory()
         total_gb = memory.total / (1024**3)
         available_gb = memory.available / (1024**3)
-        
+
         if total_gb <= 8:
             print(f"[INFO] Low memory system ({total_gb:.1f}GB) detected")
             print("Bulk processing will use conservative settings and frequent cleanup")
@@ -276,7 +284,9 @@ def bulk_processing() -> None:
     threshold = get_float_input("Confidence threshold", 0.94)
     use_version_one = get_yes_no_input("Use trained classifier (version one)?", True)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
-    save_csv = get_yes_no_input("Save results to CSV file (includes batch LUFS + True Peak analysis)?", False)
+    save_csv = get_yes_no_input(
+        "Save results to CSV file (includes batch LUFS + True Peak analysis)?", False
+    )
     test_mode = get_yes_no_input("Test mode (process subset of videos)?", False)
     test_count = None
     if test_mode:
@@ -289,7 +299,9 @@ def bulk_processing() -> None:
     print(f"Using trained classifier: {use_version_one}")
     print(f"Save CSV: {save_csv}")
     if save_csv:
-        print("Batch LUFS + True Peak analysis enabled - EBU R128 compliance across entire dataset")
+        print(
+            "Batch LUFS + True Peak analysis enabled - EBU R128 compliance across entire dataset"
+        )
     if test_mode:
         print(f"Test mode: Processing first {test_count} videos only")
     print(f"Use local media: {use_local_media}")
@@ -318,29 +330,29 @@ def bulk_processing() -> None:
 
     # Start timing for interactive menu display
     start_time = time.time()
-    
+
     try:
         os.chdir(project_root)
         # Run bulk processor
         bulk_processor_main()
-        
+
         # Calculate and display timing
         end_time = time.time()
         total_time_seconds = end_time - start_time
-        
+
         # Format time display
         total_seconds = int(total_time_seconds)
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
         secs = total_seconds % 60
-        
+
         if hours > 0:
             time_str = f"{hours}h {minutes}m {secs}s"
         else:
             time_str = f"{minutes}m {secs}s"
-        
+
         print(f"\n[OK] Bulk processing completed in {time_str}")
-        
+
     finally:
         # Restore original working directory
         os.chdir(original_cwd)

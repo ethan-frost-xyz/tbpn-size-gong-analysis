@@ -40,7 +40,9 @@ class DetectionRecord:
     window_start_seconds: float = field(default=0.0)
     video_max_confidence: str = field(default="")  # Formatted to 3 decimal places
     detection_threshold: str = field(default="")  # Formatted to 3 decimal places
-    max_threshold: str = field(default="")  # Formatted to 3 decimal places (empty if not used)
+    max_threshold: str = field(
+        default=""
+    )  # Formatted to 3 decimal places (empty if not used)
     processing_date: str = field(default="")  # ISO format YYYY-MM-DD
     processing_time: str = field(default="")  # ISO format HH:MM:SS
     detection_id: str = field(default="")
@@ -70,12 +72,13 @@ class DetectionRecord:
     video_likely_clipped: str = ""  # Whether video audio is likely clipped
     video_peak_amplitude: str = ""  # Peak amplitude for entire video
     video_rms_amplitude: str = ""  # RMS amplitude for entire video
-    
+
     # Other useless fields
     upload_date_formatted: str = field(default="")  # YYYY-MM-DD format
     upload_date: str = field(default="")  # YYYYMMDD format
     video_duration_seconds: float = field(default=0.0)
     video_url: str = field(default="")
+
 
 class CSVManager:
     """Manages comprehensive CSV generation for gong detection results."""
@@ -84,19 +87,17 @@ class CSVManager:
     FIELD_ORDER = [
         # Key identification fields (first for easy reference)
         "video_title",
-        "upload_date_formatted", 
+        "upload_date_formatted",
         "detection_timestamp_formatted",
         "confidence",
         "plr",
         "youtube_timestamped_link",
-        
         # Manual data fields (grouped together for easier editing)
         "gong_master",
-        "company_name", 
+        "company_name",
         "funding_amount",
         "funding_valuation",
         "funding_round",
-        
         # Core detection metadata
         "detection_timestamp_seconds",
         "window_start_seconds",
@@ -106,12 +107,10 @@ class CSVManager:
         "processing_date",
         "processing_time",
         "detection_id",
-        
         # Video metadata
         "upload_date",
-        "video_duration_seconds", 
+        "video_duration_seconds",
         "video_url",
-        
         # Detection-level audio metrics
         "detection_peak_dbfs",
         "detection_rms_dbfs",
@@ -119,21 +118,18 @@ class CSVManager:
         "detection_likely_clipped",
         "detection_peak_amplitude",
         "detection_rms_amplitude",
-        
         # Detection-level LUFS metrics
         "detection_integrated_lufs",
-        "detection_shortterm_lufs", 
+        "detection_shortterm_lufs",
         "detection_momentary_lufs",
-        
         # Detection-level True Peak metrics
         "detection_integrated_dbtp",
         "detection_shortterm_dbtp",
         "detection_momentary_dbtp",
-        
         # Video-level audio metrics
         "video_peak_dbfs",
         "video_rms_dbfs",
-        "video_crest_factor", 
+        "video_crest_factor",
         "video_likely_clipped",
         "video_peak_amplitude",
         "video_rms_amplitude",
@@ -166,46 +162,48 @@ class CSVManager:
 
     def _format_number(self, value: float, max_decimals: int = 3) -> str:
         """Format a number to a maximum number of decimal places.
-        
+
         Args:
             value: The numeric value to format
             max_decimals: Maximum number of decimal places (default: 3)
-            
+
         Returns:
             Formatted string with appropriate decimal places
         """
         if value == 0:
             return "0.000"
-        
+
         # Convert to string with full precision first
-        str_value = f"{value:.10f}".rstrip('0').rstrip('.')
-        
+        str_value = f"{value:.10f}".rstrip("0").rstrip(".")
+
         # Split into integer and decimal parts
-        if '.' in str_value:
-            int_part, dec_part = str_value.split('.')
+        if "." in str_value:
+            int_part, dec_part = str_value.split(".")
             # Limit decimal places to max_decimals
             dec_part = dec_part[:max_decimals]
             # Pad with zeros if needed
-            dec_part = dec_part.ljust(max_decimals, '0')
+            dec_part = dec_part.ljust(max_decimals, "0")
             return f"{int_part}.{dec_part}"
         else:
             return f"{str_value}.000"
 
-    def _calculate_plr(self, dbtp_metrics: dict[str, float], lufs_metrics: dict[str, float]) -> str:
+    def _calculate_plr(
+        self, dbtp_metrics: dict[str, float], lufs_metrics: dict[str, float]
+    ) -> str:
         """Calculate Peak-to-Loudness Ratio (PLR).
-        
+
         PLR = detection_shortterm_dbtp - detection_shortterm_lufs
-        
+
         Args:
             dbtp_metrics: Dictionary containing True Peak metrics
             lufs_metrics: Dictionary containing LUFS metrics
-            
+
         Returns:
             Formatted PLR value to 3 decimal places, or empty string if data unavailable
         """
-        shortterm_dbtp = dbtp_metrics.get('shortterm_dbtp', 0)
-        shortterm_lufs = lufs_metrics.get('shortterm_lufs', 0)
-        
+        shortterm_dbtp = dbtp_metrics.get("shortterm_dbtp", 0)
+        shortterm_lufs = lufs_metrics.get("shortterm_lufs", 0)
+
         # Only calculate if both values are available and non-zero
         if shortterm_dbtp != 0 and shortterm_lufs != 0:
             plr = shortterm_dbtp - shortterm_lufs
@@ -260,16 +258,16 @@ class CSVManager:
                 "detection_loudness_metrics length must match detections length"
             )
 
-        if detection_lufs_metrics is not None and len(
-            detection_lufs_metrics
-        ) != len(detections):
+        if detection_lufs_metrics is not None and len(detection_lufs_metrics) != len(
+            detections
+        ):
             raise ValueError(
                 "detection_lufs_metrics length must match detections length"
             )
 
-        if detection_dbtp_metrics is not None and len(
-            detection_dbtp_metrics
-        ) != len(detections):
+        if detection_dbtp_metrics is not None and len(detection_dbtp_metrics) != len(
+            detections
+        ):
             raise ValueError(
                 "detection_dbtp_metrics length must match detections length"
             )
@@ -285,12 +283,8 @@ class CSVManager:
             detection_metrics = (
                 detection_loudness_metrics[i] if detection_loudness_metrics else {}
             )
-            lufs_metrics = (
-                detection_lufs_metrics[i] if detection_lufs_metrics else {}
-            )
-            dbtp_metrics = (
-                detection_dbtp_metrics[i] if detection_dbtp_metrics else {}
-            )
+            lufs_metrics = detection_lufs_metrics[i] if detection_lufs_metrics else {}
+            dbtp_metrics = detection_dbtp_metrics[i] if detection_dbtp_metrics else {}
 
             record = DetectionRecord(
                 detection_id=str(uuid.uuid4()),
@@ -308,35 +302,65 @@ class CSVManager:
                 video_max_confidence=self._format_number(max_confidence, 3),
                 detection_threshold=self._format_number(threshold, 3),
                 max_threshold=(
-                    self._format_number(max_threshold, 3) if max_threshold is not None else ""
+                    self._format_number(max_threshold, 3)
+                    if max_threshold is not None
+                    else ""
                 ),
                 processing_date=processing_date,
                 processing_time=processing_time,
                 # Detection-level loudness metrics
-                detection_peak_dbfs=self._format_number(detection_metrics.get('peak_dbfs', 0), 3),
-                detection_rms_dbfs=self._format_number(detection_metrics.get('rms_dbfs', 0), 3),
-                detection_crest_factor=self._format_number(detection_metrics.get('crest_factor', 0), 3),
+                detection_peak_dbfs=self._format_number(
+                    detection_metrics.get("peak_dbfs", 0), 3
+                ),
+                detection_rms_dbfs=self._format_number(
+                    detection_metrics.get("rms_dbfs", 0), 3
+                ),
+                detection_crest_factor=self._format_number(
+                    detection_metrics.get("crest_factor", 0), 3
+                ),
                 detection_likely_clipped=str(
                     detection_metrics.get("likely_clipped", False)
                 ),
-                detection_peak_amplitude=self._format_number(detection_metrics.get('peak_amplitude', 0), 3),
-                detection_rms_amplitude=self._format_number(detection_metrics.get('rms_amplitude', 0), 3),
+                detection_peak_amplitude=self._format_number(
+                    detection_metrics.get("peak_amplitude", 0), 3
+                ),
+                detection_rms_amplitude=self._format_number(
+                    detection_metrics.get("rms_amplitude", 0), 3
+                ),
                 # LUFS metrics
-                detection_integrated_lufs=self._format_number(lufs_metrics.get('integrated_lufs', 0), 3),
-                detection_shortterm_lufs=self._format_number(lufs_metrics.get('shortterm_lufs', 0), 3),
-                detection_momentary_lufs=self._format_number(lufs_metrics.get('momentary_lufs', 0), 3),
+                detection_integrated_lufs=self._format_number(
+                    lufs_metrics.get("integrated_lufs", 0), 3
+                ),
+                detection_shortterm_lufs=self._format_number(
+                    lufs_metrics.get("shortterm_lufs", 0), 3
+                ),
+                detection_momentary_lufs=self._format_number(
+                    lufs_metrics.get("momentary_lufs", 0), 3
+                ),
                 # True Peak (dBTP) metrics
-                detection_integrated_dbtp=self._format_number(dbtp_metrics.get('integrated_dbtp', 0), 3),
-                detection_shortterm_dbtp=self._format_number(dbtp_metrics.get('shortterm_dbtp', 0), 3),
-                detection_momentary_dbtp=self._format_number(dbtp_metrics.get('momentary_dbtp', 0), 3),
+                detection_integrated_dbtp=self._format_number(
+                    dbtp_metrics.get("integrated_dbtp", 0), 3
+                ),
+                detection_shortterm_dbtp=self._format_number(
+                    dbtp_metrics.get("shortterm_dbtp", 0), 3
+                ),
+                detection_momentary_dbtp=self._format_number(
+                    dbtp_metrics.get("momentary_dbtp", 0), 3
+                ),
                 # Video-level loudness metrics
-                video_peak_dbfs=self._format_number(video_loudness_metrics.get('peak_dbfs', 0), 3)
+                video_peak_dbfs=self._format_number(
+                    video_loudness_metrics.get("peak_dbfs", 0), 3
+                )
                 if video_loudness_metrics
                 else "",
-                video_rms_dbfs=self._format_number(video_loudness_metrics.get('rms_dbfs', 0), 3)
+                video_rms_dbfs=self._format_number(
+                    video_loudness_metrics.get("rms_dbfs", 0), 3
+                )
                 if video_loudness_metrics
                 else "",
-                video_crest_factor=self._format_number(video_loudness_metrics.get('crest_factor', 0), 3)
+                video_crest_factor=self._format_number(
+                    video_loudness_metrics.get("crest_factor", 0), 3
+                )
                 if video_loudness_metrics
                 else "",
                 video_likely_clipped=str(
@@ -344,10 +368,14 @@ class CSVManager:
                 )
                 if video_loudness_metrics
                 else "",
-                video_peak_amplitude=self._format_number(video_loudness_metrics.get('peak_amplitude', 0), 3)
+                video_peak_amplitude=self._format_number(
+                    video_loudness_metrics.get("peak_amplitude", 0), 3
+                )
                 if video_loudness_metrics
                 else "",
-                video_rms_amplitude=self._format_number(video_loudness_metrics.get('rms_amplitude', 0), 3)
+                video_rms_amplitude=self._format_number(
+                    video_loudness_metrics.get("rms_amplitude", 0), 3
+                )
                 if video_loudness_metrics
                 else "",
             )

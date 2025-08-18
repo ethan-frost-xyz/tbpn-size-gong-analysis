@@ -17,10 +17,10 @@ from .detection_pipeline import detect_from_youtube_comprehensive
 
 def format_time(seconds: float) -> str:
     """Format seconds as human-readable time string.
-    
+
     Args:
         seconds: Time in seconds
-        
+
     Returns:
         Formatted string like "5m 23s" or "1h 15m 30s"
     """
@@ -28,7 +28,7 @@ def format_time(seconds: float) -> str:
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     secs = total_seconds % 60
-    
+
     if hours > 0:
         return f"{hours}h {minutes}m {secs}s"
     else:
@@ -192,9 +192,11 @@ Examples:
                 print("Error: --test-run must be a positive number")
                 sys.exit(1)
             if args.test_run >= total_urls:
-                print(f"Warning: --test-run {args.test_run} >= total videos {total_urls}, processing all videos")
+                print(
+                    f"Warning: --test-run {args.test_run} >= total videos {total_urls}, processing all videos"
+                )
             else:
-                urls = urls[:args.test_run]
+                urls = urls[: args.test_run]
                 print(f"TEST MODE: Processing first {len(urls)} of {total_urls} videos")
 
         print(f"Found {len(urls)} YouTube URLs to process")
@@ -209,7 +211,9 @@ Examples:
     csv_manager = None
     if args.csv:
         csv_manager = CSVManager()
-        print("CSV output enabled - batch LUFS + True Peak analysis will be performed across all videos")
+        print(
+            "CSV output enabled - batch LUFS + True Peak analysis will be performed across all videos"
+        )
 
     # Store results for CSV processing
     all_results = []  # Store results for CSV processing
@@ -220,62 +224,72 @@ Examples:
     # Process each URL
     successful = 0
     failed = 0
-    
+
     # Memory monitoring for bulk processing
     def check_memory_status() -> tuple[float, bool]:
         """Check current memory usage and return (available_gb, should_continue)."""
         try:
             import psutil
+
             memory = psutil.virtual_memory()
             available_gb = memory.available / (1024**3)
             used_percent = memory.percent
-            
+
             # Stop if memory usage is critically high
             if used_percent > 90 or available_gb < 2:
-                print(f"[CRITICAL] Memory usage too high: {used_percent:.1f}% used, {available_gb:.1f}GB available")
+                print(
+                    f"[CRITICAL] Memory usage too high: {used_percent:.1f}% used, {available_gb:.1f}GB available"
+                )
                 print("Stopping bulk processing to prevent system crash")
                 return available_gb, False
             elif used_percent > 80 or available_gb < 4:
-                print(f"[WARNING] High memory usage: {used_percent:.1f}% used, {available_gb:.1f}GB available")
+                print(
+                    f"[WARNING] High memory usage: {used_percent:.1f}% used, {available_gb:.1f}GB available"
+                )
                 return available_gb, True
-            
+
             return available_gb, True
         except ImportError:
             return 8.0, True  # Assume OK if psutil not available
-    
+
     def force_memory_cleanup() -> None:
         """Force garbage collection and memory cleanup."""
         import gc
         import os
-        
+
         # Force garbage collection
         gc.collect()
-        
+
         # Try to force TensorFlow memory cleanup if available
         try:
             import tensorflow as tf
+
             tf.keras.backend.clear_session()
         except ImportError:
             pass
-        
+
         # Force OS-level memory cleanup on macOS
-        if os.name == 'posix':
+        if os.name == "posix":
             try:
-                os.system('purge > /dev/null 2>&1 &')  # macOS memory purge in background
-            except:
+                os.system(
+                    "purge > /dev/null 2>&1 &"
+                )  # macOS memory purge in background
+            except Exception:
                 pass
 
     for i, url in enumerate(urls, 1):
         print(f"\n{'=' * 60}")
         print(f"Processing {i}/{len(urls)}: {url}")
         print(f"{'=' * 60}")
-        
+
         # Check memory before processing each video
         available_gb, should_continue = check_memory_status()
         if not should_continue:
-            print(f"[ERROR] Stopping due to insufficient memory after {successful} successful videos")
+            print(
+                f"[ERROR] Stopping due to insufficient memory after {successful} successful videos"
+            )
             break
-        
+
         # Force cleanup before processing if memory is getting low
         if available_gb < 6:
             print(f"[INFO] Running memory cleanup (available: {available_gb:.1f}GB)")
@@ -324,18 +338,26 @@ Examples:
                             max_threshold=args.max_threshold,
                             detections=result["detections"],
                             video_loudness_metrics=result.get("video_loudness_metrics"),
-                            detection_loudness_metrics=result.get("detection_loudness_metrics"),
-                            detection_lufs_metrics=result.get("detection_lufs_metrics", []),
-                            detection_dbtp_metrics=result.get("detection_dbtp_metrics", []),
+                            detection_loudness_metrics=result.get(
+                                "detection_loudness_metrics"
+                            ),
+                            detection_lufs_metrics=result.get(
+                                "detection_lufs_metrics", []
+                            ),
+                            detection_dbtp_metrics=result.get(
+                                "detection_dbtp_metrics", []
+                            ),
                         )
-                        print(f"[OK] Added {len(result['detections'])} detections to CSV")
+                        print(
+                            f"[OK] Added {len(result['detections'])} detections to CSV"
+                        )
                     except Exception as e:
                         print(f"[WARNING] CSV write failed for this video: {e}")
             successful += 1
         else:
             print(f"[ERROR] Failed: {result['error_message']}")
             failed += 1
-        
+
         # Force memory cleanup after each video to prevent accumulation
         if i % 3 == 0 or available_gb < 8:  # Every 3 videos or when memory is low
             print(f"[INFO] Running periodic memory cleanup after video {i}")
@@ -344,10 +366,12 @@ Examples:
     # Final memory cleanup
     print("\n[INFO] Running final memory cleanup...")
     force_memory_cleanup()
-    
+
     # All videos processed - CSV already written incrementally
     if csv_manager and not args.collect_negative_samples:
-        print(f"\n[OK] Processed {len(all_results)} videos with incremental CSV writing")
+        print(
+            f"\n[OK] Processed {len(all_results)} videos with incremental CSV writing"
+        )
 
     # Save CSV if requested
     if csv_manager and not args.collect_negative_samples:
@@ -375,7 +399,7 @@ Examples:
     # Calculate timing
     end_time = time.time()
     total_time_seconds = end_time - start_time
-    
+
     # Calculate average time per video (only successful ones)
     avg_time_seconds = total_time_seconds / successful if successful > 0 else 0
 

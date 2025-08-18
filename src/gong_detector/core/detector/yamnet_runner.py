@@ -13,12 +13,12 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 
 # Configure TensorFlow logging before import to reduce spam
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # 0=all, 1=info, 2=warnings, 3=errors only
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"  # 0=all, 1=info, 2=warnings, 3=errors only
 import tensorflow as tf  # type: ignore
 import tensorflow_hub as hub  # type: ignore
 
 # Set TensorFlow logging to only show errors and warnings
-tf.get_logger().setLevel('WARNING')
+tf.get_logger().setLevel("WARNING")
 
 
 class YAMNetGongDetector:
@@ -57,64 +57,86 @@ class YAMNetGongDetector:
                 # Enable memory growth for GPU
                 for gpu in gpus:
                     tf.config.experimental.set_memory_growth(gpu, True)
-                
+
                 # Optimize for Mac M4 GPU
-                tf.config.threading.set_inter_op_parallelism_threads(0)  # Use all available cores
-                tf.config.threading.set_intra_op_parallelism_threads(0)  # Use all available cores
-                
+                tf.config.threading.set_inter_op_parallelism_threads(
+                    0
+                )  # Use all available cores
+                tf.config.threading.set_intra_op_parallelism_threads(
+                    0
+                )  # Use all available cores
+
                 # Enable mixed precision for faster computation (supported on M4)
                 tf.keras.mixed_precision.set_global_policy("mixed_float16")
-                print(f"[OK] GPU acceleration enabled: {len(gpus)} GPU(s) detected (Mac M4 Metal)")
+                print(
+                    f"[OK] GPU acceleration enabled: {len(gpus)} GPU(s) detected (Mac M4 Metal)"
+                )
                 print("[OK] Mixed precision enabled (float16)")
-                
+
             except RuntimeError as e:
                 print(f"GPU setup failed, falling back to CPU: {e}")
                 self._configure_cpu_fallback()
         else:
             print("No GPU detected, using CPU optimization")
             self._configure_cpu_fallback()
-            
+
         # Optimize memory allocation
-        tf.config.experimental.enable_tensor_float_32_execution(True)  # Enable TF32 on supported hardware
-        
+        tf.config.experimental.enable_tensor_float_32_execution(
+            True
+        )  # Enable TF32 on supported hardware
+
         # Set memory limits to prevent system crashes
         self._configure_memory_limits()
 
     def _configure_cpu_fallback(self) -> None:
         """Configure CPU-specific optimizations for M4 chip."""
         # M4 has 10 CPU cores (4 performance + 6 efficiency), optimize accordingly
-        tf.config.threading.set_inter_op_parallelism_threads(0)  # Use all available cores
-        tf.config.threading.set_intra_op_parallelism_threads(0)  # Use all available cores
+        tf.config.threading.set_inter_op_parallelism_threads(
+            0
+        )  # Use all available cores
+        tf.config.threading.set_intra_op_parallelism_threads(
+            0
+        )  # Use all available cores
 
     def _configure_memory_limits(self) -> None:
         """Configure memory limits to prevent system crashes."""
         import psutil
-        
+
         # Get system memory info
         memory = psutil.virtual_memory()
         total_gb = memory.total / (1024**3)
         available_gb = memory.available / (1024**3)
-        
+
         # Store memory info for runtime checks
         self._system_memory_gb = total_gb
-        self._safe_memory_threshold_gb = max(4.0, total_gb * 0.25)  # Reserve 25% or 4GB minimum
-        
+        self._safe_memory_threshold_gb = max(
+            4.0, total_gb * 0.25
+        )  # Reserve 25% or 4GB minimum
+
         # Adjust batch size based on available memory
         if total_gb <= 8:
             # Low memory system - use smaller batch size
             self.batch_size = min(self.batch_size, 1000)
-            print(f"[INFO] Low memory system ({total_gb:.1f}GB) - reduced batch size to {self.batch_size}")
+            print(
+                f"[INFO] Low memory system ({total_gb:.1f}GB) - reduced batch size to {self.batch_size}"
+            )
         elif total_gb <= 16:
             # Medium memory system - moderate batch size
             self.batch_size = min(self.batch_size, 2000)
-            print(f"[INFO] Medium memory system ({total_gb:.1f}GB) - batch size limited to {self.batch_size}")
-        
+            print(
+                f"[INFO] Medium memory system ({total_gb:.1f}GB) - batch size limited to {self.batch_size}"
+            )
+
         # Show memory warnings if there are issues
         if available_gb < 4:
-            print(f"[WARNING] Low memory: {available_gb:.1f}GB available. Consider closing other applications.")
+            print(
+                f"[WARNING] Low memory: {available_gb:.1f}GB available. Consider closing other applications."
+            )
         elif available_gb < 8:
-            print(f"System memory: {total_gb:.1f}GB total, {available_gb:.1f}GB available")
-        
+            print(
+                f"System memory: {total_gb:.1f}GB total, {available_gb:.1f}GB available"
+            )
+
         # Configure GPU memory if available (silent unless there are issues)
         gpus = tf.config.list_physical_devices("GPU")
         if gpus:
@@ -289,9 +311,9 @@ class YAMNetGongDetector:
 
         # Memory protection: chunk large audio files based on system memory
         audio_duration_seconds = len(waveform) / self.target_sample_rate
-        
+
         # Dynamic chunk size based on system memory
-        if hasattr(self, '_system_memory_gb'):
+        if hasattr(self, "_system_memory_gb"):
             if self._system_memory_gb <= 8:
                 max_duration_seconds = 600  # 10 minutes for low memory systems
             elif self._system_memory_gb <= 16:
@@ -300,21 +322,25 @@ class YAMNetGongDetector:
                 max_duration_seconds = 1800  # 30 minutes for high memory systems
         else:
             max_duration_seconds = 1200  # Conservative default
-        
+
         max_samples = max_duration_seconds * self.target_sample_rate
-        
+
         # Check memory before processing
         self._check_memory_before_processing(audio_duration_seconds)
-        
+
         if len(waveform) > max_samples:
             print(f"[INFO] Large audio detected ({audio_duration_seconds:.1f}s)")
-            print(f"Processing in chunks of {max_duration_seconds}s for memory safety...")
+            print(
+                f"Processing in chunks of {max_duration_seconds}s for memory safety..."
+            )
             return self._run_chunked_inference(waveform, max_samples)
-        
+
         print("Running YAMNet inference...")
         return self._run_single_inference(waveform)
 
-    def _run_single_inference(self, waveform: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _run_single_inference(
+        self, waveform: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Run inference on a single chunk."""
         try:
             # Use float32 for optimal performance (compatible with mixed precision)
@@ -330,7 +356,9 @@ class YAMNetGongDetector:
 
         except tf.errors.ResourceExhaustedError as e:
             if "OOM" in str(e):
-                print(f"[WARNING] GPU out of memory. Falling back to CPU for this inference...")
+                print(
+                    "[WARNING] GPU out of memory. Falling back to CPU for this inference..."
+                )
                 print(f"Audio duration: {len(waveform) / self.target_sample_rate:.1f}s")
                 # Try CPU fallback
                 try:
@@ -355,73 +383,85 @@ class YAMNetGongDetector:
         all_scores = []
         all_embeddings = []
         all_spectrograms = []
-        
+
         num_chunks = int(np.ceil(len(waveform) / chunk_size))
         overlap_samples = int(0.96 * self.target_sample_rate)  # YAMNet window size
-        
+
         for i in range(num_chunks):
             start_idx = i * chunk_size
             end_idx = min(start_idx + chunk_size + overlap_samples, len(waveform))
             chunk = waveform[start_idx:end_idx]
-            
-            print(f"Processing chunk {i+1}/{num_chunks} ({len(chunk) / self.target_sample_rate:.1f}s)")
-            
+
+            print(
+                f"Processing chunk {i + 1}/{num_chunks} ({len(chunk) / self.target_sample_rate:.1f}s)"
+            )
+
             try:
                 scores, embeddings, spectrogram = self._run_single_inference(chunk)
-                
+
                 # Remove overlap from all but first chunk
                 if i > 0:
-                    overlap_frames = int(overlap_samples / (self.target_sample_rate * 0.48))  # 0.48s hop
+                    overlap_frames = int(
+                        overlap_samples / (self.target_sample_rate * 0.48)
+                    )  # 0.48s hop
                     scores = scores[overlap_frames:]
                     embeddings = embeddings[overlap_frames:]
                     spectrogram = spectrogram[overlap_frames:]
-                
+
                 all_scores.append(scores)
                 all_embeddings.append(embeddings)
                 all_spectrograms.append(spectrogram)
-                
+
                 # Force garbage collection between chunks
                 import gc
+
                 gc.collect()
-                
+
             except Exception as e:
-                print(f"[WARNING] Chunk {i+1} failed: {e}")
+                print(f"[WARNING] Chunk {i + 1} failed: {e}")
                 continue
-        
+
         if not all_scores:
             raise RuntimeError("All chunks failed to process")
-        
+
         # Concatenate all results
         final_scores = np.concatenate(all_scores, axis=0)
         final_embeddings = np.concatenate(all_embeddings, axis=0)
         final_spectrograms = np.concatenate(all_spectrograms, axis=0)
-        
-        print(f"[OK] Chunked processing complete. Total predictions: {final_scores.shape[0]}")
+
+        print(
+            f"[OK] Chunked processing complete. Total predictions: {final_scores.shape[0]}"
+        )
         return final_scores, final_embeddings, final_spectrograms
-    
+
     def _check_memory_before_processing(self, audio_duration_seconds: float) -> None:
         """Check system memory before processing and warn if insufficient."""
         try:
             import psutil
+
             memory = psutil.virtual_memory()
             available_gb = memory.available / (1024**3)
-            
+
             # Estimate memory usage (rough calculation)
             # Audio: 16kHz * 4 bytes * duration * 3 (waveform + scores + embeddings)
             estimated_memory_gb = (audio_duration_seconds * 16000 * 4 * 3) / (1024**3)
-            
-            if hasattr(self, '_safe_memory_threshold_gb'):
+
+            if hasattr(self, "_safe_memory_threshold_gb"):
                 if available_gb < self._safe_memory_threshold_gb:
                     print(f"[WARNING] Low available memory ({available_gb:.1f}GB)")
                     print(f"Estimated processing needs: {estimated_memory_gb:.1f}GB")
-                    print("Consider closing other applications or processing shorter audio segments")
-                    
+                    print(
+                        "Consider closing other applications or processing shorter audio segments"
+                    )
+
                     # Auto-reduce batch size for this processing
                     if self.batch_size > 500:
                         old_batch_size = self.batch_size
                         self.batch_size = 500
-                        print(f"[AUTO] Reduced batch size from {old_batch_size} to {self.batch_size} for this session")
-                        
+                        print(
+                            f"[AUTO] Reduced batch size from {old_batch_size} to {self.batch_size} for this session"
+                        )
+
         except ImportError:
             pass  # psutil not available, skip memory check
 
@@ -525,7 +565,7 @@ class YAMNetGongDetector:
             )
 
             # Use TensorFlow ops for GPU acceleration if available
-            with tf.device(''):  # Let TensorFlow choose best device (GPU if available)
+            with tf.device(""):  # Let TensorFlow choose best device (GPU if available)
                 # Get predictions and confidences for entire batch
                 predictions = self.trained_classifier.predict(batch_embeddings_reshaped)
                 probabilities = self.trained_classifier.predict_proba(
@@ -539,27 +579,29 @@ class YAMNetGongDetector:
             # Create masks for filtering
             positive_mask = predictions == 1
             min_threshold_mask = confidences > confidence_threshold
-            
+
             if max_confidence_threshold is not None:
                 max_threshold_mask = confidences < max_confidence_threshold
                 valid_mask = positive_mask & min_threshold_mask & max_threshold_mask
             else:
                 valid_mask = positive_mask & min_threshold_mask
-            
+
             # Get valid indices and confidences
             valid_indices = np.where(valid_mask)[0]
             valid_confidences = confidences[valid_mask]
-            
+
             # Vectorized calculation of timestamps
             global_indices = batch_start + valid_indices
             window_starts = global_indices * hop_length
             display_timestamps = window_starts + (window_duration / 2)
-            
+
             # Add all valid detections at once
-            for i, (window_start, confidence, display_timestamp) in enumerate(
+            for _i, (window_start, confidence, display_timestamp) in enumerate(
                 zip(window_starts, valid_confidences, display_timestamps)
             ):
-                detections.append((float(window_start), float(confidence), float(display_timestamp)))
+                detections.append(
+                    (float(window_start), float(confidence), float(display_timestamp))
+                )
 
         print(f"Found {len(detections)} gong detections with trained classifier")
         return detections
@@ -584,14 +626,18 @@ class YAMNetGongDetector:
         if gpus:
             for gpu in gpus:
                 try:
-                    gpu_details.append({
-                        "name": gpu.name,
-                        "device_type": gpu.device_type,
-                        "memory_growth": True
-                    })
-                except:
-                    gpu_details.append({"name": "GPU", "device_type": "GPU", "memory_growth": True})
-        
+                    gpu_details.append(
+                        {
+                            "name": gpu.name,
+                            "device_type": gpu.device_type,
+                            "memory_growth": True,
+                        }
+                    )
+                except Exception:
+                    gpu_details.append(
+                        {"name": "GPU", "device_type": "GPU", "memory_growth": True}
+                    )
+
         return {
             "batch_size": self.batch_size,
             "use_trained_classifier": self.use_trained_classifier,
