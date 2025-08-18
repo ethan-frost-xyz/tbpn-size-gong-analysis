@@ -51,5 +51,3 @@ def test_csv_manager_basic_flow(tmp_path):
     stats = manager.get_summary_stats()
     assert stats.get("total_detections") == 1
     assert "average_confidence" in stats
-
-

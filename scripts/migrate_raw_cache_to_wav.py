@@ -11,7 +11,7 @@ import subprocess
 from pathlib import Path
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -62,17 +62,23 @@ def migrate_webm_to_wav() -> None:
             # 16kHz 16-bit PCM provides sufficient quality for loudness measurements while minimizing storage
             cmd = [
                 "ffmpeg",
-                "-i", str(webm_file),
-                "-map", "a:0",  # Use first audio stream
-                "-acodec", "pcm_s16le",  # 16-bit PCM (sufficient dynamic range for LUFS)
-                "-ar", "16000",  # 16kHz sample rate (adequate for loudness analysis, saves storage)
-                "-af", "aresample=resampler=soxr:precision=28:cheby=1",  # High-quality resampling
+                "-i",
+                str(webm_file),
+                "-map",
+                "a:0",  # Use first audio stream
+                "-acodec",
+                "pcm_s16le",  # 16-bit PCM (sufficient dynamic range for LUFS)
+                "-ar",
+                "16000",  # 16kHz sample rate (adequate for loudness analysis, saves storage)
+                "-af",
+                "aresample=resampler=soxr:precision=28:cheby=1",  # High-quality resampling
                 "-vn",  # no video
                 "-sn",  # no subtitles
                 "-dn",  # no data
                 "-y",  # overwrite
                 "-nostdin",  # non-interactive
-                "-loglevel", "error",  # minimal output
+                "-loglevel",
+                "error",  # minimal output
                 str(wav_tmp),
             ]
 
@@ -91,7 +97,9 @@ def migrate_webm_to_wav() -> None:
 
                 converted_count += 1
             else:
-                logger.error(f"✗ Conversion failed for {video_id}: output file is empty or missing")
+                logger.error(
+                    f"✗ Conversion failed for {video_id}: output file is empty or missing"
+                )
                 failed_count += 1
 
         except subprocess.CalledProcessError as e:
@@ -116,14 +124,20 @@ def migrate_webm_to_wav() -> None:
                 except OSError:
                     pass
 
-    logger.info(f"Migration complete: {converted_count} converted, {failed_count} failed")
+    logger.info(
+        f"Migration complete: {converted_count} converted, {failed_count} failed"
+    )
 
     if converted_count > 0:
         logger.info("✓ Raw cache migration successful!")
-        logger.info("Note: Original WebM files are preserved. You can delete them manually if desired.")
+        logger.info(
+            "Note: Original WebM files are preserved. You can delete them manually if desired."
+        )
 
     if failed_count > 0:
-        logger.warning(f"⚠ {failed_count} files failed to convert. Check the logs above for details.")
+        logger.warning(
+            f"⚠ {failed_count} files failed to convert. Check the logs above for details."
+        )
 
 
 if __name__ == "__main__":

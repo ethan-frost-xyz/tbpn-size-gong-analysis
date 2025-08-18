@@ -11,7 +11,7 @@ import subprocess
 from pathlib import Path
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -28,8 +28,10 @@ def get_audio_info(file_path: str) -> dict:
     """Get audio file information using ffprobe."""
     cmd = [
         "ffprobe",
-        "-v", "quiet",
-        "-print_format", "json",
+        "-v",
+        "quiet",
+        "-print_format",
+        "json",
         "-show_format",
         "-show_streams",
         file_path,
@@ -38,6 +40,7 @@ def get_audio_info(file_path: str) -> dict:
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         import json
+
         probe_data = json.loads(result.stdout)
 
         # Extract audio stream info
@@ -108,17 +111,23 @@ def downsample_wav_files() -> None:
             # Use 16-bit PCM to balance quality and storage
             cmd = [
                 "ffmpeg",
-                "-i", str(wav_file),
-                "-map", "a:0",  # Use first audio stream
-                "-acodec", "pcm_s16le",  # 16-bit PCM (sufficient for LUFS analysis)
-                "-ar", "16000",  # 16kHz sample rate (adequate for loudness analysis)
-                "-af", "aresample=resampler=soxr:precision=28:cheby=1",  # High-quality resampling
+                "-i",
+                str(wav_file),
+                "-map",
+                "a:0",  # Use first audio stream
+                "-acodec",
+                "pcm_s16le",  # 16-bit PCM (sufficient for LUFS analysis)
+                "-ar",
+                "16000",  # 16kHz sample rate (adequate for loudness analysis)
+                "-af",
+                "aresample=resampler=soxr:precision=28:cheby=1",  # High-quality resampling
                 "-vn",  # no video
                 "-sn",  # no subtitles
                 "-dn",  # no data
                 "-y",  # overwrite
                 "-nostdin",  # non-interactive
-                "-loglevel", "error",  # minimal output
+                "-loglevel",
+                "error",  # minimal output
                 str(wav_tmp),
             ]
 
@@ -173,7 +182,9 @@ def downsample_wav_files() -> None:
 
     if downsampled_count > 0:
         logger.info("✓ Raw cache downsampling successful!")
-        logger.info("Files are now optimized for LUFS analysis with minimal storage usage.")
+        logger.info(
+            "Files are now optimized for LUFS analysis with minimal storage usage."
+        )
 
 
 if __name__ == "__main__":

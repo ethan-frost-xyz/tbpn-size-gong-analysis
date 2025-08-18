@@ -25,16 +25,16 @@ MEMORY_RESERVE_PERCENT = 25  # Reserve this % of total memory
 
 # System-specific batch size limits
 BATCH_SIZE_LIMITS = {
-    "low_memory": 1000,    # <= 8GB total RAM
-    "medium_memory": 2000, # <= 16GB total RAM  
-    "high_memory": 4000,   # > 16GB total RAM
+    "low_memory": 1000,  # <= 8GB total RAM
+    "medium_memory": 2000,  # <= 16GB total RAM
+    "high_memory": 4000,  # > 16GB total RAM
 }
 
 # Audio chunking for large files (seconds)
 AUDIO_CHUNK_LIMITS = {
-    "low_memory": 600,     # 10 minutes for <= 8GB RAM
-    "medium_memory": 1200, # 20 minutes for <= 16GB RAM
-    "high_memory": 1800,   # 30 minutes for > 16GB RAM
+    "low_memory": 600,  # 10 minutes for <= 8GB RAM
+    "medium_memory": 1200,  # 20 minutes for <= 16GB RAM
+    "high_memory": 1800,  # 30 minutes for > 16GB RAM
 }
 
 # File paths
