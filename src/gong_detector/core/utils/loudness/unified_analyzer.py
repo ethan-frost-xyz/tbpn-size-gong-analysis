@@ -17,6 +17,7 @@ try:
     import numpy as np  # type: ignore
     import pyloudnorm as pyln  # type: ignore
     import soundfile as sf  # type: ignore
+
     LOUDNESS_AVAILABLE = True
 except ImportError:
     LOUDNESS_AVAILABLE = False
@@ -99,29 +100,56 @@ def compute_all_loudness_metrics(
     if not detections:
         return [], []
 
-    logger.info(f"Computing unified loudness metrics for {len(detections)} detections from video {video_id}")
+    logger.info(
+        f"Computing unified loudness metrics for {len(detections)} detections from video {video_id}"
+    )
 
     # Find raw audio file
     try:
         from ..local_media import LocalMediaIndex
+
         idx = index or LocalMediaIndex()
 
         # Get raw audio path from index
         meta = idx.get(video_id)
         if not meta or not meta.get("raw_path"):
-            logger.warning(f"No raw audio path found for video {video_id}, returning zero metrics")
+            logger.warning(
+                f"No raw audio path found for video {video_id}, returning zero metrics"
+            )
             # Return zero metrics for all detections
-            zero_lufs = {"integrated_lufs": 0.0, "shortterm_lufs": 0.0, "momentary_lufs": 0.0}
-            zero_dbtp = {"integrated_dbtp": 0.0, "shortterm_dbtp": 0.0, "momentary_dbtp": 0.0}
-            return [zero_lufs.copy() for _ in detections], [zero_dbtp.copy() for _ in detections]
+            zero_lufs = {
+                "integrated_lufs": 0.0,
+                "shortterm_lufs": 0.0,
+                "momentary_lufs": 0.0,
+            }
+            zero_dbtp = {
+                "integrated_dbtp": 0.0,
+                "shortterm_dbtp": 0.0,
+                "momentary_dbtp": 0.0,
+            }
+            return [zero_lufs.copy() for _ in detections], [
+                zero_dbtp.copy() for _ in detections
+            ]
 
         raw_path = meta["raw_path"]
         if not Path(raw_path).exists():
-            logger.warning(f"Raw audio file not found: {raw_path}, returning zero metrics")
+            logger.warning(
+                f"Raw audio file not found: {raw_path}, returning zero metrics"
+            )
             # Return zero metrics for all detections
-            zero_lufs = {"integrated_lufs": 0.0, "shortterm_lufs": 0.0, "momentary_lufs": 0.0}
-            zero_dbtp = {"integrated_dbtp": 0.0, "shortterm_dbtp": 0.0, "momentary_dbtp": 0.0}
-            return [zero_lufs.copy() for _ in detections], [zero_dbtp.copy() for _ in detections]
+            zero_lufs = {
+                "integrated_lufs": 0.0,
+                "shortterm_lufs": 0.0,
+                "momentary_lufs": 0.0,
+            }
+            zero_dbtp = {
+                "integrated_dbtp": 0.0,
+                "shortterm_dbtp": 0.0,
+                "momentary_dbtp": 0.0,
+            }
+            return [zero_lufs.copy() for _ in detections], [
+                zero_dbtp.copy() for _ in detections
+            ]
     except ImportError as err:
         raise RuntimeError("Could not import LocalMediaIndex") from err
 
@@ -142,7 +170,9 @@ def compute_all_loudness_metrics(
         # Create loudness meter with appropriate settings
         meter = pyln.Meter(sample_rate)  # Uses BS.1770-4 K-weighting by default
 
-        logger.info(f"Processing {len(detections)} detections with unified loudness analysis")
+        logger.info(
+            f"Processing {len(detections)} detections with unified loudness analysis"
+        )
 
         # Prepare results lists
         lufs_metrics_list = []
@@ -150,11 +180,21 @@ def compute_all_loudness_metrics(
 
         # Process each detection timestamp
         for i, (_window_start, _confidence, display_timestamp) in enumerate(detections):
-            logger.debug(f"Processing detection {i+1}/{len(detections)} at {display_timestamp:.2f}s")
+            logger.debug(
+                f"Processing detection {i + 1}/{len(detections)} at {display_timestamp:.2f}s"
+            )
 
             # Initialize metrics with defaults
-            lufs_metrics = {"integrated_lufs": 0.0, "shortterm_lufs": 0.0, "momentary_lufs": 0.0}
-            dbtp_metrics = {"integrated_dbtp": 0.0, "shortterm_dbtp": 0.0, "momentary_dbtp": 0.0}
+            lufs_metrics = {
+                "integrated_lufs": 0.0,
+                "shortterm_lufs": 0.0,
+                "momentary_lufs": 0.0,
+            }
+            dbtp_metrics = {
+                "integrated_dbtp": 0.0,
+                "shortterm_dbtp": 0.0,
+                "momentary_dbtp": 0.0,
+            }
 
             try:
                 # Define time windows for different measurement types
@@ -173,9 +213,16 @@ def compute_all_loudness_metrics(
                 momentary_end = min(audio_duration, display_timestamp + 0.2)
 
                 # Extract audio segments
-                integrated_samples = slice(int(integrated_start * sample_rate), int(integrated_end * sample_rate))
-                shortterm_samples = slice(int(shortterm_start * sample_rate), int(shortterm_end * sample_rate))
-                momentary_samples = slice(int(momentary_start * sample_rate), int(momentary_end * sample_rate))
+                integrated_samples = slice(
+                    int(integrated_start * sample_rate),
+                    int(integrated_end * sample_rate),
+                )
+                shortterm_samples = slice(
+                    int(shortterm_start * sample_rate), int(shortterm_end * sample_rate)
+                )
+                momentary_samples = slice(
+                    int(momentary_start * sample_rate), int(momentary_end * sample_rate)
+                )
 
                 integrated_audio = audio_data[integrated_samples]
                 shortterm_audio = audio_data[shortterm_samples]
@@ -184,7 +231,9 @@ def compute_all_loudness_metrics(
                 # Compute LUFS measurements
                 if len(integrated_audio) > 0:
                     try:
-                        lufs_metrics["integrated_lufs"] = float(meter.integrated_loudness(integrated_audio))
+                        lufs_metrics["integrated_lufs"] = float(
+                            meter.integrated_loudness(integrated_audio)
+                        )
                     except Exception as e:
                         logger.debug(f"Integrated LUFS failed for detection {i}: {e}")
                         lufs_metrics["integrated_lufs"] = 0.0
@@ -192,7 +241,9 @@ def compute_all_loudness_metrics(
                 if len(shortterm_audio) > 0:
                     try:
                         # For short segments, use integrated loudness as approximation
-                        lufs_metrics["shortterm_lufs"] = float(meter.integrated_loudness(shortterm_audio))
+                        lufs_metrics["shortterm_lufs"] = float(
+                            meter.integrated_loudness(shortterm_audio)
+                        )
                     except Exception as e:
                         logger.debug(f"Short-term LUFS failed for detection {i}: {e}")
                         lufs_metrics["shortterm_lufs"] = 0.0
@@ -200,7 +251,9 @@ def compute_all_loudness_metrics(
                 if len(momentary_audio) > 0:
                     try:
                         # For very short segments, use integrated loudness as approximation
-                        lufs_metrics["momentary_lufs"] = float(meter.integrated_loudness(momentary_audio))
+                        lufs_metrics["momentary_lufs"] = float(
+                            meter.integrated_loudness(momentary_audio)
+                        )
                     except Exception as e:
                         logger.debug(f"Momentary LUFS failed for detection {i}: {e}")
                         lufs_metrics["momentary_lufs"] = 0.0
@@ -211,33 +264,60 @@ def compute_all_loudness_metrics(
                         # Compute True Peak using 4x oversampling for accuracy
                         # Use scipy.signal.resample instead of librosa to avoid deprecation warnings
                         from scipy import signal
-                        integrated_resampled = signal.resample(integrated_audio, len(integrated_audio) * 4)
-                        dbtp_metrics["integrated_dbtp"] = float(20 * np.log10(np.max(np.abs(integrated_resampled))))
-                        logger.debug(f"Detection {i}: Integrated True Peak = {dbtp_metrics['integrated_dbtp']:.2f} dBTP")
+
+                        integrated_resampled = signal.resample(
+                            integrated_audio, len(integrated_audio) * 4
+                        )
+                        dbtp_metrics["integrated_dbtp"] = float(
+                            20 * np.log10(np.max(np.abs(integrated_resampled)))
+                        )
+                        logger.debug(
+                            f"Detection {i}: Integrated True Peak = {dbtp_metrics['integrated_dbtp']:.2f} dBTP"
+                        )
                     except Exception as e:
-                        logger.debug(f"Integrated True Peak failed for detection {i}: {e}")
+                        logger.debug(
+                            f"Integrated True Peak failed for detection {i}: {e}"
+                        )
                         dbtp_metrics["integrated_dbtp"] = 0.0
 
                 if len(shortterm_audio) > 0:
                     try:
-                        shortterm_resampled = signal.resample(shortterm_audio, len(shortterm_audio) * 4)
-                        dbtp_metrics["shortterm_dbtp"] = float(20 * np.log10(np.max(np.abs(shortterm_resampled))))
-                        logger.debug(f"Detection {i}: Short-term True Peak = {dbtp_metrics['shortterm_dbtp']:.2f} dBTP")
+                        shortterm_resampled = signal.resample(
+                            shortterm_audio, len(shortterm_audio) * 4
+                        )
+                        dbtp_metrics["shortterm_dbtp"] = float(
+                            20 * np.log10(np.max(np.abs(shortterm_resampled)))
+                        )
+                        logger.debug(
+                            f"Detection {i}: Short-term True Peak = {dbtp_metrics['shortterm_dbtp']:.2f} dBTP"
+                        )
                     except Exception as e:
-                        logger.debug(f"Short-term True Peak failed for detection {i}: {e}")
+                        logger.debug(
+                            f"Short-term True Peak failed for detection {i}: {e}"
+                        )
                         dbtp_metrics["shortterm_dbtp"] = 0.0
 
                 if len(momentary_audio) > 0:
                     try:
-                        momentary_resampled = signal.resample(momentary_audio, len(momentary_audio) * 4)
-                        dbtp_metrics["momentary_dbtp"] = float(20 * np.log10(np.max(np.abs(momentary_resampled))))
-                        logger.debug(f"Detection {i}: Momentary True Peak = {dbtp_metrics['momentary_dbtp']:.2f} dBTP")
+                        momentary_resampled = signal.resample(
+                            momentary_audio, len(momentary_audio) * 4
+                        )
+                        dbtp_metrics["momentary_dbtp"] = float(
+                            20 * np.log10(np.max(np.abs(momentary_resampled)))
+                        )
+                        logger.debug(
+                            f"Detection {i}: Momentary True Peak = {dbtp_metrics['momentary_dbtp']:.2f} dBTP"
+                        )
                     except Exception as e:
-                        logger.debug(f"Momentary True Peak failed for detection {i}: {e}")
+                        logger.debug(
+                            f"Momentary True Peak failed for detection {i}: {e}"
+                        )
                         dbtp_metrics["momentary_dbtp"] = 0.0
 
             except Exception as e:
-                logger.warning(f"Failed to process detection {i} at {display_timestamp:.2f}s: {e}")
+                logger.warning(
+                    f"Failed to process detection {i} at {display_timestamp:.2f}s: {e}"
+                )
                 # Keep default zero values
 
             # Apply batch weighting if provided
@@ -248,12 +328,24 @@ def compute_all_loudness_metrics(
             lufs_metrics_list.append(lufs_metrics)
             dbtp_metrics_list.append(dbtp_metrics)
 
-        logger.info(f"✓ Computed unified loudness metrics for {len(detections)} detections")
+        logger.info(
+            f"✓ Computed unified loudness metrics for {len(detections)} detections"
+        )
         return lufs_metrics_list, dbtp_metrics_list
 
     except Exception as e:
         logger.error(f"Failed to compute loudness metrics for video {video_id}: {e}")
         # Return zero metrics for all detections on error
-        zero_lufs = {"integrated_lufs": 0.0, "shortterm_lufs": 0.0, "momentary_lufs": 0.0}
-        zero_dbtp = {"integrated_dbtp": 0.0, "shortterm_dbtp": 0.0, "momentary_dbtp": 0.0}
-        return [zero_lufs.copy() for _ in detections], [zero_dbtp.copy() for _ in detections]
+        zero_lufs = {
+            "integrated_lufs": 0.0,
+            "shortterm_lufs": 0.0,
+            "momentary_lufs": 0.0,
+        }
+        zero_dbtp = {
+            "integrated_dbtp": 0.0,
+            "shortterm_dbtp": 0.0,
+            "momentary_dbtp": 0.0,
+        }
+        return [zero_lufs.copy() for _ in detections], [
+            zero_dbtp.copy() for _ in detections
+        ]

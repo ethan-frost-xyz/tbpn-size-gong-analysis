@@ -59,21 +59,29 @@ def save_raw_to_cache(temp_path: str, video_id: str) -> str:
         # 16kHz 16-bit PCM provides sufficient quality for loudness measurements while minimizing storage
         cmd = [
             "ffmpeg",
-            "-i", str(temp_path),
-            "-map", "a:0",  # Use first audio stream
-            "-acodec", "pcm_s16le",  # 16-bit PCM (sufficient dynamic range for LUFS)
-            "-ar", "16000",  # 16kHz sample rate (adequate for loudness analysis, saves storage)
-            "-af", "aresample=resampler=soxr:precision=28:cheby=1",  # High-quality resampling
+            "-i",
+            str(temp_path),
+            "-map",
+            "a:0",  # Use first audio stream
+            "-acodec",
+            "pcm_s16le",  # 16-bit PCM (sufficient dynamic range for LUFS)
+            "-ar",
+            "16000",  # 16kHz sample rate (adequate for loudness analysis, saves storage)
+            "-af",
+            "aresample=resampler=soxr:precision=28:cheby=1",  # High-quality resampling
             "-vn",  # no video
             "-sn",  # no subtitles
             "-dn",  # no data
             "-y",  # overwrite
             "-nostdin",  # non-interactive
-            "-loglevel", "error",  # minimal output
+            "-loglevel",
+            "error",  # minimal output
             str(raw_cache_tmp),
         ]
 
-        logger.info(f"Converting downloaded audio to storage-optimized 16kHz WAV: {temp_path}")
+        logger.info(
+            f"Converting downloaded audio to storage-optimized 16kHz WAV: {temp_path}"
+        )
         subprocess.run(cmd, check=True, capture_output=True, text=True)
 
         # Atomically move to final location
@@ -139,17 +147,23 @@ def ensure_full_preprocessed_from_raw(raw_path: str, video_id: str) -> str:
         # Convert raw to 16kHz mono WAV with high quality settings
         cmd = [
             "ffmpeg",
-            "-i", raw_path,
-            "-map", "a:0",  # Use first audio stream
-            "-ac", "1",  # mono
-            "-ar", "16000",  # 16kHz
-            "-sample_fmt", "s16",  # 16-bit signed
+            "-i",
+            raw_path,
+            "-map",
+            "a:0",  # Use first audio stream
+            "-ac",
+            "1",  # mono
+            "-ar",
+            "16000",  # 16kHz
+            "-sample_fmt",
+            "s16",  # 16-bit signed
             "-vn",  # no video
             "-sn",  # no subtitles
             "-dn",  # no data
             "-y",  # overwrite
             "-nostdin",  # non-interactive
-            "-loglevel", "error",  # minimal output
+            "-loglevel",
+            "error",  # minimal output
             str(preprocessed_tmp),
         ]
 

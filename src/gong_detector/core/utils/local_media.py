@@ -43,9 +43,6 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-
-
-
 @dataclass
 class LocalMediaEntry:
     """Record describing a locally cached media item."""
@@ -167,6 +164,7 @@ def ensure_preprocessed_audio(
     if start is not None or duration is not None:
         # Create a temporary output path for the trimmed audio
         import tempfile
+
         temp_output = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         temp_output.close()
         output_path = temp_output.name
@@ -193,7 +191,10 @@ def ensure_preprocessed_audio(
 
             # Import trim function
             from gong_detector.core.utils.youtube_utils import trim_from_preprocessed
-            trim_from_preprocessed(str(full_preprocessed_path), output_path, start, duration)
+
+            trim_from_preprocessed(
+                str(full_preprocessed_path), output_path, start, duration
+            )
 
             return output_path, meta
         else:
@@ -265,5 +266,3 @@ def ensure_preprocessed_audio(
         # Get updated metadata from index (should now include raw_path)
         meta = idx.get(video_id) or {}
         return str(full_preprocessed_path), meta
-
-

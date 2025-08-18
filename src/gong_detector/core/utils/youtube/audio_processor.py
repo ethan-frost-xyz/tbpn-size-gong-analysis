@@ -17,7 +17,7 @@ def trim_from_preprocessed(
     preprocessed_path: str,
     output_path: str,
     start_time: Optional[int] = None,
-    duration: Optional[int] = None
+    duration: Optional[int] = None,
 ) -> None:
     """Trim audio from preprocessed WAV file.
 
@@ -46,13 +46,17 @@ def trim_from_preprocessed(
         cmd.extend(["-t", str(duration)])
 
     # Copy audio stream without re-encoding (fast)
-    cmd.extend([
-        "-c", "copy",  # Copy without re-encoding
-        "-y",  # overwrite
-        "-nostdin",  # non-interactive
-        "-loglevel", "error",  # minimal output
-        output_path,
-    ])
+    cmd.extend(
+        [
+            "-c",
+            "copy",  # Copy without re-encoding
+            "-y",  # overwrite
+            "-nostdin",  # non-interactive
+            "-loglevel",
+            "error",  # minimal output
+            output_path,
+        ]
+    )
 
     try:
         logger.info(f"Trimming preprocessed audio: {start_time}s + {duration}s")
