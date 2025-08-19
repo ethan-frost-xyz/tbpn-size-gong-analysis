@@ -46,13 +46,4 @@ python -m src.gong_detector.core.pipeline.detection_pipeline "YOUTUBE_URL"
 - Dependencies are pinned to tested, working versions to prevent compatibility issues
 - Use `pip install -r requirements.txt` for exact reproducible environment
 
-## Environment Setup
 
-**Required:**
-- Python 3.12+
-- ffmpeg (for audio conversion)
-- 16GB+ RAM (for batch processing)
-
-**Optional:**
-- GPU acceleration (TensorFlow)
-- Local media cache (for offline processing)
