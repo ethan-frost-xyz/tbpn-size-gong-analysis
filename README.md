@@ -1,6 +1,6 @@
-# TBPN Gong Detection System
-i am keeping this here but i hate it
-YAMNet-based audio event detection system for identifying gong sounds in YouTube videos with **EBU R128 compliance** (LUFS + True Peak measurements).
+# TBPN Gong Abuse Detection System
+i made this because sometimes the boys absolutely rip the size gong, especially when there is a big raise
+
 
 ## Quick Start
 
