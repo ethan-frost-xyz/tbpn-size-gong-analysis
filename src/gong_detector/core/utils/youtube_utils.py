@@ -33,6 +33,7 @@ from .youtube import (
 logger = logging.getLogger(__name__)
 
 # Maintain backward compatibility with the original function name
+# This now always uses the dual-cache system (raw + preprocessed)
 download_and_trim_youtube_audio = download_and_process_youtube_audio
 
 # Re-export all functions for backward compatibility

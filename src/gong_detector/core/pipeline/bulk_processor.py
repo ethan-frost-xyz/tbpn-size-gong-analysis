@@ -82,7 +82,7 @@ Examples:
   python -m gong_detector.core.pipeline.bulk_processor --threshold 0.3 --max_threshold 0.8
   python -m gong_detector.core.pipeline.bulk_processor --save_positive_samples
   python -m gong_detector.core.pipeline.bulk_processor --collect_negative_samples --sample_count 10
-  python -m gong_detector.core.pipeline.bulk_processor --version_one --csv  # Includes batch LUFS
+  python -m gong_detector.core.pipeline.bulk_processor --version_one --csv  # Includes batch LUFS (dual-cache enabled)
   python -m gong_detector.core.pipeline.bulk_processor --csv --test-run 10  # Test with first 10 videos
         """,
     )
@@ -141,11 +141,7 @@ Examples:
         action="store_true",
         help="Disable consolidation of overlapping detections (keep all raw detections)",
     )
-    parser.add_argument(
-        "--use_local_media",
-        action="store_true",
-        help="Prefer local preprocessed audio cache; download only if missing",
-    )
+
     parser.add_argument(
         "--local_only",
         action="store_true",
@@ -313,7 +309,6 @@ Examples:
                 use_version_one=args.version_one,
                 batch_size=args.batch_size,
                 consolidate_detections=not args.no_consolidate,
-                use_local_media=args.use_local_media,
                 local_only=args.local_only,
             )
 

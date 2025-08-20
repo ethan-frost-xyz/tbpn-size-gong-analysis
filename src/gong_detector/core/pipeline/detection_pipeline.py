@@ -253,13 +253,14 @@ def detect_from_youtube_comprehensive(
     use_version_one: bool = False,
     batch_size: int = 4000,
     consolidate_detections: bool = True,
-    use_local_media: bool = False,
     local_only: bool = False,
 ) -> dict[str, Any]:
     """Run YouTube gong detection and return comprehensive metadata.
 
     This function provides a programmatic interface for bulk processing,
     returning structured data instead of just printing results.
+    
+    Audio is automatically cached in both raw and preprocessed formats for efficiency.
 
     Args:
         youtube_url: YouTube URL to process
@@ -270,6 +271,9 @@ def detect_from_youtube_comprehensive(
         should_save_positive_samples: Whether to save detected segments
         keep_audio: Whether to keep temporary audio file
         use_version_one: Whether to use the trained classifier for enhanced detection
+        batch_size: Batch size for classifier predictions (larger = faster but more memory)
+        consolidate_detections: Whether to consolidate overlapping detections
+        local_only: Strict offline mode - require local preprocessed audio, never download
 
     Returns:
         Dictionary containing all detection metadata:
@@ -298,11 +302,12 @@ def detect_from_youtube_comprehensive(
     local_audio_used = False
 
     try:
-        # Step 1: Get audio path via local cache or download
+        # Step 1: Get audio path via dual-cache system (always caches raw + preprocessed)
         video_title = ""
         upload_date = ""
 
-        if use_local_media or local_only:
+        if local_only:
+            # Strict offline mode: require local preprocessed audio; never download
             vid = video_id_from_url(youtube_url)
             if not vid:
                 raise ValueError("Could not extract video_id from URL for local cache")
@@ -319,6 +324,7 @@ def detect_from_youtube_comprehensive(
             temp_audio = local_path
             local_audio_used = True
         else:
+            # Always use dual-cache system (downloads raw + creates preprocessed)
             temp_audio, video_title, upload_date = download_and_trim_youtube_audio(
                 url=youtube_url,
                 output_path=temp_audio,
