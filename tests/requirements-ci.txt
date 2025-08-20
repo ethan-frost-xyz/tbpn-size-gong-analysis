@@ -1,0 +1,15 @@
+# Minimal requirements for CI testing environments
+# This file excludes heavy ML dependencies that aren't needed for basic testing
+
+# Core testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+ruff>=0.1.0
+
+# Basic dependencies for utility functions
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0,<3.0.0
+
+# System monitoring (lightweight)
+psutil>=5.9.0
