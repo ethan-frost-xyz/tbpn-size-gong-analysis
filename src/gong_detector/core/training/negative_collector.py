@@ -17,12 +17,12 @@ import numpy as np
 
 from ..detector.yamnet_runner import YAMNetGongDetector
 from ..utils.audio_utils import extract_audio_slice
-from ..utils.results_utils import format_time_for_filename
 from ..utils.file_utils import (
     cleanup_old_temp_files,
     create_temp_audio_path,
     setup_directories,
 )
+from ..utils.results_utils import format_time_for_filename
 from ..utils.youtube import (
     download_and_trim_youtube_audio,
 )
