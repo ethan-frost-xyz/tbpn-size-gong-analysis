@@ -22,11 +22,13 @@ from ..utils.results_utils import (
     save_positive_samples,
     save_results_to_csv,
 )
-from ..utils.youtube_utils import (
+from ..utils.file_utils import (
     cleanup_old_temp_files,
     create_temp_audio_path,
-    download_and_trim_youtube_audio,
     setup_directories,
+)
+from ..utils.youtube import (
+    download_and_trim_youtube_audio,
     video_id_from_url,
 )
 

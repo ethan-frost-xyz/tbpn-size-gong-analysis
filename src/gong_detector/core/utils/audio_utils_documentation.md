@@ -192,9 +192,9 @@ audio_path, title, date = download_and_process_youtube_audio(
 )
 
 # BACKWARD COMPATIBLE APPROACH (Updated)
-from gong_detector.core.utils.youtube_utils import download_and_trim_youtube_audio
+from gong_detector.core.utils.youtube import download_and_trim_youtube_audio
 from gong_detector.core.utils.loudness import compute_all_loudness_metrics
-# Note: compute_lufs_segments no longer available via youtube_utils
+# Note: compute_lufs_segments no longer available - use unified analyzer instead
 ```
 
 ## Error Handling

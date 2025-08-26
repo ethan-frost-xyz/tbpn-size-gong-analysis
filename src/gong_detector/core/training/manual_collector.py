@@ -13,11 +13,13 @@ if TYPE_CHECKING:
     pass
 
 from ..utils.results_utils import save_positive_samples
-from ..utils.youtube_utils import (
+from ..utils.file_utils import (
     cleanup_old_temp_files,
     create_temp_audio_path,
-    download_and_trim_youtube_audio,
     setup_directories,
+)
+from ..utils.youtube import (
+    download_and_trim_youtube_audio,
 )
 
 
@@ -91,12 +93,12 @@ def process_single_sample(
 
         # Show the actual folder that was created
         if video_title:
-            from ..utils.youtube_utils import create_folder_name_from_title
+            from ..utils.youtube import create_folder_name_from_title
 
             folder_name = create_folder_name_from_title(video_title)
             final_dir = positive_base_dir / folder_name
         elif upload_date:
-            from ..utils.youtube_utils import create_folder_name_from_date
+            from ..utils.youtube import create_folder_name_from_date
 
             folder_name = create_folder_name_from_date(upload_date)
             final_dir = positive_base_dir / folder_name

@@ -119,12 +119,12 @@ def save_positive_samples(
 
     # Create date-based folder name using video title if available, otherwise use upload_date
     if video_title:
-        from .youtube_utils import create_folder_name_from_title
+        from .youtube import create_folder_name_from_title
 
         folder_name = create_folder_name_from_title(video_title)
         final_positive_dir = positive_dir / folder_name
     elif upload_date:
-        from .youtube_utils import create_folder_name_from_date
+        from .youtube import create_folder_name_from_date
 
         folder_name = create_folder_name_from_date(upload_date)
         final_positive_dir = positive_dir / folder_name

@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from gong_detector.core.utils.youtube_utils import (
+from gong_detector.core.utils.youtube import (
     download_and_trim_youtube_audio,
 )
 
@@ -190,7 +190,7 @@ def ensure_preprocessed_audio(
                 meta = idx.get(video_id) or {}
 
             # Import trim function
-            from gong_detector.core.utils.youtube_utils import trim_from_preprocessed
+            from gong_detector.core.utils.youtube import trim_from_preprocessed
 
             trim_from_preprocessed(
                 str(full_preprocessed_path), output_path, start, duration

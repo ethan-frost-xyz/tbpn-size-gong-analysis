@@ -73,7 +73,7 @@ def _download_audio(url: str) -> str:
     }
 
     # Add cookies if available
-    from .youtube_utils import get_cookies_path
+    from .youtube import get_cookies_path
 
     cookies_path = get_cookies_path()
     if cookies_path:
