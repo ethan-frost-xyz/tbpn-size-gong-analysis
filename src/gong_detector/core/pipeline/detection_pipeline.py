@@ -259,7 +259,7 @@ def detect_from_youtube_comprehensive(
 
     This function provides a programmatic interface for bulk processing,
     returning structured data instead of just printing results.
-    
+
     Audio is automatically cached in both raw and preprocessed formats for efficiency.
 
     Args:
