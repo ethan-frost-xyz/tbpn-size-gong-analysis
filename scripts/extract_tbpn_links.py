@@ -58,7 +58,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # TBPN Playlist URL - official curated list of episodes
-TBPN_PLAYLIST_URL = "https://www.youtube.com/playlist?list=PLBV_0ax_G8bowGFK97Nrv0DBmxaDObKgA"
+TBPN_PLAYLIST_URL = (
+    "https://www.youtube.com/playlist?list=PLBV_0ax_G8bowGFK97Nrv0DBmxaDObKgA"
+)
 
 # No filtering needed since playlist is already curated
 
@@ -74,14 +76,23 @@ def parse_date_from_title(title: str) -> str:
     """
     # Month name to number mapping
     months = {
-        'January': '01', 'February': '02', 'March': '03', 'April': '04',
-        'May': '05', 'June': '06', 'July': '07', 'August': '08',
-        'September': '09', 'October': '10', 'November': '11', 'December': '12'
+        "January": "01",
+        "February": "02",
+        "March": "03",
+        "April": "04",
+        "May": "05",
+        "June": "06",
+        "July": "07",
+        "August": "08",
+        "September": "09",
+        "October": "10",
+        "November": "11",
+        "December": "12",
     }
 
     # Pattern to match: "Day, Month Day(th/st/nd/rd)" or "Day, Month Day(th/st/nd/rd) | ..."
     # Examples: "Tuesday, August 26th", "David Senra LIVE in The Ultradome | Thursday, August 21st"
-    pattern = r'(\w+),\s+(\w+)\s+(\d+)(?:st|nd|rd|th)?'
+    pattern = r"(\w+),\s+(\w+)\s+(\d+)(?:st|nd|rd|th)?"
     match = re.search(pattern, title)
 
     if match:
@@ -94,7 +105,9 @@ def parse_date_from_title(title: str) -> str:
     return ""
 
 
-def extract_playlist_videos(playlist_url: str = TBPN_PLAYLIST_URL) -> list[tuple[str, float, str, str]]:
+def extract_playlist_videos(
+    playlist_url: str = TBPN_PLAYLIST_URL,
+) -> list[tuple[str, float, str, str]]:
     """Extract all video metadata from TBPN YouTube playlist.
 
     Args:
@@ -146,7 +159,9 @@ def extract_playlist_videos(playlist_url: str = TBPN_PLAYLIST_URL) -> list[tuple
                             upload_date = parse_date_from_title(title)
 
                         if title and duration and video_id:
-                            videos.append((title, float(duration), video_id, upload_date))
+                            videos.append(
+                                (title, float(duration), video_id, upload_date)
+                            )
                     except Exception as video_error:
                         # Skip problematic videos but continue with others
                         logger.debug(f"Skipping video due to error: {video_error}")
@@ -199,7 +214,9 @@ def get_newest_existing_date(existing_files: list[str]) -> str:
         logger.info(f"Checking dates in: {file_path}")
 
         with open(file_path) as f:
-            urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            urls = [
+                line.strip() for line in f if line.strip() and not line.startswith("#")
+            ]
 
         if not urls:
             continue
@@ -221,14 +238,18 @@ def get_newest_existing_date(existing_files: list[str]) -> str:
             continue
 
     if newest_date:
-        logger.info(f"Newest existing episode: {newest_date} (checked {total_videos} videos)")
+        logger.info(
+            f"Newest existing episode: {newest_date} (checked {total_videos} videos)"
+        )
     else:
         logger.warning("No existing dates found")
 
     return newest_date
 
 
-def get_downloaded_video_info(local_media_index_path: str = "data/local_media/index.json") -> tuple[set[str], Optional[str]]:
+def get_downloaded_video_info(
+    local_media_index_path: str = "data/local_media/index.json",
+) -> tuple[set[str], Optional[str]]:
     """Get downloaded video IDs and the newest download date.
 
     Args:
@@ -256,7 +277,9 @@ def get_downloaded_video_info(local_media_index_path: str = "data/local_media/in
                 if newest_date is None or upload_date > newest_date:
                     newest_date = upload_date
 
-        logger.info(f"Found {len(downloaded_ids)} already downloaded videos in local media")
+        logger.info(
+            f"Found {len(downloaded_ids)} already downloaded videos in local media"
+        )
         if newest_date:
             logger.info(f"Newest downloaded episode: {newest_date}")
 
@@ -291,11 +314,17 @@ def filter_episodes(
         logger.info(f"Excluding {len(downloaded_video_ids)} already downloaded videos")
 
     if after_date:
-        logger.info(f"Only including episodes uploaded after {after_date} (newer than newest downloaded)")
+        logger.info(
+            f"Only including episodes uploaded after {after_date} (newer than newest downloaded)"
+        )
 
     for title, duration, video_id, upload_date in videos:
         # Check if already downloaded
-        if exclude_downloaded and downloaded_video_ids and video_id in downloaded_video_ids:
+        if (
+            exclude_downloaded
+            and downloaded_video_ids
+            and video_id in downloaded_video_ids
+        ):
             logger.debug(f"Skipping already downloaded video: {title} ({video_id})")
             continue
 
@@ -303,7 +332,9 @@ def filter_episodes(
         if after_date and upload_date:
             try:
                 if upload_date <= after_date:
-                    logger.debug(f"Skipping old video: {title} (uploaded {upload_date}, need after {after_date})")
+                    logger.debug(
+                        f"Skipping old video: {title} (uploaded {upload_date}, need after {after_date})"
+                    )
                     continue
             except (ValueError, TypeError):
                 # If we can't parse the date, include it anyway
@@ -315,7 +346,7 @@ def filter_episodes(
 
         # Include this episode
         filtered_episodes.append((title, duration, video_id, upload_date))
-        logger.debug(f"Found episode: {title} ({duration/60:.1f} min)")
+        logger.debug(f"Found episode: {title} ({duration / 60:.1f} min)")
 
     logger.info(f"Found {len(filtered_episodes)} episodes")
     return filtered_episodes
@@ -339,16 +370,20 @@ def save_video_links(
 
     with open(output_file, "w", encoding="utf-8") as f:
         if include_metadata and videos:
-            f.write(f"# TBPN Episodes to Download - Generated {datetime.now().isoformat()}\n")
+            f.write(
+                f"# TBPN Episodes to Download - Generated {datetime.now().isoformat()}\n"
+            )
             f.write(f"# Total new episodes: {len(videos)}\n")
-            f.write(f"# Duration range: {min(v[1]/60 for v in videos):.1f} - {max(v[1]/60 for v in videos):.1f} minutes\n")
+            f.write(
+                f"# Duration range: {min(v[1] / 60 for v in videos):.1f} - {max(v[1] / 60 for v in videos):.1f} minutes\n"
+            )
             f.write("#\n")
 
         for title, duration, video_id, upload_date in videos:
             url = f"https://www.youtube.com/watch?v={video_id}"
 
             if include_metadata:
-                f.write(f"# {title} ({duration/60:.1f} min) - {upload_date}\n")
+                f.write(f"# {title} ({duration / 60:.1f} min) - {upload_date}\n")
 
             f.write(f"{url}\n")
 
@@ -365,36 +400,36 @@ def main():
         "--output",
         type=str,
         default="data/tbpn_ytlinks/tbpn_youtube_links.txt",
-        help="Output file path (default: data/tbpn_ytlinks/tbpn_youtube_links.txt)"
+        help="Output file path (default: data/tbpn_ytlinks/tbpn_youtube_links.txt)",
     )
 
     parser.add_argument(
         "--include-metadata",
         action="store_true",
-        help="Include metadata comments in output file"
+        help="Include metadata comments in output file",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be extracted without saving"
+        help="Show what would be extracted without saving",
     )
 
     parser.add_argument(
         "--exclude-downloaded",
         action="store_true",
         default=True,
-        help="Exclude videos that are already downloaded in local media (default: True)"
+        help="Exclude videos that are already downloaded in local media (default: True)",
     )
     parser.add_argument(
         "--include-downloaded",
         action="store_true",
-        help="Include videos even if they're already downloaded (overrides --exclude-downloaded)"
+        help="Include videos even if they're already downloaded (overrides --exclude-downloaded)",
     )
     parser.add_argument(
         "--local-media-index",
         type=str,
         default="data/local_media/index.json",
-        help="Path to local media index file (default: data/local_media/index.json)"
+        help="Path to local media index file (default: data/local_media/index.json)",
     )
 
     args = parser.parse_args()
@@ -407,7 +442,9 @@ def main():
     downloaded_video_ids = set()
     newest_downloaded_date = None
     if args.exclude_downloaded:
-        downloaded_video_ids, newest_downloaded_date = get_downloaded_video_info(args.local_media_index)
+        downloaded_video_ids, newest_downloaded_date = get_downloaded_video_info(
+            args.local_media_index
+        )
 
     try:
         # Extract all videos from TBPN playlist
@@ -434,8 +471,10 @@ def main():
 
         if args.dry_run:
             logger.info(f"\nWould extract {len(episodes)} episodes:")
-            for title, duration, _video_id, _upload_date in episodes[:10]:  # Show first 10
-                logger.info(f"  {title} ({duration/60:.1f} min)")
+            for title, duration, _video_id, _upload_date in episodes[
+                :10
+            ]:  # Show first 10
+                logger.info(f"  {title} ({duration / 60:.1f} min)")
             if len(episodes) > 10:
                 logger.info(f"  ... and {len(episodes) - 10} more")
         else:
@@ -445,7 +484,9 @@ def main():
             # Show summary
             logger.info("\nExtraction complete!")
             logger.info(f"New episodes to download: {len(episodes)}")
-            logger.info(f"Duration range: {min(v[1]/60 for v in episodes):.1f} - {max(v[1]/60 for v in episodes):.1f} minutes")
+            logger.info(
+                f"Duration range: {min(v[1] / 60 for v in episodes):.1f} - {max(v[1] / 60 for v in episodes):.1f} minutes"
+            )
             logger.info(f"Download list saved to: {args.output}")
 
     except Exception as e:

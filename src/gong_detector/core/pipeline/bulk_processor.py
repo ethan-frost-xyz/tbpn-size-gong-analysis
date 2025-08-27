@@ -280,7 +280,6 @@ Examples:
 
         # Add delay between downloads to avoid rate limiting (except for first video)
         if i > 1:
-            import time
             delay = 5  # 5 second delay between downloads
             print(f"[INFO] Waiting {delay} seconds before next download...")
             time.sleep(delay)

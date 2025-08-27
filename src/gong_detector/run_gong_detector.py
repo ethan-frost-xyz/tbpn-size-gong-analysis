@@ -200,7 +200,9 @@ def single_video_detection() -> None:
     batch_size = get_int_input("Batch size", suggested_batch_size)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     keep_audio = get_yes_no_input("Keep temporary audio files?", False)
-    local_only = get_yes_no_input("Strict offline mode (require cached audio, no downloads)?", False)
+    local_only = get_yes_no_input(
+        "Strict offline mode (require cached audio, no downloads)?", False
+    )
 
     # Optional trimming
     start_time = get_user_input("Start time in seconds (optional, press Enter to skip)")
@@ -214,7 +216,9 @@ def single_video_detection() -> None:
     print(f"Threshold: {threshold}")
     print(f"Using trained classifier: {use_version_one}")
     print(f"Batch size: {batch_size}")
-    print("Dual-cache enabled: Audio will be cached in both raw and preprocessed formats")
+    print(
+        "Dual-cache enabled: Audio will be cached in both raw and preprocessed formats"
+    )
     print(f"Local only: {local_only}")
 
     # Run detection
@@ -289,7 +293,9 @@ def bulk_processing() -> None:
     test_count = None
     if test_mode:
         test_count = get_int_input("Number of videos to process (from start)", 10)
-    local_only = get_yes_no_input("Strict offline mode (require cached audio, no downloads)?", False)
+    local_only = get_yes_no_input(
+        "Strict offline mode (require cached audio, no downloads)?", False
+    )
 
     print(f"\nProcessing videos from: {links_file}")
     print(f"Threshold: {threshold}")
@@ -301,7 +307,9 @@ def bulk_processing() -> None:
         )
     if test_mode:
         print(f"Test mode: Processing first {test_count} videos only")
-    print("Dual-cache enabled: Audio will be cached in both raw and preprocessed formats")
+    print(
+        "Dual-cache enabled: Audio will be cached in both raw and preprocessed formats"
+    )
     print(f"Local only: {local_only}")
 
     # Set up sys.argv for bulk processor
