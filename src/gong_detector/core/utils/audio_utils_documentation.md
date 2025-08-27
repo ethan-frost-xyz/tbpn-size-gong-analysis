@@ -224,7 +224,6 @@ from gong_detector.core.utils.loudness import compute_all_loudness_metrics
 ## Performance Optimizations (NEW)
 
 **Unified Loudness Analysis:**
-- **6x → 1x** raw audio loads per video (85% memory reduction)
 - **Single-pass processing** for all LUFS and True Peak measurements
 - **Modern audio loading** with soundfile-first approach (reduces deprecation warnings)
 - **Backward compatible** - existing functions still work

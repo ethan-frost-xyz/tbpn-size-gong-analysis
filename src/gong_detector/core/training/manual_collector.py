@@ -105,14 +105,14 @@ def process_single_sample(
         else:
             final_dir = positive_base_dir
 
-        print("\n✓ Manual sample collected successfully!")
+        print("\nManual sample collected successfully!")
         print(f"  Video: {video_title}")
         print(f"  Timestamp: {timestamp}s")
         print(f"  Saved to: {final_dir}")
         return True
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"Error: {e}")
         return False
 
     finally:
@@ -145,14 +145,14 @@ def main() -> None:
             # Parse input
             parts = user_input.split()
             if len(parts) < 2:
-                print("❌ Please provide both link and timestamp")
+                print("Please provide both link and timestamp")
                 continue
 
             youtube_url = parts[0]
             try:
                 timestamp = float(parts[1])
             except ValueError:
-                print("❌ Invalid timestamp. Please enter a number.")
+                print("Invalid timestamp. Please enter a number.")
                 continue
 
             # Process the sample
@@ -167,7 +167,7 @@ def main() -> None:
             print("\n\nGoodbye!")
             break
         except Exception as e:
-            print(f"❌ Unexpected error: {e}")
+            print(f"Unexpected error: {e}")
             continue
 
 
