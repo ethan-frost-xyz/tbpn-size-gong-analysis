@@ -18,6 +18,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -62,6 +63,37 @@ TBPN_PLAYLIST_URL = "https://www.youtube.com/playlist?list=PLBV_0ax_G8bowGFK97Nr
 # No filtering needed since playlist is already curated
 
 
+def parse_date_from_title(title: str) -> str:
+    """Parse upload date from TBPN episode title.
+
+    Args:
+        title: Episode title containing date information
+
+    Returns:
+        Date in YYYYMMDD format, or empty string if no date found
+    """
+    # Month name to number mapping
+    months = {
+        'January': '01', 'February': '02', 'March': '03', 'April': '04',
+        'May': '05', 'June': '06', 'July': '07', 'August': '08',
+        'September': '09', 'October': '10', 'November': '11', 'December': '12'
+    }
+
+    # Pattern to match: "Day, Month Day(th/st/nd/rd)" or "Day, Month Day(th/st/nd/rd) | ..."
+    # Examples: "Tuesday, August 26th", "David Senra LIVE in The Ultradome | Thursday, August 21st"
+    pattern = r'(\w+),\s+(\w+)\s+(\d+)(?:st|nd|rd|th)?'
+    match = re.search(pattern, title)
+
+    if match:
+        day_name, month_name, day = match.groups()
+        if month_name in months:
+            day_padded = day.zfill(2)
+            # Assume 2025 for recent episodes
+            return f"2025{months[month_name]}{day_padded}"
+
+    return ""
+
+
 def extract_playlist_videos(playlist_url: str = TBPN_PLAYLIST_URL) -> list[tuple[str, float, str, str]]:
     """Extract all video metadata from TBPN YouTube playlist.
 
@@ -77,7 +109,7 @@ def extract_playlist_videos(playlist_url: str = TBPN_PLAYLIST_URL) -> list[tuple
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
-        "extract_flat": True,  # Don't download, just get metadata
+        "extract_flat": True,  # Get flat metadata for faster extraction
     }
 
     # Add cookies if available
@@ -103,13 +135,22 @@ def extract_playlist_videos(playlist_url: str = TBPN_PLAYLIST_URL) -> list[tuple
             videos = []
             for entry in info["entries"]:
                 if entry:  # Skip None entries
-                    title = entry.get("title", "")
-                    duration = entry.get("duration", 0)
-                    video_id = entry.get("id", "")
-                    upload_date = entry.get("upload_date", "")
+                    try:
+                        title = entry.get("title", "")
+                        duration = entry.get("duration", 0)
+                        video_id = entry.get("id", "")
+                        upload_date = entry.get("upload_date", "")
 
-                    if title and duration and video_id:
-                        videos.append((title, float(duration), video_id, upload_date))
+                        # If no upload_date, try to parse from title
+                        if not upload_date:
+                            upload_date = parse_date_from_title(title)
+
+                        if title and duration and video_id:
+                            videos.append((title, float(duration), video_id, upload_date))
+                    except Exception as video_error:
+                        # Skip problematic videos but continue with others
+                        logger.debug(f"Skipping video due to error: {video_error}")
+                        continue
 
             logger.info(f"Extracted {len(videos)} videos from playlist")
             return videos
@@ -188,14 +229,14 @@ def get_newest_existing_date(existing_files: list[str]) -> str:
 
 
 def get_downloaded_video_info(local_media_index_path: str = "data/local_media/index.json") -> tuple[set[str], Optional[str]]:
-    """Get downloaded video IDs and the oldest download date.
+    """Get downloaded video IDs and the newest download date.
 
     Args:
         local_media_index_path: Path to the local media index JSON file.
 
     Returns:
-        Tuple of (downloaded_video_ids, oldest_upload_date).
-        oldest_upload_date is None if no downloads found.
+        Tuple of (downloaded_video_ids, newest_upload_date).
+        newest_upload_date is None if no downloads found.
     """
     if not os.path.exists(local_media_index_path):
         logger.info(f"Local media index not found at: {local_media_index_path}")
@@ -206,20 +247,20 @@ def get_downloaded_video_info(local_media_index_path: str = "data/local_media/in
             index_data = json.load(f)
 
         downloaded_ids = set(index_data.keys())
-        oldest_date = None
+        newest_date = None
 
-        # Find the oldest upload date among downloaded videos
+        # Find the newest upload date among downloaded videos
         for video_info in index_data.values():
             upload_date = video_info.get("upload_date")
             if upload_date:
-                if oldest_date is None or upload_date < oldest_date:
-                    oldest_date = upload_date
+                if newest_date is None or upload_date > newest_date:
+                    newest_date = upload_date
 
         logger.info(f"Found {len(downloaded_ids)} already downloaded videos in local media")
-        if oldest_date:
-            logger.info(f"Oldest downloaded episode: {oldest_date}")
+        if newest_date:
+            logger.info(f"Newest downloaded episode: {newest_date}")
 
-        return downloaded_ids, oldest_date
+        return downloaded_ids, newest_date
 
     except (json.JSONDecodeError, Exception) as e:
         logger.warning(f"Failed to read local media index: {e}")
@@ -232,13 +273,14 @@ def filter_episodes(
     downloaded_video_ids: Optional[set[str]] = None,
     after_date: Optional[str] = None,
 ) -> list[tuple[str, float, str, str]]:
-    """Filter playlist videos to exclude already downloaded ones and old episodes.
+    """Filter playlist videos to exclude already downloaded ones and episodes before cutoff date.
 
     Args:
         videos: List of (title, duration_seconds, video_id, upload_date).
         exclude_downloaded: Whether to exclude already downloaded videos.
         downloaded_video_ids: Set of video IDs that are already downloaded.
         after_date: Only include videos uploaded after this date (YYYYMMDD format).
+                   This is typically the newest downloaded episode date.
 
     Returns:
         Filtered list of episodes.
@@ -249,7 +291,7 @@ def filter_episodes(
         logger.info(f"Excluding {len(downloaded_video_ids)} already downloaded videos")
 
     if after_date:
-        logger.info(f"Only including episodes uploaded after {after_date}")
+        logger.info(f"Only including episodes uploaded after {after_date} (newer than newest downloaded)")
 
     for title, duration, video_id, upload_date in videos:
         # Check if already downloaded
@@ -361,11 +403,11 @@ def main():
     if args.include_downloaded:
         args.exclude_downloaded = False
 
-    # Get downloaded video info (IDs and oldest date)
+    # Get downloaded video info (IDs and newest date)
     downloaded_video_ids = set()
-    oldest_downloaded_date = None
+    newest_downloaded_date = None
     if args.exclude_downloaded:
-        downloaded_video_ids, oldest_downloaded_date = get_downloaded_video_info(args.local_media_index)
+        downloaded_video_ids, newest_downloaded_date = get_downloaded_video_info(args.local_media_index)
 
     try:
         # Extract all videos from TBPN playlist
@@ -377,7 +419,7 @@ def main():
             all_videos,
             args.exclude_downloaded,
             downloaded_video_ids,
-            oldest_downloaded_date,
+            newest_downloaded_date,
         )
 
         if not episodes:
