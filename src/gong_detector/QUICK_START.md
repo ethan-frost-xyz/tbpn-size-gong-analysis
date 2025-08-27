@@ -167,12 +167,6 @@ python -m src.gong_detector.core.training.negative_collector "URL"
 - `scripts/evaluate_model.py` - Evaluate trained model performance
 - `data/validated_samples/` - Curated training data (positive/negative)
 
-### **Performance Optimizations**
-- **Batch Processing**: 5000 embeddings per batch (configurable)
-- **Multi-threading**: 8 inter-op + 4 intra-op threads
-- **Memory Efficient**: Optimized for 16GB+ systems
-- **Conservative Defaults**: 0.925 threshold for high precision
-
 ## **Importable Modules**
 
 ### **Main API (from gong_detector.core)**
