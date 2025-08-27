@@ -278,6 +278,13 @@ Examples:
         print(f"Processing {i}/{len(urls)}: {url}")
         print(f"{'=' * 60}")
 
+        # Add delay between downloads to avoid rate limiting (except for first video)
+        if i > 1:
+            import time
+            delay = 5  # 5 second delay between downloads
+            print(f"[INFO] Waiting {delay} seconds before next download...")
+            time.sleep(delay)
+
         # Check memory before processing each video
         available_gb, should_continue = check_memory_status()
         if not should_continue:

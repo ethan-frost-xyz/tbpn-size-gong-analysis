@@ -28,6 +28,12 @@ def get_cookies_path() -> Optional[str]:
         "youtube_cookies.txt",
         os.path.expanduser("~/cookies.txt"),
         os.path.expanduser("~/youtube_cookies.txt"),
+        # Add project root paths relative to current working directory
+        os.path.join(os.getcwd(), "cookies.txt"),
+        os.path.join(os.getcwd(), "youtube_cookies.txt"),
+        # Also check if we're in a subdirectory and look up
+        os.path.join(os.path.dirname(os.getcwd()), "cookies.txt"),
+        os.path.join(os.path.dirname(os.getcwd()), "youtube_cookies.txt"),
     ]
 
     for path in cookie_paths:
@@ -57,12 +63,8 @@ def download_youtube_audio(
         "format": "bestaudio/best",
         "outtmpl": output_template,
         "quiet": True,  # Reduce output noise
-        # Speed-related options
-        "http_chunk_size": 10 * 1024 * 1024,  # 10MB chunks
-        "retries": 20,
-        "fragment_retries": 20,
-        # Prefer IPv4; many VPN exits have better IPv4 peering to Google CDNs
-        "source_address": "0.0.0.0",
+        "retries": 10,
+        "fragment_retries": 10,
     }
 
     # Add cookies if available
