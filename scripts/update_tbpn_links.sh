@@ -9,18 +9,19 @@ cd "$(dirname "$0")/.."
 # Activate virtual environment
 source .venv/bin/activate
 
-# Check for new episodes
+# Check for new episodes and append directly to main file
 echo "Checking for new TBPN episodes..."
-python scripts/extract_tbpn_links.py --newer-than-existing --output data/tbpn_ytlinks/tbpn_new_episodes.txt
+initial_count=$(wc -l < data/tbpn_ytlinks/tbpn_youtube_links.txt 2>/dev/null || echo "0")
 
-# Check if any new episodes were found
-if [ -f "data/tbpn_ytlinks/tbpn_new_episodes.txt" ] && [ -s "data/tbpn_ytlinks/tbpn_new_episodes.txt" ]; then
+python scripts/extract_tbpn_links.py --exclude-downloaded --append
+
+final_count=$(wc -l < data/tbpn_ytlinks/tbpn_youtube_links.txt 2>/dev/null || echo "0")
+new_episodes=$((final_count - initial_count))
+
+if [ $new_episodes -gt 0 ]; then
     echo ""
-    echo "New episodes found! Saved to: data/tbpn_ytlinks/tbpn_new_episodes.txt"
-    echo "Episode count: $(wc -l < data/tbpn_ytlinks/tbpn_new_episodes.txt)"
-    echo ""
-    echo "To add them to your main collection:"
-    echo "  cat data/tbpn_ytlinks/tbpn_new_episodes.txt >> data/tbpn_ytlinks/tbpn_youtube_links.txt"
+    echo "✓ Found and added $new_episodes new episode(s) to your collection!"
+    echo "Total episodes: $final_count"
 else
     echo "Your collection is up to date - no new episodes found."
 fi
