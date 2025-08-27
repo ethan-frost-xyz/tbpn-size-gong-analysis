@@ -3,7 +3,7 @@
 ## Overview
 Audio utilities for gong detection, providing functions for audio analysis, conversion, processing, and loudness measurement.
 
-**🔄 REFACTORING UPDATE**: The `youtube_utils.py` module has been refactored into smaller, focused modules:
+**REFACTORING UPDATE**: The `youtube_utils.py` module has been refactored into smaller, focused modules:
 - `youtube/` - YouTube downloading, caching, and processing
 - `loudness/` - LUFS and True Peak analysis
 - `file_utils.py` - File system operations
@@ -74,13 +74,13 @@ Existing imports continue to work for backward compatibility.
 
 ### loudness/ Package
 
-**unified_analyzer.py** ⭐ **RECOMMENDED - Modern Implementation**
+**unified_analyzer.py** (RECOMMENDED - Modern Implementation)
 - `compute_all_loudness_metrics(video_id, detections, index)` - **Unified single-pass computation** of all LUFS and True Peak metrics for maximum efficiency (soundfile-only, no deprecation warnings)
 - `load_raw_audio_modern(file_path)` - Modern audio loading with soundfile-first approach, avoiding deprecated librosa methods
 
 **Legacy analyzers removed** (lufs_analyzer.py, true_peak_analyzer.py)
-- ❌ `compute_lufs_segments()` and `compute_true_peak_segments()` have been removed
-- ✅ Use `compute_all_loudness_metrics()` for optimal performance and no warnings
+- `compute_lufs_segments()` and `compute_true_peak_segments()` have been removed
+- Use `compute_all_loudness_metrics()` for optimal performance and no warnings
 
 **batch_processor.py**
 - `compute_batch_weighted_lufs(all_video_data, measurement_type, reference_lufs)` - Batch-weighted LUFS across multiple videos
@@ -95,7 +95,7 @@ Existing imports continue to work for backward compatibility.
 
 ## youtube_utils.py (Backward Compatibility)
 
-**⚠️ DEPRECATED**: This module now imports from the new modular structure for backward compatibility. New code should use the specific modules above.
+**DEPRECATED**: This module now imports from the new modular structure for backward compatibility. New code should use the specific modules above.
 
 ### Features
 - YouTube download with yt-dlp
@@ -168,8 +168,8 @@ for i, (lufs, dbtp) in enumerate(zip(lufs_metrics, dbtp_metrics)):
     print(f"  Momentary dBTP: {dbtp['momentary_dbtp']:.1f} dBTP")
 
 # LEGACY ANALYSIS (REMOVED - use unified analyzer instead)
-# ❌ compute_lufs_segments() and compute_true_peak_segments() have been removed
-# ✅ Use compute_all_loudness_metrics() for optimal performance:
+# compute_lufs_segments() and compute_true_peak_segments() have been removed
+# Use compute_all_loudness_metrics() for optimal performance:
 from gong_detector.core.utils.loudness import compute_all_loudness_metrics
 
 # Convert timestamps to detection format: (window_start, confidence, display_timestamp)
@@ -207,9 +207,9 @@ from gong_detector.core.utils.loudness import compute_all_loudness_metrics
 ## Known Warnings & Compatibility
 
 **Audio Loading (Optimized):**
-- ✅ **No more deprecation warnings** - Raw cache now uses 16kHz WAV format
-- ✅ **soundfile-only loading** - No fallback to deprecated librosa methods needed
-- ✅ **~75% storage reduction** - 16kHz WAV files vs original 48kHz files
+- **No more deprecation warnings** - Raw cache now uses 16kHz WAV format
+- **soundfile-only loading** - No fallback to deprecated librosa methods needed
+- **~75% storage reduction** - 16kHz WAV files vs original 48kHz files
 
 **LUFS Analysis Warnings (Normal):**
 - `Short-term LUFS approximated using integrated loudness` - When precise measurements unavailable

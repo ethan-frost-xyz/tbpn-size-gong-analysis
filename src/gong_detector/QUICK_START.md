@@ -239,8 +239,8 @@ from gong_detector.core.training import collect_negative_samples
 
 ## **Recent Fixes**
 
-✅ **Fixed routing issues**: All pipeline scripts now work with correct module paths  
-✅ **Fixed classifier loading**: Models now load from correct `core/models/` directory  
-✅ **Fixed file paths**: YouTube links file moved to `core/data/` directory  
-✅ **Tested all commands**: Bulk processing, individual detection, and training scripts all working  
-✅ **EBU R128 compliance**: LUFS + True Peak measurements integrated across full pipeline
+- **Fixed routing issues**: All pipeline scripts now work with correct module paths
+- **Fixed classifier loading**: Models now load from correct `core/models/` directory
+- **Fixed file paths**: YouTube links file moved to `core/data/` directory
+- **Tested all commands**: Bulk processing, individual detection, and training scripts all working
+- **EBU R128 compliance**: LUFS + True Peak measurements integrated across full pipeline
