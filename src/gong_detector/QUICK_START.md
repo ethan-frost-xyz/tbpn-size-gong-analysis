@@ -38,7 +38,7 @@ python run_gong_detector.py
 #    - Save positive samples? (y/n) - choose based on need
 #    - Save results to CSV file? (y) - recommended for analysis (includes LUFS + True Peak)
 #    - Use local media (cache) if available? (y) - enables caching
-#    - Local only (no downloads)? (n) - allow downloads to populate cache
+#    - Strict offline mode (require cached audio, no downloads)? (n) - allow downloads to populate cache
 ```
 
 This will:
@@ -59,7 +59,7 @@ python run_gong_detector.py
 
 # In the menu, select "Bulk Processing" and choose:
 # - Use local media (cache) if available? (y)
-# - Local only (no downloads)? (y) - pure offline mode
+# - Strict offline mode (require cached audio, no downloads)? (y) - pure offline mode
 ```
 
 Or via command line:

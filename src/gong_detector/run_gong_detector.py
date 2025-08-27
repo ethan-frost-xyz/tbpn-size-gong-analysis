@@ -200,7 +200,7 @@ def single_video_detection() -> None:
     batch_size = get_int_input("Batch size", suggested_batch_size)
     should_save_samples = get_yes_no_input("Save positive samples?", False)
     keep_audio = get_yes_no_input("Keep temporary audio files?", False)
-    local_only = get_yes_no_input("Local only (no downloads)?", False)
+    local_only = get_yes_no_input("Strict offline mode (require cached audio, no downloads)?", False)
 
     # Optional trimming
     start_time = get_user_input("Start time in seconds (optional, press Enter to skip)")
@@ -289,7 +289,7 @@ def bulk_processing() -> None:
     test_count = None
     if test_mode:
         test_count = get_int_input("Number of videos to process (from start)", 10)
-    local_only = get_yes_no_input("Local only (no downloads)?", False)
+    local_only = get_yes_no_input("Strict offline mode (require cached audio, no downloads)?", False)
 
     print(f"\nProcessing videos from: {links_file}")
     print(f"Threshold: {threshold}")
