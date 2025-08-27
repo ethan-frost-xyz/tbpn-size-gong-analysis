@@ -294,7 +294,7 @@ def bulk_processing() -> None:
     if test_mode:
         test_count = get_int_input("Number of videos to process (from start)", 10)
     local_only = get_yes_no_input(
-        "Strict offline mode (require cached audio, no downloads)?", False
+        "Offline mode (require cached audio, no downloads)?", False
     )
 
     print(f"\nProcessing videos from: {links_file}")
