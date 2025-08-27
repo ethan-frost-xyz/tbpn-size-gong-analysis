@@ -220,6 +220,7 @@ notes_self.txt
 # Cursor IDE
 .cursorrules
 .cursorignore
+.cursor/rules
 
 # Ruff cache
 .ruff_cache/
