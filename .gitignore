@@ -1,3 +1,8 @@
+# Ignore all files in the .cursor directory
+.cursor/
+.cursorrules
+.cursorignore
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
