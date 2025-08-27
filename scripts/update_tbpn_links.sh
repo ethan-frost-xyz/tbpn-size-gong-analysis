@@ -9,19 +9,24 @@ cd "$(dirname "$0")/.."
 # Activate virtual environment
 source .venv/bin/activate
 
-# Check for new episodes and append directly to main file
-echo "Checking for new TBPN episodes..."
-initial_count=$(wc -l < data/tbpn_ytlinks/tbpn_youtube_links.txt 2>/dev/null || echo "0")
+# Update the download list with new episodes only
+echo "Updating TBPN download list..."
 
-python scripts/extract_tbpn_links.py --exclude-downloaded --append
+python scripts/extract_tbpn_links.py --exclude-downloaded
 
-final_count=$(wc -l < data/tbpn_ytlinks/tbpn_youtube_links.txt 2>/dev/null || echo "0")
-new_episodes=$((final_count - initial_count))
+# Count non-comment lines (actual URLs)
+episode_count=$(grep -v '^#' data/tbpn_ytlinks/tbpn_youtube_links.txt 2>/dev/null | wc -l | tr -d ' ')
 
-if [ $new_episodes -gt 0 ]; then
+if [ "$episode_count" -gt 0 ]; then
     echo ""
-    echo "✓ Found and added $new_episodes new episode(s) to your collection!"
-    echo "Total episodes: $final_count"
+    echo "✓ Found $episode_count new episode(s) ready for download!"
+    echo "Download list updated: data/tbpn_ytlinks/tbpn_youtube_links.txt"
+    echo ""
+    echo "Next steps:"
+    echo "1. Run your download script on the updated file"
+    echo "2. Run this script again after downloading to refresh the list"
 else
-    echo "Your collection is up to date - no new episodes found."
+    echo ""
+    echo "✓ Your collection is up to date - no new episodes found."
+    echo "The download list is empty."
 fi

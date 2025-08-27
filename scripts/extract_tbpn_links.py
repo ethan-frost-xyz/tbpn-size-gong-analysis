@@ -187,51 +187,69 @@ def get_newest_existing_date(existing_files: list[str]) -> str:
     return newest_date
 
 
-def get_downloaded_video_ids(local_media_index_path: str = "data/local_media/index.json") -> set[str]:
-    """Get set of video IDs that are already downloaded.
+def get_downloaded_video_info(local_media_index_path: str = "data/local_media/index.json") -> tuple[set[str], Optional[str]]:
+    """Get downloaded video IDs and the oldest download date.
 
     Args:
         local_media_index_path: Path to the local media index JSON file.
 
     Returns:
-        Set of video IDs that are already downloaded.
+        Tuple of (downloaded_video_ids, oldest_upload_date).
+        oldest_upload_date is None if no downloads found.
     """
     if not os.path.exists(local_media_index_path):
         logger.info(f"Local media index not found at: {local_media_index_path}")
-        return set()
+        return set(), None
 
     try:
         with open(local_media_index_path) as f:
             index_data = json.load(f)
 
         downloaded_ids = set(index_data.keys())
+        oldest_date = None
+
+        # Find the oldest upload date among downloaded videos
+        for video_info in index_data.values():
+            upload_date = video_info.get("upload_date")
+            if upload_date:
+                if oldest_date is None or upload_date < oldest_date:
+                    oldest_date = upload_date
+
         logger.info(f"Found {len(downloaded_ids)} already downloaded videos in local media")
-        return downloaded_ids
+        if oldest_date:
+            logger.info(f"Oldest downloaded episode: {oldest_date}")
+
+        return downloaded_ids, oldest_date
 
     except (json.JSONDecodeError, Exception) as e:
         logger.warning(f"Failed to read local media index: {e}")
-        return set()
+        return set(), None
 
 
 def filter_episodes(
     videos: list[tuple[str, float, str, str]],
     exclude_downloaded: bool = True,
     downloaded_video_ids: Optional[set[str]] = None,
+    after_date: Optional[str] = None,
 ) -> list[tuple[str, float, str, str]]:
-    """Filter playlist videos to exclude already downloaded ones.
+    """Filter playlist videos to exclude already downloaded ones and old episodes.
 
     Args:
-        videos: List of (title, duration_seconds, video_id, upload_date)
-        exclude_downloaded: Whether to exclude already downloaded videos
-        downloaded_video_ids: Set of video IDs that are already downloaded
+        videos: List of (title, duration_seconds, video_id, upload_date).
+        exclude_downloaded: Whether to exclude already downloaded videos.
+        downloaded_video_ids: Set of video IDs that are already downloaded.
+        after_date: Only include videos uploaded after this date (YYYYMMDD format).
 
     Returns:
-        Filtered list of episodes
+        Filtered list of episodes.
     """
     filtered_episodes = []
 
     if exclude_downloaded and downloaded_video_ids:
         logger.info(f"Excluding {len(downloaded_video_ids)} already downloaded videos")
+
+    if after_date:
+        logger.info(f"Only including episodes uploaded after {after_date}")
 
     for title, duration, video_id, upload_date in videos:
         # Check if already downloaded
@@ -239,7 +257,21 @@ def filter_episodes(
             logger.debug(f"Skipping already downloaded video: {title} ({video_id})")
             continue
 
-        # Since this is a curated playlist, include all non-downloaded videos
+        # Check date filter if enabled
+        if after_date and upload_date:
+            try:
+                if upload_date <= after_date:
+                    logger.debug(f"Skipping old video: {title} (uploaded {upload_date}, need after {after_date})")
+                    continue
+            except (ValueError, TypeError):
+                # If we can't parse the date, include it anyway
+                logger.debug(f"Could not parse upload date for: {title}")
+        elif after_date and not upload_date:
+            # If we have a date filter but no upload date, skip to be safe
+            logger.debug(f"Skipping video with no upload date: {title}")
+            continue
+
+        # Include this episode
         filtered_episodes.append((title, duration, video_id, upload_date))
         logger.debug(f"Found episode: {title} ({duration/60:.1f} min)")
 
@@ -251,25 +283,22 @@ def save_video_links(
     videos: list[tuple[str, float, str, str]],
     output_file: str,
     include_metadata: bool = False,
-    append_mode: bool = False
 ) -> None:
-    """Save video links to file.
+    """Save video links to file, overwriting existing content.
+
+    This creates a clean "todo list" of episodes that need to be downloaded.
 
     Args:
-        videos: List of (title, duration_seconds, video_id, upload_date)
-        output_file: Output file path
-        include_metadata: Whether to include metadata comments
-        append_mode: Whether to append to existing file instead of overwriting
+        videos: List of (title, duration_seconds, video_id, upload_date).
+        output_file: Output file path.
+        include_metadata: Whether to include metadata comments.
     """
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-    mode = "a" if append_mode else "w"
-    with open(output_file, mode, encoding="utf-8") as f:
-        # Only write headers in non-append mode or if file is empty
-        file_is_empty = not os.path.exists(output_file) or os.path.getsize(output_file) == 0
-        if include_metadata and (not append_mode or file_is_empty):
-            f.write(f"# TBPN Full Episodes - Generated {datetime.now().isoformat()}\n")
-            f.write(f"# Total episodes: {len(videos)}\n")
+    with open(output_file, "w", encoding="utf-8") as f:
+        if include_metadata and videos:
+            f.write(f"# TBPN Episodes to Download - Generated {datetime.now().isoformat()}\n")
+            f.write(f"# Total new episodes: {len(videos)}\n")
             f.write(f"# Duration range: {min(v[1]/60 for v in videos):.1f} - {max(v[1]/60 for v in videos):.1f} minutes\n")
             f.write("#\n")
 
@@ -281,7 +310,7 @@ def save_video_links(
 
             f.write(f"{url}\n")
 
-    logger.info(f"Saved {len(videos)} video links to: {output_file}")
+    logger.info(f"Saved {len(videos)} new episode links to: {output_file}")
 
 
 def main():
@@ -296,12 +325,7 @@ def main():
         default="data/tbpn_ytlinks/tbpn_youtube_links.txt",
         help="Output file path (default: data/tbpn_ytlinks/tbpn_youtube_links.txt)"
     )
-    parser.add_argument(
-        "--append",
-        action="store_true",
-        default=True,
-        help="Append new episodes to existing file instead of overwriting (default: True)"
-    )
+
     parser.add_argument(
         "--include-metadata",
         action="store_true",
@@ -337,10 +361,11 @@ def main():
     if args.include_downloaded:
         args.exclude_downloaded = False
 
-    # Get downloaded video IDs if needed
+    # Get downloaded video info (IDs and oldest date)
     downloaded_video_ids = set()
+    oldest_downloaded_date = None
     if args.exclude_downloaded:
-        downloaded_video_ids = get_downloaded_video_ids(args.local_media_index)
+        downloaded_video_ids, oldest_downloaded_date = get_downloaded_video_info(args.local_media_index)
 
     try:
         # Extract all videos from TBPN playlist
@@ -352,9 +377,13 @@ def main():
             all_videos,
             args.exclude_downloaded,
             downloaded_video_ids,
+            oldest_downloaded_date,
         )
 
         if not episodes:
+            # Create empty file to indicate no episodes to download
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write("# No new episodes to download - collection is up to date\n")
             logger.info("No new episodes found. Your collection is up to date!")
             return
 
@@ -368,14 +397,14 @@ def main():
             if len(episodes) > 10:
                 logger.info(f"  ... and {len(episodes) - 10} more")
         else:
-            # Save to file
-            save_video_links(episodes, args.output, args.include_metadata, args.append)
+            # Save to file (overwriting existing content)
+            save_video_links(episodes, args.output, args.include_metadata)
 
             # Show summary
             logger.info("\nExtraction complete!")
-            logger.info(f"Total episodes found: {len(episodes)}")
+            logger.info(f"New episodes to download: {len(episodes)}")
             logger.info(f"Duration range: {min(v[1]/60 for v in episodes):.1f} - {max(v[1]/60 for v in episodes):.1f} minutes")
-            logger.info(f"Output saved to: {args.output}")
+            logger.info(f"Download list saved to: {args.output}")
 
     except Exception as e:
         logger.error(f"Extraction failed: {e}")
