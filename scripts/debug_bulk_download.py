@@ -4,21 +4,23 @@
 This script helps identify what's causing bulk downloads to fail after the first successful download.
 """
 
-import sys
-import time
 import logging
+import sys
 import tempfile
+import time
 from pathlib import Path
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from gong_detector.core.utils.youtube.downloader import download_youtube_audio
-from gong_detector.core.utils.youtube.metadata_utils import video_id_from_url
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 def test_single_download(url: str, index: int) -> bool:
     """Test downloading a single YouTube URL."""
@@ -31,8 +33,7 @@ def test_single_download(url: str, index: int) -> bool:
 
             start_time = time.time()
             downloaded_file, video_title, upload_date = download_youtube_audio(
-                url=url,
-                output_template=output_template
+                url=url, output_template=output_template
             )
             end_time = time.time()
 
@@ -41,7 +42,9 @@ def test_single_download(url: str, index: int) -> bool:
             logger.info(f"  Upload Date: {upload_date}")
             logger.info(f"  File: {downloaded_file}")
             logger.info(f"  Download time: {end_time - start_time:.2f} seconds")
-            logger.info(f"  File size: {Path(downloaded_file).stat().st_size / (1024*1024):.2f} MB")
+            logger.info(
+                f"  File size: {Path(downloaded_file).stat().st_size / (1024 * 1024):.2f} MB"
+            )
 
             return True
 
@@ -49,10 +52,12 @@ def test_single_download(url: str, index: int) -> bool:
         logger.error(f"✗ Download failed: {e}")
         return False
 
+
 def test_memory_usage():
     """Test current memory usage."""
     try:
         import psutil
+
         memory = psutil.virtual_memory()
         logger.info("=== Memory Status ===")
         logger.info(f"  Total: {memory.total / (1024**3):.1f} GB")
@@ -64,10 +69,12 @@ def test_memory_usage():
         logger.warning("psutil not available for memory monitoring")
         return True
 
+
 def test_cookie_access():
     """Test if cookies are accessible."""
     try:
         from gong_detector.core.utils.youtube.downloader import get_cookies_path
+
         cookie_path = get_cookies_path()
         if cookie_path:
             logger.info(f"✓ Cookies found at: {cookie_path}")
@@ -81,6 +88,7 @@ def test_cookie_access():
         logger.error(f"Error checking cookies: {e}")
         return False
 
+
 def main():
     """Run bulk download diagnostics."""
     logger.info("=== Bulk Download Diagnostics ===")
@@ -92,7 +100,7 @@ def main():
         return
 
     # Check cookies
-    cookies_ok = test_cookie_access()
+    test_cookie_access()
 
     # Get URLs to test (first few from the links file)
     try:
@@ -102,10 +110,14 @@ def main():
             return
 
         urls = []
-        with open(links_file, 'r', encoding='utf-8') as f:
+        with open(links_file, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith('#') and ('youtube.com' in line or 'youtu.be' in line):
+                if (
+                    line
+                    and not line.startswith("#")
+                    and ("youtube.com" in line or "youtu.be" in line)
+                ):
                     urls.append(line)
                     if len(urls) >= 5:  # Test first 5 URLs
                         break
@@ -157,7 +169,9 @@ def main():
     except Exception as e:
         logger.error(f"Error during diagnostics: {e}")
         import traceback
+
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     main()

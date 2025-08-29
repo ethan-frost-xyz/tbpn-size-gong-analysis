@@ -399,7 +399,7 @@ def save_video_links(
     logger.info(f"Saved {len(videos)} new episode links to: {output_file}")
 
 
-def main():
+def _main():
     """Extract TBPN video links from command line arguments."""
     parser = argparse.ArgumentParser(
         description="Extract full-episode video links from TBPN YouTube channel"
@@ -504,7 +504,7 @@ def main():
 
 
 def update_download_list():
-    """Convenience function to update the download list with user-friendly output."""
+    """Update the download list with user-friendly output."""
     import os
 
     # Run the extraction with default settings
@@ -514,7 +514,7 @@ def update_download_list():
         dry_run=False,
         exclude_downloaded=True,
         include_downloaded=False,
-        local_media_index="data/local_media/index.json"
+        local_media_index="data/local_media/index.json",
     )
 
     try:
@@ -547,13 +547,15 @@ def update_download_list():
 
         # Count non-comment lines (actual URLs)
         if os.path.exists(args.output):
-            with open(args.output, 'r') as f:
+            with open(args.output) as f:
                 lines = f.readlines()
-            episode_count = sum(1 for line in lines if line.strip() and not line.strip().startswith('#'))
+            episode_count = sum(
+                1 for line in lines if line.strip() and not line.strip().startswith("#")
+            )
 
             if episode_count > 0:
-                print("\n✓ Found {} new episode(s) ready for download!".format(episode_count))
-                print("Download list updated: {}".format(args.output))
+                print(f"\n✓ Found {episode_count} new episode(s) ready for download!")
+                print(f"Download list updated: {args.output}")
                 print("")
                 print("Next steps:")
                 print("1. Run your download script on the updated file")
@@ -563,7 +565,7 @@ def update_download_list():
                 print("✓ Your collection is up to date - no new episodes found.")
                 print("The download list is empty.")
         else:
-            logger.error("Output file not found: {}".format(args.output))
+            logger.error(f"Output file not found: {args.output}")
             return False
 
         return True
@@ -574,7 +576,7 @@ def update_download_list():
 
 
 def main():
-    """Main entry point for the script."""
+    """Serve as main entry point for the script."""
     import sys
 
     if len(sys.argv) > 1 and sys.argv[1] == "--update":
@@ -584,115 +586,6 @@ def main():
     else:
         # Run the normal extraction function
         _main()
-
-
-def _main():
-    """Extract TBPN video links from command line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Extract full-episode video links from TBPN YouTube channel",
-        epilog="""
-Examples:
-  python scripts/extract_tbpn_links.py --update              # Simple update (recommended)
-  python scripts/extract_tbpn_links.py --dry-run             # Preview what would be extracted
-  python scripts/extract_tbpn_links.py --include-metadata    # Include episode details
-        """
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="data/tbpn_ytlinks/tbpn_youtube_links.txt",
-        help="Output file path (default: data/tbpn_ytlinks/tbpn_youtube_links.txt)",
-    )
-
-    parser.add_argument(
-        "--include-metadata",
-        action="store_true",
-        help="Include metadata comments in output file",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what would be extracted without saving",
-    )
-
-    parser.add_argument(
-        "--exclude-downloaded",
-        action="store_true",
-        default=True,
-        help="Exclude videos that are already downloaded in local media (default: True)",
-    )
-    parser.add_argument(
-        "--include-downloaded",
-        action="store_true",
-        help="Include videos even if they're already downloaded (overrides --exclude-downloaded)",
-    )
-    parser.add_argument(
-        "--local-media-index",
-        type=str,
-        default="data/local_media/index.json",
-        help="Path to local media index file (default: data/local_media/index.json)",
-    )
-
-    args = parser.parse_args()
-
-    # Handle downloaded video filtering logic
-    if args.include_downloaded:
-        args.exclude_downloaded = False
-
-    # Get downloaded video info (IDs and newest date)
-    downloaded_video_ids = set()
-    newest_downloaded_date = None
-    if args.exclude_downloaded:
-        downloaded_video_ids, newest_downloaded_date = get_downloaded_video_info(
-            args.local_media_index
-        )
-
-    try:
-        # Extract all videos from TBPN playlist
-        logger.info("Starting TBPN playlist extraction...")
-        all_videos = extract_playlist_videos()
-
-        # Filter episodes
-        episodes = filter_episodes(
-            all_videos,
-            args.exclude_downloaded,
-            downloaded_video_ids,
-            newest_downloaded_date,
-        )
-
-        if not episodes:
-            # Create empty file to indicate no episodes to download
-            with open(args.output, "w", encoding="utf-8") as f:
-                f.write("# No new episodes to download - collection is up to date\n")
-            logger.info("No new episodes found. Your collection is up to date!")
-            return
-
-        # Sort by duration (longest first) to prioritize main episodes
-        episodes.sort(key=lambda x: x[1], reverse=True)
-
-        if args.dry_run:
-            logger.info(f"\nWould extract {len(episodes)} episodes:")
-            for title, duration, _video_id, _upload_date in episodes[
-                :10
-            ]:  # Show first 10
-                logger.info(f"  {title} ({duration / 60:.1f} min)")
-            if len(episodes) > 10:
-                logger.info(f"  ... and {len(episodes) - 10} more")
-        else:
-            # Save to file (overwriting existing content)
-            save_video_links(episodes, args.output, args.include_metadata)
-
-            # Show summary
-            logger.info("\nExtraction complete!")
-            logger.info(f"New episodes to download: {len(episodes)}")
-            logger.info(
-                f"Duration range: {min(v[1] / 60 for v in episodes):.1f} - {max(v[1] / 60 for v in episodes):.1f} minutes"
-            )
-            logger.info(f"Download list saved to: {args.output}")
-
-    except Exception as e:
-        logger.error(f"Extraction failed: {e}")
-        sys.exit(1)
 
 
 if __name__ == "__main__":
