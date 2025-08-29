@@ -157,8 +157,15 @@ def ensure_preprocessed_audio(
 
     # Check if raw file exists (for index population)
     raw_cache_dir = idx.base_dir / "raw"
-    raw_files = list(raw_cache_dir.glob(f"{video_id}.*"))
-    raw_path = str(raw_files[0]) if raw_files else ""
+
+    # Prefer WAV files over other formats for loudness analysis compatibility
+    wav_files = list(raw_cache_dir.glob(f"{video_id}.wav"))
+    if wav_files:
+        raw_path = str(wav_files[0])
+    else:
+        # Fallback to any format if WAV doesn't exist (for backward compatibility)
+        raw_files = list(raw_cache_dir.glob(f"{video_id}.*"))
+        raw_path = str(raw_files[0]) if raw_files else ""
 
     # If trimming is requested, we need to create a temporary trimmed file
     if start is not None or duration is not None:

@@ -87,21 +87,42 @@ def save_raw_to_cache(temp_path: str, video_id: str) -> str:
         # Atomically move to final location
         os.replace(raw_cache_tmp, raw_cache_path)
         logger.info(f"Saved raw audio to cache as WAV: {raw_cache_path}")
+
+        # Clean up original downloaded file to prevent duplication
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+                logger.debug(f"Cleaned up original file: {temp_path}")
+        except OSError as e:
+            logger.warning(f"Could not clean up original file {temp_path}: {e}")
+
         return str(raw_cache_path)
 
     except subprocess.CalledProcessError as e:
-        # Clean up temp file if it exists
+        # Clean up temp files if they exist
         if raw_cache_tmp.exists():
             try:
                 raw_cache_tmp.unlink()
             except OSError:
                 pass
+        # Also clean up original file if conversion failed
+        if temp_file.exists():
+            try:
+                temp_file.unlink()
+            except OSError:
+                pass
         raise RuntimeError(f"FFmpeg conversion to WAV failed: {e.stderr}") from e
     except Exception as e:
-        # Clean up temp file if it exists
+        # Clean up temp files if they exist
         if raw_cache_tmp.exists():
             try:
                 raw_cache_tmp.unlink()
+            except OSError:
+                pass
+        # Also clean up original file if conversion failed
+        if temp_file.exists():
+            try:
+                temp_file.unlink()
             except OSError:
                 pass
         raise RuntimeError(f"Failed to save raw audio to cache: {e}") from e
