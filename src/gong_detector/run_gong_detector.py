@@ -296,6 +296,9 @@ def bulk_processing() -> None:
     local_only = get_yes_no_input(
         "Offline mode (require cached audio, no downloads)?", False
     )
+    disable_consolidation = get_yes_no_input(
+        "Disable consolidation of overlapping detections (keep all raw detections)?", False
+    )
 
     print(f"\nProcessing videos from: {links_file}")
     print(f"Threshold: {threshold}")
@@ -311,6 +314,7 @@ def bulk_processing() -> None:
         "Dual-cache enabled: Audio will be cached in both raw and preprocessed formats"
     )
     print(f"Local only: {local_only}")
+    print(f"Disable consolidation: {disable_consolidation}")
 
     # Set up sys.argv for bulk processor
     sys.argv = ["bulk_processor"]
@@ -326,6 +330,8 @@ def bulk_processing() -> None:
         sys.argv.extend(["--test-run", str(test_count)])
     if local_only:
         sys.argv.append("--local_only")
+    if disable_consolidation:
+        sys.argv.append("--no_consolidate")
 
     # Change to project root directory so bulk_processor can find data/
     project_root = links_file.parent.parent  # data/tbpn_ytlinks -> data -> project_root
