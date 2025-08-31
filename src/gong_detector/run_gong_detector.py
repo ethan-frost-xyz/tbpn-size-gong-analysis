@@ -255,7 +255,7 @@ def bulk_processing() -> None:
             print(f"[INFO] Low memory system ({total_gb:.1f}GB) detected")
             print("Bulk processing will use conservative settings and frequent cleanup")
         elif available_gb < 6:
-            print(f"[WARNING] Low available memory ({available_gb:.1f}GB)")
+            print(f"Low available memory ({available_gb:.1f}GB)")
             print("Consider closing other applications for optimal performance")
         print()
     except ImportError:
