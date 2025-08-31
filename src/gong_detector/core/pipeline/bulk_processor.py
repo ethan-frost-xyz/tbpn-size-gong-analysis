@@ -22,7 +22,7 @@ def format_time(seconds: float) -> str:
         seconds: Time in seconds
 
     Returns:
-        Formatted string like "5m 23s" or "1h 15m 30s"
+        Formatted string like "1h 15m 30s"
     """
     total_seconds = int(seconds)
     hours = total_seconds // 3600
