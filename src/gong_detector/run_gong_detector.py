@@ -309,7 +309,7 @@ def bulk_processing() -> None:
             "Batch LUFS + True Peak analysis enabled for EBU R128 compliance"
         )
     if test_mode:
-        print(f"Test mode: Processing first {test_count} videos only")
+        print(f"Test mode: Processing first {test_count} videos")
     print(
         "Dual-cache enabled: Audio will be cached in both raw and preprocessed formats"
     )
