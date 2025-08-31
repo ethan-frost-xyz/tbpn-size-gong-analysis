@@ -306,7 +306,7 @@ def bulk_processing() -> None:
     print(f"Save CSV: {save_csv}")
     if save_csv:
         print(
-            "Batch LUFS + True Peak analysis enabled - EBU R128 compliance across entire dataset"
+            "Batch LUFS + True Peak analysis enabled for EBU R128 compliance"
         )
     if test_mode:
         print(f"Test mode: Processing first {test_count} videos only")
