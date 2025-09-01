@@ -213,6 +213,7 @@ models/
 *.h5
 data/raw/
 data/processed/
+data/csv_clean/
 
 # Development and helper scripts
 export_cookies.py
