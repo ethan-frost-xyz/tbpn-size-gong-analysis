@@ -215,6 +215,9 @@ data/raw/
 data/processed/
 data/csv_clean/
 
+notebooks/
+notebooks/*
+
 # Development and helper scripts
 export_cookies.py
 test_cookies.py
