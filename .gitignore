@@ -215,8 +215,9 @@ data/raw/
 data/processed/
 data/csv_clean/
 
-notebooks/
-notebooks/*
+# Excel files in notebooks (keep these ignored)
+notebooks/**/*.xlsx
+notebooks/**/*.xls
 
 # Development and helper scripts
 export_cookies.py
