@@ -142,13 +142,6 @@ python gong_detector/core/bulk_process.py
 python gong_detector/core/bulk_process.py --threshold 0.5 --save_positive_samples --run_name "tbpn_batch_1"
 ```
 
-**CSV Output Features:**
-- **Rich metadata**: Each detection includes video title, upload date, duration, confidence, timestamps
-- **Unique IDs**: Every detection has a UUID for easy referencing
-- **Extensible schema**: Future-ready with validation and notes fields
-- **Summary statistics**: Automatic calculation of detection patterns
-- **Saved in `data/csv_results/`**: Organized with timestamps and run names
-
 **CSV Schema:**
 - `detection_id` - Unique identifier for each detection
 - `video_url` - Original YouTube URL
@@ -162,28 +155,3 @@ python gong_detector/core/bulk_process.py --threshold 0.5 --save_positive_sample
 - `processing_date` / `processing_time` - When analysis was performed
 - `notes` / `validated` - For future human review workflow
 
-**Example Output:**
-```
-CSV saved to: data/csv_results/comprehensive_detections_tbpn_batch_1_20250726_184200.csv
-Total detections: 47
-Videos processed: 12
-Average confidence: 0.682
-Confidence range: 0.401 - 0.950
-```
-
-This CSV is perfect for:
-- **Finding missed gongs**: Look for videos with low detection counts
-- **Analyzing patterns**: Study confidence distributions and timing
-- **Quality control**: Identify edge cases and validation priorities
-- **Training data curation**: Select best samples for model improvement
-
-## Complete Workflow
-
-1. **Collect YAMNet samples**: Use `detect_from_youtube` with `--save_positive_samples`
-2. **Collect manual samples**: Use `manual_sample_collector` for interactive collection of missed detections
-3. **Collect negative samples**: Use `negative_sample_collector` or `bulk_process --collect_negative_samples`
-4. **Generate comprehensive CSV**: Use `bulk_process.py` for systematic data collection
-5. **Analyze detection patterns**: Review CSV data for insights and edge cases
-6. **Review and clean**: Manually review samples in training data folders
-7. **Train model**: Run training pipeline on cleaned data
-8. **Evaluate**: Test model performance on validation data
