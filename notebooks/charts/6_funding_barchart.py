@@ -30,7 +30,7 @@ def generate_chart():
     # Minimalist styling
     fig.update_layout(
         template="simple_white",
-        font=dict(family="Times New Roman", size=14, color="black"),
+        font=dict(family="monotype bembo", size=14, color="black"),
         xaxis_title="",
         yaxis_title="",
         showlegend=False,
@@ -39,15 +39,13 @@ def generate_chart():
         margin=dict(l=40, r=20, t=40, b=60),
         xaxis=dict(
             showgrid=False,
-            showline=True,
-            linecolor="black",
-            linewidth=1,
+            showline=False,
             zeroline=False,
             tickfont=dict(size=14),
             tickangle=-45
         ),
         yaxis=dict(
-            range=[0, 0.4],
+            range=[-0.01, 0.4],
             tickmode='array',
             tickvals=[0, 0.1, 0.2, 0.3, 0.4],
             ticktext=['0.0%', '10.0%', '20.0%', '30.0%', '40.0%'],
@@ -65,23 +63,24 @@ def generate_chart():
     # Bar styling
     fig.update_traces(
         marker=dict(
-            color="#016144",
+            color="#1f78b4",
             line=dict(width=1, color="black"),
-            opacity=0.8
+            opacity=1
         ),
         hoverinfo="none"
     )
     
-    # Add percentage labels
+    # Add percentage labels (only for first and last bars)
     for i, percentage in enumerate(sitting_percentages):
-        fig.add_annotation(
-            x=i, y=percentage + 0.005,
-            text=f"{percentage:.1%}",
-            showarrow=False,
-            font=dict(family="Times New Roman", size=12, color="black"),
-            xanchor="center",
-            yanchor="bottom"
-        )
+        if i == 0 or i == len(sitting_percentages) - 1:  # Only first and last
+            fig.add_annotation(
+                x=i, y=percentage + 0.005,
+                text=f"{percentage:.1%}",
+                showarrow=False,
+                font=dict(family="Gill Sans", size=12, color="black"),
+                xanchor="center",
+                yanchor="bottom"
+            )
     
     # Create output directory if it doesn't exist
     output_dir = script_dir / "charts_output"

@@ -35,20 +35,20 @@ def generate_chart():
     
     # Add John Sitting bars (base layer)
     fig.add_trace(go.Bar(
-        name='John (Sitting)',
+        name='John Sitting',
         x=stages,
         y=[john_sitting_counts.get(stage, 0) for stage in stages],
-        marker_color='#90EE90',
+        marker_color='#1f78b4',
         offsetgroup=0,  # John's group
         base=0  # Start from bottom
     ))
     
     # Add John Standing bars (stacked on top)
     fig.add_trace(go.Bar(
-        name='John (Standing)',
+        name='John Standing',
         x=stages,
         y=[john_standing_counts.get(stage, 0) for stage in stages],
-        marker_color='#009966',
+        marker_color='#a6cee3',
         offsetgroup=0,  # Same group as John Sitting
         base=[john_sitting_counts.get(stage, 0) for stage in stages]  # Stack on top of sitting
     ))
@@ -58,31 +58,29 @@ def generate_chart():
         name='Jordi',
         x=stages,
         y=[jordi_counts.get(stage, 0) for stage in stages],
-        marker_color='#ffe020',
+        marker_color='#b2df8a',
         offsetgroup=1  # Separate group from John
     ))
     
     # Minimalist styling
     fig.update_layout(
         template="simple_white",
-        font=dict(family="Times New Roman", size=12, color="black"),
+        font=dict(family="monotype bembo", size=14, color="black"),
         xaxis_title="",  # Remove x-axis title for minimalism
-        yaxis_title="Value",
-        showlegend=True,
+        yaxis_title="Gong Hits",
+        showlegend=False,
         width=647.2,
         height=400,
         margin=dict(l=40, r=20, t=20, b=60),  # Extra bottom margin for stage labels
         xaxis=dict(
             showgrid=False,
-            showline=True,
-            linecolor="black",
-            linewidth=1,
+            showline=False,
             zeroline=False,
-            tickfont=dict(size=10),
+            tickfont=dict(size=14),
             tickangle=-45  # Angle the stage labels
         ),
         yaxis=dict(
-            range=[0, 20],
+            range=[-0.5, 20],
             tickmode='array',
             tickvals=[0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
             showgrid=False,
@@ -90,37 +88,105 @@ def generate_chart():
             linecolor="black",
             linewidth=1,
             zeroline=False,
-            tickfont=dict(size=12)
+            tickfont=dict(size=14)
         ),
         plot_bgcolor="white",
         paper_bgcolor="white",
-        legend=dict(
-            x=0.65,
-            y=0.9,
-            bgcolor="rgba(255,255,255,0)",  # Transparent legend background
-            bordercolor="rgba(0,0,0,0)",
-            font=dict(family="Times New Roman", size=10, color="black")
-        )
     )
     
     # Update bar colors and styling
     fig.update_traces(
         marker=dict(
-            line=dict(width=0.5, color="black"),
-            opacity=0.8
+            line=dict(width=1, color="black"),
+            opacity=1
         ),
         hoverinfo="none"  # Disable hover
     )
     
     # Set specific colors for John standing, John sitting, and Jordi
     colors = {
-        "John (Standing)": "#009966",  # Original John green
-        "John (Sitting)": "#90EE90",   # Light green for sitting
-        "Jordi": "#ffe020"             # Yellow for Jordi
+        "John (Standing)": "#a6cee3",  # Light blue for standing
+        "John (Sitting)": "#1f78b4",   # Dark blue for sitting
+        "Jordi": "#b2df8a"             # Light green for Jordi
     }
     for trace in fig.data:
         if trace.name in colors:
             trace.marker.color = colors[trace.name]
+    
+    # Add Tufte-style direct labels with thin black lines for Series A
+    # Use actual data coordinates instead of random positioning
+    series_a_category = "Series A"
+    
+    # Get Series A values for positioning
+    john_sitting_series_a = john_sitting_counts.get("Series A", 0)
+    john_standing_series_a = john_standing_counts.get("Series A", 0)
+    jordi_series_a = jordi_counts.get("Series A", 0)
+    
+    # John Sitting
+    fig.add_annotation(
+        x=series_a_category,  # Use actual category name
+        y=john_sitting_series_a / 1.2, 
+        xref="x",
+        yref="y",
+        text="John Sitting",
+        showarrow=True,
+        arrowhead=0,
+        arrowcolor="black",
+        arrowwidth=1,
+        arrowsize=0.5,
+        ax=50,  
+        ay=-45,   
+        xanchor="left",
+        yanchor="middle",
+        font=dict(family="gill sans", size=12, color="black"),
+        bgcolor="white",
+        bordercolor="rgba(0,0,0,0)",
+        borderwidth=0
+    )
+    
+    # John Standing
+    fig.add_annotation(
+        x=series_a_category,  # Use actual category name
+        y=john_sitting_series_a + (john_standing_series_a / 2),  # Middle of standing bar
+        xref="x",
+        yref="y",
+        text="John Standing",
+        showarrow=True,
+        arrowhead=0,
+        arrowcolor="black",
+        arrowwidth=1,
+        arrowsize=0.5,
+        ax=50,  # Position text to the right
+        ay=-15,   # No vertical offset from bar
+        xanchor="left",
+        yanchor="middle",
+        font=dict(family="gill sans", size=12, color="black"),
+        bgcolor="white",
+        bordercolor="rgba(0,0,0,0)",
+        borderwidth=0
+    )
+    
+    # Jordi
+    fig.add_annotation(
+        x=1.4,  # Jordi bar x-position (offsetgroup=1 creates offset)
+        y=jordi_series_a/1.2,  # Middle of Jordi bar
+        xref="x",
+        yref="y",
+        text="Jordi",
+        showarrow=True,
+        arrowhead=0,
+        arrowcolor="black",
+        arrowwidth=1,
+        arrowsize=0.5,
+        ax=30,  # Position text to the right (same side as other labels)
+        ay=-20,   # No vertical offset from bar
+        xanchor="left",
+        yanchor="middle",
+        font=dict(family="gill sans", size=12, color="black"),
+        bgcolor="white",
+        bordercolor="rgba(0,0,0,0)",
+        borderwidth=0
+    )
     
     # Create output directory if it doesn't exist
     output_dir = script_dir / "charts_output"

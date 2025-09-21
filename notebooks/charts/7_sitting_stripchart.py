@@ -45,7 +45,7 @@ def generate_chart():
             ),
             hovertemplate="%{hovertext}<br>Funding: $%{x:.0f}M<br>PLR: %{y:.2f}<extra></extra>",
             hoverlabel=dict(
-                font=dict(family="Times New Roman", color="black"),
+                font=dict(family="monotype bembo", color="black"),
                 bgcolor="white",
                 bordercolor="black"
             )
@@ -63,14 +63,14 @@ def generate_chart():
             x=i + 0.45, y=median,
             text=f"{median:.2f}",
             showarrow=False,
-            font=dict(family="Times New Roman", size=10, color="black"),
+            font=dict(family="monotype bembo", size=10, color="black"),
             xanchor="left"
         )
     
     # Complete layout configuration
     fig.update_layout(
         template="simple_white",
-        font=dict(family="Times New Roman", size=12, color="black"),
+        font=dict(family="monotype bembo", size=12, color="black"),
         xaxis_title="",
         yaxis_title="Loudness (PLR)",
         showlegend=False,

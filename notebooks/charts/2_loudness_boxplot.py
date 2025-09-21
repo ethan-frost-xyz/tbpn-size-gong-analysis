@@ -31,7 +31,7 @@ def generate_chart():
     # Minimalist styling with center alignment
     fig.update_layout(
         template="simple_white",
-        font=dict(family="Times New Roman", size=14, color="black"),
+        font=dict(family="monotype bembo", size=14, color="black"),
         xaxis_title="",
         yaxis_title="Loudness",
         showlegend=False,
@@ -49,7 +49,7 @@ def generate_chart():
         showgrid=False,
         showline=False,  # Remove axis line for minimalism
         zeroline=False,
-        tickfont=dict(size=14, family="Times New Roman", color="black")
+        tickfont=dict(size=14, family="monotype bembo", color="black")
     )
     
     fig.update_yaxes(
@@ -61,17 +61,17 @@ def generate_chart():
         linecolor="white",
         linewidth=1,
         zeroline=False,
-        tickfont=dict(size=14, family="Times New Roman", color="black")
+        tickfont=dict(size=14, family="monotype bembo", color="black")
     )
     
     # Set global font first
     fig.update_layout(
-        font=dict(size=14, family="Times New Roman", color="black")
+        font=dict(size=14, family="monotype bembo", color="black")
     )
     
     # Then override x-axis category labels to be larger
     fig.update_xaxes(
-        tickfont=dict(size=16, family="Times New Roman", color="black")
+        tickfont=dict(size=16, family="monotype bembo", color="black")
     )
     
     # Minimalist box styling with different colors for each person
