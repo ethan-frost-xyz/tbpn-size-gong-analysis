@@ -54,8 +54,8 @@ def generate_chart():
         xaxis_title="",
         yaxis_title="Gong Hits in Episode",
         showlegend=False,
-        width=550,
-        height=500,
+        width=647.2,
+        height=400,
         margin=dict(l=10, r=10, t=10, b=40),  # Account for axis labels
         plot_bgcolor="white",
         paper_bgcolor="white",
@@ -157,8 +157,8 @@ def generate_chart():
     # Save as PNG with high resolution
     output_path = output_dir / "9_daily_gong_hits.png"
     fig.write_image(output_path, 
-                    width=550, 
-                    height=500, 
+                    width=647.2, 
+                    height=400, 
                     scale=2)  # Higher scale for better quality
     
     print(f"Chart saved to {output_path}")

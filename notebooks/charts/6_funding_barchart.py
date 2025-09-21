@@ -34,7 +34,7 @@ def generate_chart():
         xaxis_title="",
         yaxis_title="",
         showlegend=False,
-        width=500,
+        width=647.2,
         height=400,
         margin=dict(l=40, r=20, t=40, b=60),
         xaxis=dict(
@@ -89,7 +89,7 @@ def generate_chart():
     # Save as PNG with high resolution
     output_path = output_dir / "6_funding_barchart.png"
     fig.write_image(output_path, 
-                    width=500, 
+                    width=647.2, 
                     height=400, 
                     scale=2)  # Higher scale for better quality
     

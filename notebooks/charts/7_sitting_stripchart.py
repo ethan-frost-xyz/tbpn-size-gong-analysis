@@ -74,8 +74,8 @@ def generate_chart():
         xaxis_title="",
         yaxis_title="Loudness (PLR)",
         showlegend=False,
-        width=600,
-        height=600,
+        width=647.2,
+        height=400,
         margin=dict(l=80, r=80, t=40, b=60),
         xaxis=dict(
             showgrid=False,
@@ -105,8 +105,8 @@ def generate_chart():
     # Save as PNG with high resolution
     output_path = output_dir / "7_sitting_stripchart.png"
     fig.write_image(output_path, 
-                    width=550, 
-                    height=500, 
+                    width=647.2, 
+                    height=400, 
                     scale=2)  # Higher scale for better quality
     
     print(f"Chart saved to {output_path}")
