@@ -67,7 +67,7 @@ def generate_chart():
     
     # Then override x-axis category labels to be larger
     fig.update_xaxes(
-        tickfont=dict(size=16, family="monotype bembo", color="black")
+        tickfont=dict(size=14, family="monotype bembo", color="black")
     )
     
     # Minimalist box styling with different colors for each person
