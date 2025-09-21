@@ -27,7 +27,7 @@ def generate_chart():
     )
     
     # Define colors and prepare position data once
-    colors = {"Standing": "black", "Sitting": "black"}
+    colors = {"Standing": "#a6cee3", "Sitting": "#1f78b4"}
     position_data = {pos: john_df[john_df["Position"] == pos] for pos in ["Standing", "Sitting"]}
     
     # Style traces and add median lines in single loop
@@ -39,9 +39,9 @@ def generate_chart():
         trace.update(
             marker=dict(
                 color=colors[position],
-                size=8,
+                size=10,
                 opacity=1,
-                line=dict(width=0.5, color="black")
+                line=dict(width=0)
             ),
             hovertemplate="%{hovertext}<br>Funding: $%{x:.0f}M<br>PLR: %{y:.2f}<extra></extra>",
             hoverlabel=dict(
@@ -54,23 +54,23 @@ def generate_chart():
         # Add median line and label
         fig.add_shape(
             type="line",
-            x0=i-0.4, x1=i+0.4,
+            x0=i-0.2, x1=i+0.2,
             y0=median, y1=median,
-            line=dict(color="black", width=2, dash="dash")
+            line=dict(color="black", width=2)
         )
         
         fig.add_annotation(
-            x=i + 0.45, y=median,
+            x=i + 0.225, y=median,
             text=f"{median:.2f}",
             showarrow=False,
-            font=dict(family="monotype bembo", size=10, color="black"),
+            font=dict(family="gill sans", size=12, color="black"),
             xanchor="left"
         )
     
     # Complete layout configuration
     fig.update_layout(
         template="simple_white",
-        font=dict(family="monotype bembo", size=12, color="black"),
+        font=dict(family="monotype bembo", size=14, color="black"),
         xaxis_title="",
         yaxis_title="Loudness (PLR)",
         showlegend=False,
@@ -92,7 +92,7 @@ def generate_chart():
             linecolor="white",
             linewidth=1,
             zeroline=False,
-            tickfont=dict(size=12)
+            tickfont=dict(size=14)
         ),
         plot_bgcolor="white",
         paper_bgcolor="white"
