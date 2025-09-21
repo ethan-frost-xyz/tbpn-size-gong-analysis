@@ -6,7 +6,8 @@ from pathlib import Path
 
 
 def generate_chart():
-    """Generate top 5 most hit episodes strip chart with PLR loudness values."""
+    """Generate top 5 loudest episodes strip chart by highest median PLR norm values.
+    Only considers episodes with 3 or more gong hits."""
     
     # Find the script directory and CSV file path
     script_dir = Path(__file__).parent
@@ -15,15 +16,22 @@ def generate_chart():
     # Load master_data.csv
     df = pd.read_csv(csv_path, on_bad_lines='skip')
     
-    # Count gong hits per episode to find top 5
-    episode_counts = df.groupby('Episode').size().reset_index(name='gong_hits')
-    top_5_episodes = episode_counts.nlargest(5, 'gong_hits')['Episode'].tolist()
+    # Calculate median PLR norm per episode and count gong hits to find top 5
+    # Only consider episodes with 3 or more gong hits
+    episode_stats = df.groupby('Episode').agg({
+        'plr_norm': ['median', 'count']
+    }).reset_index()
+    episode_stats.columns = ['Episode', 'median_plr_norm', 'gong_count']
     
-    # Filter original data to only include gong hits from top 5 episodes
+    # Filter to episodes with 3+ gong hits, then get top 5 by median PLR norm
+    qualified_episodes = episode_stats[episode_stats['gong_count'] >= 3]
+    top_5_episodes = qualified_episodes.nlargest(5, 'median_plr_norm')['Episode'].tolist()
+    
+    # Filter original data to only include gong hits from top 5 loudest episodes
     top_episodes_data = df[df['Episode'].isin(top_5_episodes)].copy()
     
-    # Sort episodes by total gong hits for consistent ordering (reverse for 5th on left, 1st on right)
-    episode_order = episode_counts.nlargest(5, 'gong_hits')['Episode'].tolist()
+    # Sort episodes by median PLR norm for consistent ordering (reverse for 5th on left, 1st on right)
+    episode_order = qualified_episodes.nlargest(5, 'median_plr_norm')['Episode'].tolist()
     episode_order.reverse()  # Reverse so 5th place is on the left, 1st place on the right
     
     # Create episode labels with day of week on first line, date on second line
@@ -140,7 +148,7 @@ def generate_chart():
     output_dir.mkdir(exist_ok=True)
     
     # Save as PNG with high resolution
-    output_path = output_dir / "10_gong_hits_strip.png"
+    output_path = output_dir / "11_loudest_episodes_strip.png"
     fig.write_image(output_path, 
                     width=647.2, 
                     height=400, 

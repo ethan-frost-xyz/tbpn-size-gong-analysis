@@ -17,6 +17,9 @@ def generate_chart():
     # Filter for John and Jordi only
     df_filtered = df[df["Gong Master"].isin(["John", "Jordi"])]
     
+    # Box styling parameters
+    boxgap = 0.6  # Controls spacing between boxes
+    
     # Create minimalist boxplot with color separation
     fig = px.box(
         df_filtered,
@@ -41,6 +44,7 @@ def generate_chart():
         paper_bgcolor="white",
         hovermode=False,  # Completely disable hover
         dragmode=False,  # Disable drag interactions
+        boxgap=boxgap,
     )
     
     # Update axis properties separately to ensure font consistency
@@ -101,7 +105,9 @@ def generate_chart():
         
         # Add annotations for key values
         x_pos = i  # 0 for John, 1 for Jordi
-        offset = 0.275  # Horizontal offset from center (increase for more spacing)
+        # Calculate offset based on box width: higher boxgap = narrower boxes = closer offset
+        box_width = (1 - boxgap) / 2  # Approximate box width
+        offset = box_width / 2 + 0.05  # Half box width plus small buffer
         
         # Median label
         fig.add_annotation(

@@ -72,7 +72,7 @@ def generate_chart():
         template="simple_white",
         font=dict(family="monotype bembo", size=14, color="black"),
         xaxis_title="",
-        yaxis_title="Loudness (PLR)",
+        yaxis_title="Loudness",
         showlegend=False,
         width=647.2,
         height=400,
