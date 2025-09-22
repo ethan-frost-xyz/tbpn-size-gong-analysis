@@ -71,7 +71,7 @@ def generate_chart():
         showlegend=False,
         width=647.2,
         height=400,
-        margin=dict(l=40, r=20, t=20, b=60),  # Extra bottom margin for stage labels
+        margin=dict(l=10, r=10, t=10, b=10),
         xaxis=dict(
             showgrid=False,
             showline=False,

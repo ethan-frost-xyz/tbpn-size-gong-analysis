@@ -76,7 +76,7 @@ def generate_chart():
         showlegend=False,
         width=647.2,
         height=400,
-        margin=dict(l=80, r=80, t=40, b=60),
+        margin=dict(l=10, r=10, t=10, b=10),
         xaxis=dict(
             showgrid=False,
             showline=False,
