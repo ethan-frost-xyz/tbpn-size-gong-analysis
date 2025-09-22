@@ -5,7 +5,7 @@ from pathlib import Path
 def main():
     # Load data
     script_dir = Path(__file__).parent
-    history_path = script_dir.parent.parent / "data" / "chrome_history" / "tbpn_viewing_timeline.csv"
+    history_path = script_dir / "tbpn_viewing_timeline.csv"
 
     df = pd.read_csv(history_path)
     df['visit_timestamp'] = pd.to_datetime(df['visit_timestamp'])

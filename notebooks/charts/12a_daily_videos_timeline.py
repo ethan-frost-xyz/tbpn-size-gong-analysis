@@ -19,13 +19,8 @@ def main():
     # Create a complete date range from first to last day
     complete_date_range = pd.date_range(start=first_date, end=last_date, freq='D')
 
-    # Group by date to show TOTAL visits per day (sum the visit_count column)
-    daily_visits = df.groupby('visit_date').agg({
-        'visit_count': 'sum'
-    }).reset_index()
-
-    # Rename the column
-    daily_visits = daily_visits.rename(columns={'visit_count': 'total_visits'})
+    # Group by date to count unique entries per day (not sum of visit_count)
+    daily_visits = df.groupby('visit_date').size().reset_index(name='total_visits')
 
     # Create a complete DataFrame with all dates, filling missing dates with 0
     complete_daily_visits = pd.DataFrame({'visit_date': complete_date_range})
@@ -43,6 +38,9 @@ def main():
     # Create custom date labels like the other charts (Month Day format)
     def format_date_label(date):
         return date.strftime('%m/%d')
+
+    # Calculate cumulative video entries over time (no resets)
+    complete_daily_visits['total_cumulative'] = complete_daily_visits['total_visits'].cumsum()
 
     # Create date labels for ALL dates but only show labels for every few days
     complete_daily_visits['date_label'] = complete_daily_visits['visit_date'].apply(format_date_label)
@@ -67,29 +65,26 @@ def main():
     selected_dates = complete_daily_visits['visit_date'].iloc[selected_indices]
     selected_labels = complete_daily_visits['date_label'].iloc[selected_indices]
 
-    # Create timeline chart
+    # Create cumulative line chart
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
         x=complete_daily_visits['visit_date'],
-        y=complete_daily_visits['total_visits'],
-        mode='lines+markers',
-        name='Total Visits',
-        fill='tozeroy',
-        line=dict(color='#1f77b4', width=3),
-        marker=dict(size=6, color='#1f77b4', line=dict(width=2, color='white'))
+        y=complete_daily_visits['total_cumulative'],
+        mode='lines',
+        name='Cumulative Video Entries',
+        line=dict(color='black', width=1.5)
     ))
 
     fig.update_layout(
-        title="Daily TBPN Video Visits Over Time",
-        xaxis_title="",
-        yaxis_title="Total Daily Gong Hits Heard",
+        xaxis_title="Date",
+        yaxis_title="Total Video Entries",
         template='plotly_white',
         font=dict(family="monotype bembo", size=14, color="black"),
         showlegend=False,
-        width=1200,
-        height=600,
-        margin=dict(l=10, r=10, t=50, b=40),
+        width=647.2,
+        height=400,
+        margin=dict(l=10, r=10, t=10, b=10),
         plot_bgcolor="white",
         paper_bgcolor="white"
     )
@@ -110,7 +105,7 @@ def main():
     # Save chart
     output_dir = script_dir / "charts_output"
     output_dir.mkdir(exist_ok=True)
-    fig.write_image(output_dir / "12a_daily_videos_timeline.png", width=1200, height=600, scale=2)
+    fig.write_image(output_dir / "12a_daily_videos_timeline.png", width=647.2, height=400, scale=2)
 
 if __name__ == "__main__":
     main()
