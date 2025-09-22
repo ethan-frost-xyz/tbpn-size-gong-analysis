@@ -73,12 +73,12 @@ def main():
         y=complete_daily_visits['total_cumulative'],
         mode='lines',
         name='Cumulative Video Entries',
-        line=dict(color='black', width=1.5)
+        line=dict(color='black', width=1)
     ))
 
     fig.update_layout(
-        xaxis_title="Date",
-        yaxis_title="Total Video Entries",
+        xaxis_title="",
+        yaxis_title="Cumulative Gong Hits Listened",
         template='plotly_white',
         font=dict(family="monotype bembo", size=14, color="black"),
         showlegend=False,
