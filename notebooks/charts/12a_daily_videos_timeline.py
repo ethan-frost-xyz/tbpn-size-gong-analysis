@@ -78,7 +78,7 @@ def main():
 
     fig.update_layout(
         xaxis_title="",
-        yaxis_title="Cumulative Gong Hits Listened",
+        yaxis_title="Cumulative Gong Hits Heard",
         template='plotly_white',
         font=dict(family="monotype bembo", size=14, color="black"),
         showlegend=False,
