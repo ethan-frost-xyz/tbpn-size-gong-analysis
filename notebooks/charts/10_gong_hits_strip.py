@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def generate_chart():
-    """Generate top 5 most hit episodes strip chart with PLR loudness values."""
+    """Generate top 5 most hit episodes strip chart with PLR loudness values and save as HTML."""
     
     # Find the script directory and CSV file path
     script_dir = Path(__file__).parent
@@ -54,7 +54,8 @@ def generate_chart():
         x="Episode",
         y="plr_norm",
         color="Episode",
-        hover_name="Company",
+        hover_name="Gong Master",
+        custom_data=["timestamped_link"],  # Add URL data for click functionality
         category_orders={"Episode": episode_order},
         stripmode="overlay"  # Back to overlay with jitter
     )
@@ -76,9 +77,9 @@ def generate_chart():
                         opacity=0.7,
                         line=dict(width=0)
                     ),
-                    hovertemplate="%{hovertext}<br>Episode: %{x}<br>PLR: %{y:.3f}<extra></extra>",
+                    hovertemplate="<span style='font-weight: 600; font-family: gill sans;'>%{hovertext}</span><br>PLR: %{y:.2f}<extra></extra>",
                     hoverlabel=dict(
-                        font=dict(family="monotype bembo", color="black"),
+                        font=dict(family="gill sans", color="black"),
                         bgcolor="white",
                         bordercolor="black"
                     )
@@ -139,12 +140,55 @@ def generate_chart():
     output_dir = script_dir / "charts_output"
     output_dir.mkdir(exist_ok=True)
     
-    # Save as PNG with high resolution
-    output_path = output_dir / "10_gong_hits_strip.png"
-    fig.write_image(output_path, 
-                    width=647.2, 
-                    height=400, 
-                    scale=2)  # Higher scale for better quality
+    # Show chart with click functionality enabled
+    config = {
+        "displaylogo": False, 
+        "displayModeBar": False
+    }
+    
+    # Write HTML with embedded JavaScript for click handling
+    html_string = fig.to_html(config=config, include_plotlyjs=True)
+    
+    # Add JavaScript for click handling with debouncing
+    click_js = '''
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var clickTimeout = null;
+    
+    setTimeout(function() {
+        var plotDiv = document.querySelector('.js-plotly-plot');
+        if (plotDiv) {
+            plotDiv.on('plotly_click', function(data) {
+                // Check if a click is already being processed
+                if (clickTimeout) {
+                    return;
+                }
+                
+                if (data.points && data.points[0] && data.points[0].customdata) {
+                    var url = data.points[0].customdata[0];
+                    if (url) {
+                        // Set debounce timer to prevent rapid successive clicks
+                        clickTimeout = setTimeout(function() {
+                            clickTimeout = null;
+                        }, 300);
+                        
+                        window.open(url, '_blank');
+                    }
+                }
+            });
+        }
+    }, 100);
+});
+</script>
+'''
+    
+    # Insert JavaScript before closing body tag
+    html_with_clicks = html_string.replace('</body>', click_js + '</body>')
+    
+    # Save the interactive HTML file
+    output_path = output_dir / "10_gong_hits_strip.html"
+    with open(output_path, "w") as f:
+        f.write(html_with_clicks)
     
     print(f"Chart saved to {output_path}")
 

@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def generate_chart():
-    """Generate John sitting vs standing loudness strip chart and save as PNG."""
+    """Generate John sitting vs standing loudness strip chart and save as HTML."""
     
     # Find the script directory and CSV file path
     script_dir = Path(__file__).parent
@@ -22,6 +22,7 @@ def generate_chart():
         y="plr_norm",
         color="Position",
         hover_name="Company",
+        custom_data=["timestamped_link"],  # Add URL data for click functionality
         category_orders={"Position": ["Standing", "Sitting"]},
         stripmode="overlay"
     )
@@ -43,9 +44,9 @@ def generate_chart():
                 opacity=1,
                 line=dict(width=0)
             ),
-            hovertemplate="%{hovertext}<br>Funding: $%{x:.0f}M<br>PLR: %{y:.2f}<extra></extra>",
+            hovertemplate="<span style='font-weight: 600; font-family: gill sans;'>%{hovertext}</span><br>PLR: %{y:.2f}<extra></extra>",
             hoverlabel=dict(
-                font=dict(family="monotype bembo", color="black"),
+                font=dict(family="gill sans", color="black"),
                 bgcolor="white",
                 bordercolor="black"
             )
@@ -102,12 +103,55 @@ def generate_chart():
     output_dir = script_dir / "charts_output"
     output_dir.mkdir(exist_ok=True)
     
-    # Save as PNG with high resolution
-    output_path = output_dir / "7_sitting_stripchart.png"
-    fig.write_image(output_path, 
-                    width=647.2, 
-                    height=400, 
-                    scale=2)  # Higher scale for better quality
+    # Show chart with click functionality enabled
+    config = {
+        "displaylogo": False, 
+        "displayModeBar": False
+    }
+    
+    # Write HTML with embedded JavaScript for click handling
+    html_string = fig.to_html(config=config, include_plotlyjs=True)
+    
+    # Add JavaScript for click handling with debouncing
+    click_js = '''
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var clickTimeout = null;
+    
+    setTimeout(function() {
+        var plotDiv = document.querySelector('.js-plotly-plot');
+        if (plotDiv) {
+            plotDiv.on('plotly_click', function(data) {
+                // Check if a click is already being processed
+                if (clickTimeout) {
+                    return;
+                }
+                
+                if (data.points && data.points[0] && data.points[0].customdata) {
+                    var url = data.points[0].customdata[0];
+                    if (url) {
+                        // Set debounce timer to prevent rapid successive clicks
+                        clickTimeout = setTimeout(function() {
+                            clickTimeout = null;
+                        }, 300);
+                        
+                        window.open(url, '_blank');
+                    }
+                }
+            });
+        }
+    }, 100);
+});
+</script>
+'''
+    
+    # Insert JavaScript before closing body tag
+    html_with_clicks = html_string.replace('</body>', click_js + '</body>')
+    
+    # Save the interactive HTML file
+    output_path = output_dir / "7_sitting_stripchart.html"
+    with open(output_path, "w") as f:
+        f.write(html_with_clicks)
     
     print(f"Chart saved to {output_path}")
 
