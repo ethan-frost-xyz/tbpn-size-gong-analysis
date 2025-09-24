@@ -25,14 +25,14 @@ def generate_chart():
         x="date_parsed",
         y="plr_norm",
         hover_name="Episode",
-        custom_data=["timestamped_link"],  # Add URL data for click functionality
+        custom_data=["timestamped_link", "Gong Master"],  # Add URL and gong master data for click functionality and hover
         title=""
     )
     
     # Style markers
     fig.update_traces(
         marker=dict(color="black", size=5, opacity=.8, line=dict(width=0)),
-        hovertemplate="<span style='font-weight: 600; font-family: gill sans;'>%{hovertext}</span><br>%{x}<br>PLR: %{y:.2f}<extra></extra>",
+        hovertemplate="<span style='font-weight: 600; font-family: gill sans;'>%{hovertext}</span><br>%{customdata[1]}<br>PLR: %{y:.2f}<extra></extra>",
         hoverlabel=dict(
             font=dict(family="gill sans", color="black"),
             bgcolor="white",
@@ -62,10 +62,10 @@ def generate_chart():
             tickformat="%b %d"
         ),
         yaxis=dict(
-            range=[.175, 1.025],
+            range=[0, 1.0],
             tickmode='array',
-            tickvals=[0.2, 0.4, 0.6, 0.8, 1],
-            ticktext=['.2', '.4', '.6', '.8', '1'],
+            tickvals=[0, 0.2, 0.4, 0.6, 0.8, 1.0],
+            ticktext=['0', '.2', '.4', '.6', '.8', '1'],
             showgrid=False,
             showline=True,
             zeroline=False,
