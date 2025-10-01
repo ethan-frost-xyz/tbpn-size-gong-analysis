@@ -224,6 +224,10 @@ models/
 data/raw/
 data/processed/
 data/csv_clean/
+data/local_media/
+
+# Local helper scripts
+scripts/
 
 # Excel files in notebooks (keep these ignored)
 notebooks/**/*.xlsx
