@@ -30,31 +30,26 @@ TBPN Gong Analysis is a reproducible machine learning pipeline for detecting gon
        --use_version_one --save_csv data/csv_results/demo.csv --save_positive_samples
    ```
 5. Results include:
-   - Cached audio in `data/local_media/raw/` and `data/local_media/preprocessed/`
-   - Detection CSV files under `data/csv_results/`
+   - Cached audio in `data/local_media/raw/` and `data/local_media/preprocessed/` (git-ignored local cache)
+   - Detection CSV files under `data/csv_results/` (generated outputs, not version controlled)
    - Optional positive sample WAV files for audit trails
 
 ## Project Structure
 ```
 .
-├── config/                     Configuration defaults and authenticated cookie store
+├── config/                     Settings plus optional cookies for yt-dlp
 ├── data/
-│   ├── csv_results/            Reproducible detection exports with loudness metrics
-│   └── tbpn_ytlinks/           Episode link manifests for bulk runs
-├── docs/                       Engineering notes and scratch documentation
+│   ├── csv_results/            Exported detection tables
+│   └── tbpn_ytlinks/           Episode link lists for bulk runs
+├── docs/                       Working notes and references
 ├── notebooks/
-│   └── charts/                 Chart notebooks and scripts that visualize detection datasets
-├── scripts/                    CLI utilities for playlist extraction, cache migration, and index upkeep
+│   └── charts/                 Notebooks and scripts that build the visuals
+├── scripts/ (local)            Personal helper scripts (git-ignored)
 ├── src/gong_detector/
-│   ├── core/
-│   │   ├── pipeline/           Detection and bulk-processing entry points
-│   │   ├── detector/           YAMNet runner and trained classifier integration
-│   │   ├── utils/              Audio, loudness, YouTube, and results utilities
-│   │   ├── data/               CSV manager and detection record schema
-│   │   └── training/           Manual and negative sample collection tooling
-│   └── run_gong_detector.py    Interactive menu that orchestrates the full pipeline
-├── tests/                      Unit, integration, and functional coverage for core components
-└── requirements.txt            Locked dependency set for local execution
+│   ├── core/                   Detection engine, pipelines, utils, and training tools
+│   └── run_gong_detector.py    Menu runner for the whole pipeline
+├── tests/                      Unit, integration, and functional checks
+└── requirements.txt            Locked dependency list
 ```
 
 ## Usage Notes
@@ -62,6 +57,7 @@ TBPN Gong Analysis is a reproducible machine learning pipeline for detecting gon
 - **Batch runners**: `python -m gong_detector.core.pipeline.bulk_processor` processes the canonical episode list, performs LUFS and True Peak analysis, and can operate strictly offline when the local cache is populated.
 - **Training utilities**: `gong_detector/core/training` provides manual and negative sample collectors plus scripts for embedding extraction and classifier retraining.
 - **Cache management**: `gong_detector/core/utils/local_media.py` maintains the dual-cache index. Migration helpers such as `scripts/migrate_raw_cache_to_wav.py` and `scripts/update_index_for_wav.py` keep cached assets consistent.
+- **Git hygiene**: Generated artifacts (`data/local_media/`, `data/temp_audio/`, exported CSV/LUFS reports) and personal helpers in `scripts/` stay out of version control; rerun the pipeline or rebuild scripts locally as needed.
 - **Dataset generation and charts**: The `CSVManager` assembles PLR, LUFS, and confidence metrics. Notebooks in `notebooks/charts` turn the exports into reproducible visualizations.
 - **Configuration**: Tune thresholds, batch sizes, and memory guards in `config/settings.py`. Place YouTube playlists or ad-hoc link lists in `data/tbpn_ytlinks/` to drive bulk runs.
 

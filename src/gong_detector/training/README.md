@@ -4,11 +4,11 @@ This folder is for organizing training data and utilities for improving the gong
 
 ## Structure
 
-- `data/raw_samples/positive/[video_title]/` - Gong samples organized by video
-- `data/raw_samples/negative/` - Non-gong samples for training
-- `data/processed/` - Processed embeddings and labels
-- `data/models/` - Trained model checkpoints
-- `scripts/` - Data processing and training scripts
+- `data/raw_samples/positive/[video_title]/` – Positive clips grouped by episode
+- `data/raw_samples/negative/` – Negative clips used for balance
+- `data/processed/` – Saved embeddings and labels
+- `data/models/` – Classifier checkpoints
+- `scripts/` – Small helpers for embedding, training, and evaluation
 
 ## Quick Start
 
@@ -34,13 +34,7 @@ For collecting samples that YAMNet missed or for manual verification:
 python -m gong_detector.core.manual_sample_collector
 ```
 
-This tool:
-- Runs in interactive loop asking for YouTube links and timestamps
-- Downloads the full YouTube video
-- Extracts a 3-second segment around your specified timestamp
-- Saves it in the same format as YAMNet-detected samples
-- Organizes samples by video title in `gong_detector/training/data/raw_samples/positive/`
-- Asks if you want to continue after each sample
+This command loops over your timestamps, pulls a clip, and drops a 3-second WAV into the positive folder so you can review it later.
 
 ### Negative Sample Collection
 
@@ -57,21 +51,7 @@ python -m gong_detector.core.negative_sample_collector "https://www.youtube.com/
 python -m gong_detector.core.bulk_process --collect_negative_samples --sample_count 10
 ```
 
-This tool:
-- **Automatically detects gongs** using YAMNet to avoid them
-- **Finds safe regions** far from detected gongs
-- **Extracts random segments** from safe regions
-- **Saves samples** to `gong_detector/training/data/raw_samples/negative/`
-- **Uses same organization** as positive samples (date-based folders)
-- **Configurable sample count** per video
-- **Works with bulk processing** for multiple videos
-
-**Output:**
-- `negative_at_HH_MM_SS_s_01.wav`
-- `negative_at_HH_MM_SS_s_02.wav`
-- etc.
-
-Each sample contains 3 seconds of audio (0.75s before + 2.25s after the selected timestamp), matching the positive sample format.
+The collector skips over detected gongs, snags quiet patches, and writes out 3-second WAVs in the negative folder using the same naming scheme as the positives.
 
 ## Collecting Training Samples
 
@@ -84,26 +64,10 @@ source venv/bin/activate
 # Basic detection with sample collection
 python -m gong_detector.core.detect_from_youtube "YOUR_YOUTUBE_URL" --save_positive_samples
 
-# With custom threshold (more strict)
+# Tighten the threshold
 python -m gong_detector.core.detect_from_youtube "YOUR_YOUTUBE_URL" --threshold 0.6 --save_positive_samples
 
-# With time segment
-python -m gong_detector.core.detect_from_youtube "YOUR_YOUTUBE_URL" --start_time 100 --duration 30 --save_positive_samples
-```
-
-### YouTube Detection with Sample Collection
-
-```bash
-# Activate virtual environment
-source venv/bin/activate
-
-# Basic detection with sample collection
-python -m gong_detector.core.detect_from_youtube "YOUR_YOUTUBE_URL" --save_positive_samples
-
-# With custom threshold (more strict)
-python -m gong_detector.core.detect_from_youtube "YOUR_YOUTUBE_URL" --threshold 0.6 --save_positive_samples
-
-# With time segment
+# Focus on a specific window
 python -m gong_detector.core.detect_from_youtube "YOUR_YOUTUBE_URL" --start_time 100 --duration 30 --save_positive_samples
 ```
 
@@ -154,4 +118,3 @@ python gong_detector/core/bulk_process.py --threshold 0.5 --save_positive_sample
 - `detection_threshold` - Threshold used for detection
 - `processing_date` / `processing_time` - When analysis was performed
 - `notes` / `validated` - For future human review workflow
-
