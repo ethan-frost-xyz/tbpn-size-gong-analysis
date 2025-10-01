@@ -20,15 +20,22 @@ def save_raw_to_cache(temp_path: str, video_id: str) -> str:
     for optimal compatibility with loudness analysis tools and to avoid
     deprecated librosa fallback methods.
 
-    Args:
-        temp_path: Path to temporary downloaded audio file
-        video_id: YouTube video ID
+    Parameters
+    ----------
+    temp_path : str
+        Temporary file produced by yt-dlp.
+    video_id : str
+        YouTube video identifier used to name the cached asset.
 
-    Returns:
-        Path to the cached raw audio file (WAV format)
+    Returns
+    -------
+    str
+        Path to the cached raw audio file (WAV format).
 
-    Raises:
-        RuntimeError: If file operations fail
+    Raises
+    ------
+    RuntimeError
+        Raised when conversion or file operations fail.
     """
     # Find project root and create raw cache directory
     current = Path(__file__).resolve().parent
@@ -131,15 +138,22 @@ def save_raw_to_cache(temp_path: str, video_id: str) -> str:
 def ensure_full_preprocessed_from_raw(raw_path: str, video_id: str) -> str:
     """Ensure full preprocessed WAV exists from raw audio.
 
-    Args:
-        raw_path: Path to raw audio file
-        video_id: YouTube video ID
+    Parameters
+    ----------
+    raw_path : str
+        Path to the cached raw audio file.
+    video_id : str
+        YouTube video identifier used to name the preprocessed asset.
 
-    Returns:
-        Path to the preprocessed WAV file
+    Returns
+    -------
+    str
+        Path to the preprocessed WAV file.
 
-    Raises:
-        RuntimeError: If conversion fails
+    Raises
+    ------
+    RuntimeError
+        Raised when conversion fails.
     """
     # Find project root and create preprocessed cache directory
     current = Path(__file__).resolve().parent

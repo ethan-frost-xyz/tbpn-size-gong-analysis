@@ -31,21 +31,26 @@ def compute_batch_weighted_lufs(
     computes LUFS measurements, and applies batch weighting to normalize loudness
     measurements relative to the entire dataset rather than individual videos.
 
-    Args:
-        all_video_data: List of video data dicts, each containing:
-            - "video_id": YouTube video ID
-            - "timestamps": List of (start_time, end_time) tuples
-            - "result": Detection result dict
-        measurement_type: Type of LUFS measurement (integrated, short_term, momentary)
-        reference_lufs: Reference LUFS level for batch normalization (default: -23.0 LUFS)
+    Parameters
+    ----------
+    all_video_data : list[dict[str, Any]]
+        Dictionary per video containing `video_id`, `timestamps`, and detection `result`.
+    measurement_type : str, default="integrated"
+        LUFS measurement variant to use (`integrated`, `short_term`, or `momentary`).
+    reference_lufs : float, default=-23.0
+        Reference LUFS level applied during batch normalization.
 
-    Returns:
-        Dictionary mapping video_id to list of LUFS measurement dicts for that video.
-        Each measurement dict contains batch-weighted LUFS values.
+    Returns
+    -------
+    dict[str, list[dict[str, Any]]]
+        Mapping from video ID to batch-weighted LUFS measurements.
 
-    Raises:
-        RuntimeError: If LUFS library not available
-        ValueError: If video data is invalid
+    Raises
+    ------
+    RuntimeError
+        Raised when the loudness stack is unavailable.
+    ValueError
+        Raised when `all_video_data` is empty or malformed.
     """
     if not LUFS_AVAILABLE:
         raise RuntimeError(
@@ -204,21 +209,26 @@ def compute_batch_weighted_dbtp(
     computes True Peak measurements, and applies batch weighting to normalize
     measurements relative to the entire dataset.
 
-    Args:
-        all_video_data: List of video data dicts, each containing:
-            - "video_id": YouTube video ID
-            - "timestamps": List of (start_time, end_time) tuples
-            - "result": Detection result dict
-        measurement_type: Type of measurement context (integrated, short_term, momentary)
-        reference_dbtp: Reference True Peak level for batch normalization (default: -1.0 dBTP)
+    Parameters
+    ----------
+    all_video_data : list[dict[str, Any]]
+        Dictionary per video containing `video_id`, `timestamps`, and detection `result`.
+    measurement_type : str, default="integrated"
+        Measurement context (`integrated`, `short_term`, or `momentary`).
+    reference_dbtp : float, default=-1.0
+        Reference True Peak level applied during normalization.
 
-    Returns:
-        Dictionary mapping video_id to list of True Peak measurement dicts for that video.
-        Each measurement dict contains batch-weighted True Peak values.
+    Returns
+    -------
+    dict[str, list[dict[str, Any]]]
+        Mapping from video ID to batch-weighted True Peak measurements.
 
-    Raises:
-        RuntimeError: If LUFS library not available
-        ValueError: If video data is invalid
+    Raises
+    ------
+    RuntimeError
+        Raised when the loudness stack is unavailable.
+    ValueError
+        Raised when `all_video_data` is empty or malformed.
     """
     if not LUFS_AVAILABLE:
         raise RuntimeError(

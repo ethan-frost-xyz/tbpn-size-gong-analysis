@@ -33,14 +33,20 @@ def load_raw_audio_modern(file_path: str) -> tuple[np.ndarray, int]:
     Since raw cache now saves high-quality WAV files, we can use soundfile exclusively,
     eliminating the need for deprecated librosa fallback methods.
 
-    Args:
-        file_path: Path to audio file (expected to be WAV format)
+    Parameters
+    ----------
+    file_path : str
+        Path to the audio file (expected to be WAV format).
 
-    Returns:
-        Tuple of (audio_data, sample_rate) where audio_data is 2D array (channels, samples)
+    Returns
+    -------
+    tuple[numpy.ndarray, int]
+        Audio data arranged as `(channels, samples)` and the sample rate.
 
-    Raises:
-        RuntimeError: If audio loading fails
+    Raises
+    ------
+    RuntimeError
+        Raised when soundfile cannot decode the audio.
     """
     if not LOUDNESS_AVAILABLE:
         raise RuntimeError("Audio loading requires soundfile")
@@ -74,22 +80,28 @@ def compute_all_loudness_metrics(
     measurements (integrated, short-term, momentary) for both LUFS and True Peak
     analysis across all detection timestamps.
 
-    Args:
-        video_id: YouTube video ID
-        detections: List of (window_start, confidence, display_timestamp) tuples
-        index: Optional LocalMediaIndex instance
-        batch_context: Optional dict with batch weighting information
+    Parameters
+    ----------
+    video_id : str
+        YouTube video identifier used to locate cached audio.
+    detections : list[tuple[float, float, float]]
+        Detection tuples `(window_start, confidence, display_timestamp)`.
+    index : LocalMediaIndex, optional
+        Cache index instance to reuse; created on demand when omitted.
+    batch_context : dict[str, Any], optional
+        Reserved for future weighting information across bulk runs.
 
-    Returns:
-        Tuple of (lufs_metrics_list, dbtp_metrics_list) where each list contains
-        one dict per detection with keys:
-        - integrated_lufs/dbtp: 5-second window measurement
-        - shortterm_lufs/dbtp: 3-second window measurement
-        - momentary_lufs/dbtp: 400ms window measurement
+    Returns
+    -------
+    tuple[list[dict[str, float]], list[dict[str, float]]]
+        Pair of lists containing LUFS metrics and True Peak metrics per detection.
 
-    Raises:
-        RuntimeError: If loudness libraries not available or raw audio not found
-        ValueError: If detections list is invalid
+    Raises
+    ------
+    RuntimeError
+        Raised when loudness dependencies are unavailable or raw audio cannot be located.
+    ValueError
+        Raised when `detections` is empty or malformed.
     """
     if not LOUDNESS_AVAILABLE:
         raise RuntimeError(

@@ -138,8 +138,10 @@ class CSVManager:
     def __init__(self, csv_results_dir: str = "data/csv_results"):
         """Initialize CSV manager.
 
-        Args:
-            csv_results_dir: Directory to store CSV files
+        Parameters
+        ----------
+        csv_results_dir : str, default="data/csv_results"
+            Directory where comprehensive detection CSV files should be written.
         """
         # Find project root robustly if using default path
         if csv_results_dir == "data/csv_results":
@@ -163,12 +165,17 @@ class CSVManager:
     def _format_number(self, value: float, max_decimals: int = 3) -> str:
         """Format a number to a maximum number of decimal places.
 
-        Args:
-            value: The numeric value to format
-            max_decimals: Maximum number of decimal places (default: 3)
+        Parameters
+        ----------
+        value : float
+            Numeric value to format.
+        max_decimals : int, default=3
+            Upper bound on the number of decimal places.
 
-        Returns:
-            Formatted string with appropriate decimal places
+        Returns
+        -------
+        str
+            Value formatted with the requested precision.
         """
         if value == 0:
             return "0.000"
@@ -194,12 +201,17 @@ class CSVManager:
 
         PLR = detection_shortterm_dbtp - detection_shortterm_lufs
 
-        Args:
-            dbtp_metrics: Dictionary containing True Peak metrics
-            lufs_metrics: Dictionary containing LUFS metrics
+        Parameters
+        ----------
+        dbtp_metrics : dict[str, float]
+            Dictionary containing True Peak metrics.
+        lufs_metrics : dict[str, float]
+            Dictionary containing LUFS metrics.
 
-        Returns:
-            Formatted PLR value to 3 decimal places, or empty string if data unavailable
+        Returns
+        -------
+        str
+            PLR formatted to three decimal places, or an empty string when data is missing.
         """
         shortterm_dbtp = dbtp_metrics.get("shortterm_dbtp", 0)
         shortterm_lufs = lufs_metrics.get("shortterm_lufs", 0)
@@ -228,19 +240,32 @@ class CSVManager:
     ) -> None:
         """Add all detections from a single video to the comprehensive record.
 
-        Args:
-            video_url: YouTube URL
-            video_title: Video title
-            upload_date: Upload date in YYYYMMDD format
-            video_duration: Total video duration in seconds
-            max_confidence: Maximum confidence score in the video
-            threshold: Detection threshold used
-            max_threshold: Maximum threshold used (if any)
-            detections: List of (window_start, confidence, display_timestamp) tuples
-            video_loudness_metrics: Optional dict with video-level loudness metrics
-            detection_loudness_metrics: Optional list of dicts with detection-level loudness metrics
-            detection_lufs_metrics: Optional list of dicts with detection-level LUFS metrics
-            detection_dbtp_metrics: Optional list of dicts with detection-level True Peak metrics
+        Parameters
+        ----------
+        video_url : str
+            YouTube URL associated with the detections.
+        video_title : str
+            Title supplied by YouTube for the episode.
+        upload_date : str
+            Upload date recorded in `YYYYMMDD` format.
+        video_duration : float
+            Total video duration in seconds.
+        max_confidence : float
+            Highest confidence returned by the detection pass.
+        threshold : float
+            Primary detection threshold in use.
+        max_threshold : float, optional
+            Upper threshold bound applied during the run.
+        detections : list[tuple[float, float, float]]
+            Detection tuples `(window_start, confidence, display_timestamp)`.
+        video_loudness_metrics : dict[str, float], optional
+            Video-level loudness metrics such as peak dBFS and crest factor.
+        detection_loudness_metrics : list[dict[str, float]], optional
+            Loudness metrics computed for each detection window.
+        detection_lufs_metrics : list[dict[str, float]], optional
+            LUFS metrics computed for each detection window.
+        detection_dbtp_metrics : list[dict[str, float]], optional
+            True Peak (dBTP) metrics computed for each detection window.
         """
         # Format upload date for human readability
         upload_date_formatted = self._format_upload_date(upload_date)
@@ -384,11 +409,15 @@ class CSVManager:
     def save_comprehensive_csv(self, run_name: Optional[str] = None) -> str:
         """Save all collected detections to a comprehensive CSV file.
 
-        Args:
-            run_name: Optional name for this bulk run
+        Parameters
+        ----------
+        run_name : str, optional
+            Optional label used to differentiate bulk runs.
 
-        Returns:
-            Path to the saved CSV file
+        Returns
+        -------
+        str
+            Path to the saved CSV file.
         """
         if not self.detection_records:
             raise ValueError("No detection records to save")
@@ -415,8 +444,10 @@ class CSVManager:
     def get_summary_stats(self) -> dict[str, Any]:
         """Get summary statistics for all collected detections.
 
-        Returns:
-            Dictionary with summary statistics
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing detection counts, confidence extrema, and loudness stats.
         """
         if not self.detection_records:
             return {}
@@ -498,11 +529,15 @@ class CSVManager:
     def _format_upload_date(self, upload_date: str) -> str:
         """Format upload date from YYYYMMDD to YYYY-MM-DD.
 
-        Args:
-            upload_date: Date in YYYYMMDD format
+        Parameters
+        ----------
+        upload_date : str
+            Date in `YYYYMMDD` format.
 
-        Returns:
-            Date in YYYY-MM-DD format, or original if invalid
+        Returns
+        -------
+        str
+            Formatted date string, or the original value when parsing fails.
         """
         if not upload_date or len(upload_date) != 8:
             return upload_date
@@ -518,11 +553,15 @@ class CSVManager:
     def _format_time(self, seconds: float) -> str:
         """Format seconds as HH:MM:SS string.
 
-        Args:
-            seconds: Time in seconds
+        Parameters
+        ----------
+        seconds : float
+            Duration in seconds.
 
-        Returns:
-            Formatted time string in HH:MM:SS format
+        Returns
+        -------
+        str
+            Zero-padded HH:MM:SS string.
         """
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
@@ -534,12 +573,17 @@ class CSVManager:
     ) -> str:
         """Create a YouTube URL with timestamp parameter.
 
-        Args:
-            video_url: Original YouTube URL
-            timestamp_seconds: Timestamp in seconds (no decimals)
+        Parameters
+        ----------
+        video_url : str
+            Original YouTube URL.
+        timestamp_seconds : int
+            Timestamp expressed in whole seconds.
 
-        Returns:
-            YouTube URL with timestamp parameter
+        Returns
+        -------
+        str
+            YouTube URL with the `t` query parameter applied.
         """
         # Handle different YouTube URL formats
         if "youtube.com/watch?v=" in video_url:

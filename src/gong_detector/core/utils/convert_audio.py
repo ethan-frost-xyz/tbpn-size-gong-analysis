@@ -7,19 +7,28 @@ import yt_dlp  # type: ignore
 
 
 def convert_youtube_audio(url_or_path: str, output_wav_path: str = "audio.wav") -> str:
-    """Convert YouTube URL or local file to WAV format.
+    """Download or convert audio content to a 16 kHz mono WAV file.
 
-    Args:
-        url_or_path: YouTube URL or local file path
-        output_wav_path: Output WAV file path
+    Parameters
+    ----------
+    url_or_path : str
+        YouTube URL or path to an existing local audio/video file.
+    output_wav_path : str, default="audio.wav"
+        Destination path for the converted WAV output.
 
-    Returns:
-        Path to converted WAV file
+    Returns
+    -------
+    str
+        Path to the generated WAV file.
 
-    Raises:
-        FileNotFoundError: If local file doesn't exist
-        RuntimeError: If download or conversion fails
-        ValueError: If input parameters are invalid
+    Raises
+    ------
+    FileNotFoundError
+        Raised when the provided local file does not exist.
+    RuntimeError
+        Raised when yt-dlp or ffmpeg fail to process the input.
+    ValueError
+        Raised when input arguments are empty.
     """
     if not url_or_path.strip():
         raise ValueError("URL or file path cannot be empty")
@@ -55,14 +64,20 @@ def convert_youtube_audio(url_or_path: str, output_wav_path: str = "audio.wav") 
 def _download_audio(url: str) -> str:
     """Download audio from YouTube URL.
 
-    Args:
-        url: YouTube URL to download
+    Parameters
+    ----------
+    url : str
+        YouTube URL to download.
 
-    Returns:
-        Path to downloaded audio file
+    Returns
+    -------
+    str
+        Path to the downloaded audio file.
 
-    Raises:
-        RuntimeError: If download fails
+    Raises
+    ------
+    RuntimeError
+        Raised when yt-dlp cannot complete the download.
     """
     ydl_opts = {
         "format": "bestaudio/best",
@@ -121,13 +136,19 @@ def _download_audio(url: str) -> str:
 def _convert_to_wav(input_path: str, output_path: str) -> None:
     """Convert audio to WAV using ffmpeg.
 
-    Args:
-        input_path: Path to input audio file
-        output_path: Path for output WAV file
+    Parameters
+    ----------
+    input_path : str
+        Path to the input audio file.
+    output_path : str
+        Path for the resulting WAV file.
 
-    Raises:
-        FileNotFoundError: If input file doesn't exist
-        RuntimeError: If ffmpeg conversion fails
+    Raises
+    ------
+    FileNotFoundError
+        Raised when the input file cannot be found.
+    RuntimeError
+        Raised when ffmpeg fails to convert the file.
     """
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input audio file not found: {input_path}")
@@ -167,13 +188,17 @@ def _convert_to_wav(input_path: str, output_path: str) -> None:
 
 
 def validate_audio_file(file_path: str) -> bool:
-    """Validate that a file exists and appears to be an audio file.
+    """Check whether a file exists and has a known audio extension.
 
-    Args:
-        file_path: Path to the file to validate
+    Parameters
+    ----------
+    file_path : str
+        Path to the file to validate.
 
-    Returns:
-        True if file exists and has an audio extension
+    Returns
+    -------
+    bool
+        `True` when the file exists and its extension matches a supported audio type.
     """
     if not os.path.exists(file_path):
         return False
@@ -194,17 +219,24 @@ def validate_audio_file(file_path: str) -> bool:
 
 
 def get_audio_info(file_path: str) -> dict:
-    """Get basic information about an audio file using ffprobe.
+    """Inspect an audio file with `ffprobe` and return core metadata.
 
-    Args:
-        file_path: Path to the audio file
+    Parameters
+    ----------
+    file_path : str
+        Path to the audio file to analyse.
 
-    Returns:
-        Dictionary with audio file information
+    Returns
+    -------
+    dict
+        Dictionary containing duration, size, format, sample rate, channel count, and codec.
 
-    Raises:
-        FileNotFoundError: If file doesn't exist
-        RuntimeError: If ffprobe fails
+    Raises
+    ------
+    FileNotFoundError
+        Raised when the path does not exist.
+    RuntimeError
+        Raised when `ffprobe` cannot process or parse the file details.
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Audio file not found: {file_path}")

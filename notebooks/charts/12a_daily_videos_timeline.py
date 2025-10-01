@@ -1,6 +1,8 @@
-import plotly.graph_objects as go
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+import plotly.graph_objects as go
+
 
 def main():
     # Load data
@@ -73,18 +75,18 @@ def main():
         y=complete_daily_visits['total_cumulative'],
         mode='lines',
         name='Cumulative Video Entries',
-        line=dict(color='black', width=1)
+        line={"color": 'black', "width": 1}
     ))
 
     fig.update_layout(
         xaxis_title="",
         yaxis_title="Cumulative Gong Hits Heard",
         template='plotly_white',
-        font=dict(family="monotype bembo", size=14, color="black"),
+        font={"family": "monotype bembo", "size": 14, "color": "black"},
         showlegend=False,
         width=647.2,
         height=400,
-        margin=dict(l=10, r=10, t=10, b=10),  # Reduced bottom margin to bring x-axis labels closer
+        margin={"l": 10, "r": 10, "t": 10, "b": 10},  # Reduced bottom margin to bring x-axis labels closer
         plot_bgcolor="white",
         paper_bgcolor="white"
     )
@@ -94,7 +96,7 @@ def main():
         showgrid=False,
         showline=False,  # Hide default x-axis line since we'll use zeroline
         linecolor="black",
-        tickfont=dict(size=12, family="monotype bembo", color="black"),
+        tickfont={"size": 12, "family": "monotype bembo", "color": "black"},
         tickangle=0,
         ticktext=selected_labels,
         tickvals=selected_dates,
@@ -105,7 +107,7 @@ def main():
         showgrid=False,
         showline=True,
         linecolor="black",
-        tickfont=dict(size=12, family="monotype bembo", color="black"),
+        tickfont={"size": 12, "family": "monotype bembo", "color": "black"},
         range=[0, None],  # Start y-axis at 0 to align with x-axis
         rangemode='tozero',  # Ensure range starts exactly at 0
         zeroline=True,    # Show line at y=0
@@ -118,48 +120,48 @@ def main():
 
     # Add simple annotations that can be positioned independently
     annotations = [
-        dict(
-            x=0.1, y=0.075,
-            xref="paper", yref="paper",
-            text="First Test Run",
-            showarrow=False,
-            font=dict(family="gill sans", size=12, color="black"),
-        ),
-        dict(
-            x=0.27, y=0.10,
-            xref="paper", yref="paper",
-            text="Detection Pipeline<br>Development",
-            showarrow=False,
-            font=dict(family="gill sans", size=12, color="black"),
-        ),
-        dict(
-            x=0.51, y=0.145,
-            xref="paper", yref="paper",
-            text="Loudness<br>Testing",
-            showarrow=False,
-            font=dict(family="gill sans", size=12, color="black"),
-        ),
-        dict(
-            x=0.78, y=0.25,
-            xref="paper", yref="paper",
-            text="Manual Labeling<br>Begins",
-            showarrow=False,
-            font=dict(family="gill sans", size=12, color="black"),
-        ),
-        dict(
-            x=0.82, y=0.67,
-            xref="paper", yref="paper",
-            text="Trough of<br>Disillusionment",
-            showarrow=False,
-            font=dict(family="gill sans", size=12, color="black"),
-        ),
-        dict(
-            x=0.99, y=.99,
-            xref="paper", yref="paper",
-            text="Analysis Begins",
-            showarrow=False,
-            font=dict(family="gill sans", size=12, color="black"),
-        )
+        {
+            "x": 0.1, "y": 0.075,
+            "xref": "paper", "yref": "paper",
+            "text": "First Test Run",
+            "showarrow": False,
+            "font": {"family": "gill sans", "size": 12, "color": "black"},
+        },
+        {
+            "x": 0.27, "y": 0.10,
+            "xref": "paper", "yref": "paper",
+            "text": "Detection Pipeline<br>Development",
+            "showarrow": False,
+            "font": {"family": "gill sans", "size": 12, "color": "black"},
+        },
+        {
+            "x": 0.51, "y": 0.145,
+            "xref": "paper", "yref": "paper",
+            "text": "Loudness<br>Testing",
+            "showarrow": False,
+            "font": {"family": "gill sans", "size": 12, "color": "black"},
+        },
+        {
+            "x": 0.78, "y": 0.25,
+            "xref": "paper", "yref": "paper",
+            "text": "Manual Labeling<br>Begins",
+            "showarrow": False,
+            "font": {"family": "gill sans", "size": 12, "color": "black"},
+        },
+        {
+            "x": 0.82, "y": 0.67,
+            "xref": "paper", "yref": "paper",
+            "text": "Trough of<br>Disillusionment",
+            "showarrow": False,
+            "font": {"family": "gill sans", "size": 12, "color": "black"},
+        },
+        {
+            "x": 0.99, "y": .99,
+            "xref": "paper", "yref": "paper",
+            "text": "Analysis Begins",
+            "showarrow": False,
+            "font": {"family": "gill sans", "size": 12, "color": "black"},
+        }
     ]
 
     fig.update_layout(annotations=annotations)

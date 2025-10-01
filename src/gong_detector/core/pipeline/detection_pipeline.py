@@ -41,19 +41,32 @@ def process_audio_with_yamnet(
     batch_size: int = 4000,
     consolidate_detections: bool = True,
 ) -> tuple[list[tuple[float, float, float]], float, float]:
-    """Process audio file with YAMNet detector.
+    """Process audio with a YAMNet-based classifier and optional post processing.
 
-    Args:
-        temp_audio: Path to temporary audio file
-        threshold: Confidence threshold for detection
-        max_threshold: Maximum confidence threshold for detection (optional)
-        use_version_one: Whether to use the trained classifier for enhanced detection
-        batch_size: Batch size for classifier predictions (larger = faster but more memory)
-        consolidate_detections: Whether to consolidate overlapping detections (default: True)
+    Parameters
+    ----------
+    temp_audio : str
+        Path to the temporary WAV file created for this detection run.
+    threshold : float
+        Confidence threshold that a frame must exceed to be considered a gong strike.
+    max_threshold : float, optional
+        Upper bound for the adaptive confidence threshold. Useful when iterating across
+        multiple passes.
+    use_version_one : bool, default=False
+        When `True`, route embeddings through the trained Random Forest classifier in
+        addition to YAMNet’s native scores.
+    batch_size : int, default=4000
+        Number of embeddings evaluated together. Larger values improve throughput at the
+        cost of memory.
+    consolidate_detections : bool, default=True
+        Collapses overlapping detections after filtering to avoid duplicate timestamps.
 
-    Returns:
-        Tuple of (consolidated_detections, total_duration, max_gong_confidence)
-        Note: detections are automatically consolidated to remove sliding-window overlaps
+    Returns
+    -------
+    tuple[list[tuple[float, float, float]], float, float]
+        Consolidated detections expressed as `(window_start, confidence, display_timestamp)`
+        tuples, the audio duration in seconds, and the maximum class confidence captured
+        during inference.
     """
     # Memory safety check before processing
     try:
@@ -178,10 +191,13 @@ def process_audio_with_yamnet(
 
 
 def create_argument_parser() -> argparse.ArgumentParser:
-    """Create and configure argument parser.
+    """Build the CLI argument parser for single-video detection runs.
 
-    Returns:
-        Configured argument parser
+    Returns
+    -------
+    argparse.ArgumentParser
+        Parser configured with detection, caching, and export options suitable for
+        direct invocation via `python -m gong_detector.core.pipeline.detection_pipeline`.
     """
     parser = argparse.ArgumentParser(
         description="Detect gongs in YouTube videos using YAMNet",
@@ -257,43 +273,41 @@ def detect_from_youtube_comprehensive(
     consolidate_detections: bool = True,
     local_only: bool = False,
 ) -> dict[str, Any]:
-    """Run YouTube gong detection and return comprehensive metadata.
+    """Run the end-to-end detection pipeline for a single YouTube video.
 
-    This function provides a programmatic interface for bulk processing,
-    returning structured data instead of just printing results.
+    Parameters
+    ----------
+    youtube_url : str
+        Public or authenticated YouTube URL pointing to a TBPN episode.
+    threshold : float, default=0.94
+        Minimum class confidence required to emit a gong detection.
+    max_threshold : float, optional
+        Upper confidence bound applied when sweeping detection thresholds.
+    start_time : int, optional
+        Number of seconds to skip before processing, useful for trimming intros.
+    duration : int, optional
+        Length of audio in seconds to analyze; processes the remainder when omitted.
+    should_save_positive_samples : bool, default=False
+        Write trimmed detection windows to the training sample archive when `True`.
+    keep_audio : bool, default=False
+        Preserve the temporary WAV file created during download instead of deleting it.
+    use_version_one : bool, default=False
+        Enable the trained Random Forest classifier on top of YAMNet embeddings.
+    batch_size : int, default=4000
+        Number of embeddings evaluated per batch during classifier inference.
+    consolidate_detections : bool, default=True
+        Merge overlapping detections to reduce duplicate timestamps in the output.
+    local_only : bool, default=False
+        Do not attempt network downloads; require that preprocessed audio already exists
+        in the dual-cache index.
 
-    Audio is automatically cached in both raw and preprocessed formats for efficiency.
-
-    Args:
-        youtube_url: YouTube URL to process
-        threshold: Confidence threshold for detection
-        max_threshold: Maximum confidence threshold for detection (optional)
-        start_time: Start time in seconds (optional)
-        duration: Duration in seconds (optional)
-        should_save_positive_samples: Whether to save detected segments
-        keep_audio: Whether to keep temporary audio file
-        use_version_one: Whether to use the trained classifier for enhanced detection
-        batch_size: Batch size for classifier predictions (larger = faster but more memory)
-        consolidate_detections: Whether to consolidate overlapping detections
-        local_only: Strict offline mode - require local preprocessed audio, never download
-
-    Returns:
-        Dictionary containing all detection metadata:
-        - video_url: Original YouTube URL
-        - video_title: Video title
-        - upload_date: Upload date (YYYYMMDD format)
-        - video_duration: Total video duration in seconds
-        - max_confidence: Maximum confidence score in video
-        - threshold: Detection threshold used
-        - max_threshold: Maximum threshold used (if any)
-        - detections: List of detection tuples
-        - detection_count: Number of detections found
-        - success: Whether processing was successful
-        - error_message: Error message if failed
-        - video_loudness_metrics: Video-level loudness metrics
-        - detection_loudness_metrics: Detection-level loudness metrics
-        - detection_lufs_metrics: Detection-level LUFS metrics
-        - detection_dbtp_metrics: Detection-level True Peak metrics
+    Returns
+    -------
+    dict[str, Any]
+        Structured payload describing the run. Important keys include `success`,
+        `detections`, `video_loudness_metrics`, `detection_lufs_metrics`, and
+        `detection_dbtp_metrics`. When an error occurs, `success` is `False` and
+        `error_message` captures the failure reason.
     """
     # Setup directories
     temp_audio_dir, csv_results_dir = setup_directories()

@@ -19,8 +19,10 @@ logger = logging.getLogger(__name__)
 def get_cookies_path() -> Optional[str]:
     """Get path to cookies file if it exists.
 
-    Returns:
-        Path to cookies file or None if not found
+    Returns
+    -------
+    str | None
+        Path to the cookies file when discovered; otherwise `None`.
     """
     # Common cookie file locations
     cookie_paths = [
@@ -48,16 +50,24 @@ def download_youtube_audio(
 ) -> tuple[str, str, str]:
     """Download audio from YouTube using yt-dlp and extract video metadata.
 
-    Args:
-        url: YouTube URL to download
-        output_template: Template for output filename
-        yt_dlp_options: Additional yt-dlp options to merge
+    Parameters
+    ----------
+    url : str
+        YouTube URL to download.
+    output_template : str
+        Template used by yt-dlp when naming the temporary file.
+    yt_dlp_options : dict, optional
+        Additional yt-dlp options to merge into the configuration.
 
-    Returns:
-        Tuple of (downloaded_file_path, video_title, upload_date)
+    Returns
+    -------
+    tuple[str, str, str]
+        Downloaded file path, video title, and upload date (if available).
 
-    Raises:
-        RuntimeError: If download fails
+    Raises
+    ------
+    RuntimeError
+        Raised when yt-dlp cannot complete the download.
     """
     ydl_opts = {
         "format": "bestaudio/best",
@@ -141,18 +151,28 @@ def download_and_process_youtube_audio(
     This is a high-level function that coordinates downloading with the
     cache management and audio processing modules.
 
-    Args:
-        url: YouTube URL to download
-        output_path: Path for output WAV file
-        start_time: Start time in seconds (optional)
-        duration: Duration in seconds (optional)
-        yt_dlp_options: Additional yt-dlp options to merge
+    Parameters
+    ----------
+    url : str
+        YouTube URL to download.
+    output_path : str
+        Destination path for the processed WAV file.
+    start_time : int, optional
+        Start time in seconds for optional trimming.
+    duration : int, optional
+        Duration in seconds for optional trimming.
+    yt_dlp_options : dict, optional
+        Additional yt-dlp options to merge into the download configuration.
 
-    Returns:
-        Tuple of (audio_path, video_title, upload_date)
+    Returns
+    -------
+    tuple[str, str, str]
+        Tuple containing the processed audio path, video title, and upload date.
 
-    Raises:
-        RuntimeError: If download or conversion fails
+    Raises
+    ------
+    RuntimeError
+        Raised when download or conversion fails.
     """
     logger.info(f"Processing audio from: {url}")
 

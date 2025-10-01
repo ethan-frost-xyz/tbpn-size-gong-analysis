@@ -16,10 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 def setup_directories() -> tuple[str, str]:
-    """Create necessary directories and return paths.
+    """Create required working directories for detection outputs.
 
-    Returns:
-        Tuple of (temp_audio_dir, csv_results_dir)
+    Returns
+    -------
+    tuple[str, str]
+        Pair containing the temporary audio directory and the CSV results directory.
     """
     # Find project root robustly
     current = Path(__file__).resolve().parent
@@ -43,11 +45,14 @@ def setup_directories() -> tuple[str, str]:
 
 
 def cleanup_old_temp_files(temp_dir: str, max_age_hours: int = 24) -> None:
-    """Clean up old temporary audio files.
+    """Delete stale temporary WAV files from previous detection runs.
 
-    Args:
-        temp_dir: Directory containing temp files
-        max_age_hours: Maximum age in hours before cleanup
+    Parameters
+    ----------
+    temp_dir : str
+        Directory that stores intermediate audio artifacts.
+    max_age_hours : int, default=24
+        Age threshold in hours; files older than this value are removed.
     """
     current_time = time.time()
     max_age_seconds = max_age_hours * 3600
@@ -65,12 +70,16 @@ def cleanup_old_temp_files(temp_dir: str, max_age_hours: int = 24) -> None:
 
 
 def create_temp_audio_path(temp_dir: str) -> str:
-    """Create a unique temporary audio file path.
+    """Generate a unique path for a temporary audio artifact.
 
-    Args:
-        temp_dir: Directory for temporary files
+    Parameters
+    ----------
+    temp_dir : str
+        Directory where temporary files should be created.
 
-    Returns:
-        Path to temporary audio file
+    Returns
+    -------
+    str
+        Fully qualified path for a new temporary WAV file.
     """
     return os.path.join(temp_dir, f"temp_youtube_audio_{uuid.uuid4().hex[:8]}.wav")

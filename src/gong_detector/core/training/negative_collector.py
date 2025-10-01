@@ -37,15 +37,23 @@ def find_negative_timestamps(
 ) -> list[float]:
     """Find random timestamps that are not near gong detections.
 
-    Args:
-        waveform: Full audio waveform
-        sample_rate: Audio sample rate
-        num_samples: Number of negative samples to collect
-        gong_detections: List of (window_start, confidence, display_timestamp) tuples
-        min_gap_seconds: Minimum gap from gong detections in seconds
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Full waveform array.
+    sample_rate : int
+        Sample rate of the audio in Hz.
+    num_samples : int
+        Number of negative samples to collect.
+    gong_detections : list[tuple[float, float, float]]
+        Detection tuples `(window_start, confidence, display_timestamp)`.
+    min_gap_seconds : float, default=30.0
+        Minimum separation in seconds from known gong detections.
 
-    Returns:
-        List of timestamps for negative samples
+    Returns
+    -------
+    list[float]
+        Timestamps (seconds) suitable for negative sampling.
     """
     total_duration = len(waveform) / sample_rate
     negative_timestamps = []
@@ -126,15 +134,25 @@ def collect_negative_samples(
 ) -> dict[str, any]:
     """Collect negative samples from a YouTube video.
 
-    Args:
-        youtube_url: YouTube URL to process
-        num_samples: Number of negative samples to collect
-        threshold: Confidence threshold for gong detection
-        max_threshold: Maximum confidence threshold for gong detection
-        keep_audio: Whether to keep temporary audio files
+    Parameters
+    ----------
+    youtube_url : str
+        YouTube URL to process.
+    num_samples : int, default=5
+        Number of negative samples to collect.
+    threshold : float, default=0.4
+        Minimum confidence used to identify gongs that should be avoided.
+    max_threshold : float, optional
+        Upper confidence bound used when screening detections.
+    keep_audio : bool, default=False
+        Preserve the temporary audio file when `True`.
+    cookies_from_browser : str, optional
+        Browser identifier used by yt-dlp to extract authenticated cookies.
 
-    Returns:
-        Dictionary with results including success status and sample count
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary summarizing success, error message (if any), and sample count.
     """
     # Setup directories
     temp_audio_dir, _ = setup_directories()
@@ -277,11 +295,15 @@ def collect_negative_samples(
 def format_time(seconds: float) -> str:
     """Format seconds as HH:MM:SS string.
 
-    Args:
-        seconds: Time in seconds
+    Parameters
+    ----------
+    seconds : float
+        Time in seconds.
 
-    Returns:
-        Formatted time string in HH:MM:SS format
+    Returns
+    -------
+    str
+        Zero-padded HH:MM:SS string.
     """
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)

@@ -1,6 +1,8 @@
-import plotly.graph_objects as go
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+import plotly.graph_objects as go
+
 
 def main():
     # Load data
@@ -26,7 +28,7 @@ def main():
         x=day_data['day_of_week'],
         y=day_data['total_visits'],
         marker_color='#1f78b4',
-        marker_line=dict(width=1, color="black"),
+        marker_line={"width": 1, "color": "black"},
         hoverinfo="none"
     ))
 
@@ -36,28 +38,28 @@ def main():
         xaxis_title="",
         yaxis_title="",
         template="simple_white",
-        font=dict(family="monotype bembo", size=14, color="black"),
+        font={"family": "monotype bembo", "size": 14, "color": "black"},
         width=647.2,
         height=400,
-        margin=dict(l=10, r=10, t=10, b=10),
-        xaxis=dict(
-            showgrid=False,
-            showline=False,
-            zeroline=False,
-            tickfont=dict(size=14)
-        ),
-        yaxis=dict(
-            range=[0, 700],
-            tickmode='array',
-            tickvals=list(range(0, 701, 100)),
-            ticktext=[f"{i}" for i in range(0, 701, 100)],
-            showgrid=False,
-            showline=True,
-            linecolor="black",
-            linewidth=1,
-            zeroline=False,
-            tickfont=dict(size=14)
-        ),
+        margin={"l": 10, "r": 10, "t": 10, "b": 10},
+        xaxis={
+            "showgrid": False,
+            "showline": False,
+            "zeroline": False,
+            "tickfont": {"size": 14}
+        },
+        yaxis={
+            "range": [0, 700],
+            "tickmode": 'array',
+            "tickvals": list(range(0, 701, 100)),
+            "ticktext": [f"{i}" for i in range(0, 701, 100)],
+            "showgrid": False,
+            "showline": True,
+            "linecolor": "black",
+            "linewidth": 1,
+            "zeroline": False,
+            "tickfont": {"size": 14}
+        },
         plot_bgcolor="white",
         paper_bgcolor="white"
     )
@@ -69,7 +71,7 @@ def main():
             y=visits + 0.5,  # Offset above bar
             text=f"{int(visits)}",  # Convert to int for clean display
             showarrow=False,
-            font=dict(family="Gill Sans", size=12, color="black"),
+            font={"family": "Gill Sans", "size": 12, "color": "black"},
             xanchor="center",
             yanchor="bottom"
         )

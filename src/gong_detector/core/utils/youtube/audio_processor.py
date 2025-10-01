@@ -21,14 +21,21 @@ def trim_from_preprocessed(
 ) -> None:
     """Trim audio from preprocessed WAV file.
 
-    Args:
-        preprocessed_path: Path to full preprocessed WAV file
-        output_path: Path for output trimmed WAV file
-        start_time: Start time in seconds (optional)
-        duration: Duration in seconds (optional)
+    Parameters
+    ----------
+    preprocessed_path : str
+        Path to the cached 16 kHz mono WAV file.
+    output_path : str
+        Destination for the trimmed output.
+    start_time : int, optional
+        Start time in seconds for the trimmed segment.
+    duration : int, optional
+        Duration in seconds for the trimmed segment.
 
-    Raises:
-        RuntimeError: If trimming fails
+    Raises
+    ------
+    RuntimeError
+        Raised when ffmpeg fails to trim the audio.
     """
     if not Path(preprocessed_path).exists():
         raise RuntimeError(f"Preprocessed file not found: {preprocessed_path}")
@@ -74,14 +81,21 @@ def convert_and_trim_audio(
 ) -> None:
     """Convert audio to WAV format and optionally trim it.
 
-    Args:
-        input_file: Input audio file path
-        output_path: Output WAV file path
-        start_time: Start time in seconds (optional)
-        duration: Duration in seconds (optional)
+    Parameters
+    ----------
+    input_file : str
+        Source audio or video path.
+    output_path : str
+        Destination for the converted WAV file.
+    start_time : int, optional
+        Start time in seconds for trimming.
+    duration : int, optional
+        Duration in seconds for trimming.
 
-    Raises:
-        subprocess.CalledProcessError: If ffmpeg conversion fails
+    Raises
+    ------
+    subprocess.CalledProcessError
+        Raised when ffmpeg fails to convert or trim the audio.
     """
     cmd = ["ffmpeg", "-i", input_file]
 

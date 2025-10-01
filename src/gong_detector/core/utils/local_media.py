@@ -61,10 +61,12 @@ class LocalMediaIndex:
     """Minimal index for cached local media."""
 
     def __init__(self, base_dir: Path | str = LOCAL_MEDIA_BASE) -> None:
-        """Initialize the index, ensuring directories and loading existing data.
+        """Initialize the index and prepare cache directories.
 
-        Args:
-            base_dir: Base directory for local media cache.
+        Parameters
+        ----------
+        base_dir : pathlib.Path | str, default=LOCAL_MEDIA_BASE
+            Base directory for the dual-cache structure.
         """
         self.base_dir = Path(base_dir)
         self.preprocessed_dir = self.base_dir / "preprocessed"
@@ -141,14 +143,33 @@ def ensure_preprocessed_audio(
     local_only: bool = False,
     index: Optional[LocalMediaIndex] = None,
 ) -> tuple[str, dict[str, Any]]:
-    """Ensure a preprocessed 16kHz mono WAV exists for the given video.
+    """Guarantee that a preprocessed 16 kHz mono WAV exists for the requested video.
 
-    This function implements dual-cache: it ensures both raw and preprocessed
-    audio are cached, then provides the requested audio segment.
+    Parameters
+    ----------
+    video_id : str
+        Identifier parsed from the YouTube URL.
+    url : str
+        Source URL used for cache population and metadata tracking.
+    start : int, optional
+        Optional start time in seconds when a trimmed segment is required.
+    duration : int, optional
+        Optional duration in seconds for trimmed segments.
+    local_only : bool, default=False
+        When `True`, fail instead of downloading if cached audio is missing.
+    index : LocalMediaIndex, optional
+        Existing index instance to reuse; a new one is created when omitted.
 
-    Returns a tuple of (path, metadata_dict). The metadata contains keys that
-    align with LocalMediaEntry fields. If metadata is unavailable (e.g.,
-    running strictly offline), some fields may be empty strings.
+    Returns
+    -------
+    tuple[str, dict[str, Any]]
+        Pair containing the path to the preprocessed (or trimmed) WAV file and the cached
+        metadata dictionary keyed the same way as `LocalMediaEntry`.
+
+    Raises
+    ------
+    RuntimeError
+        Raised when `local_only` is `True` but the requested audio is not cached.
     """
     idx = index or LocalMediaIndex()
 

@@ -29,9 +29,12 @@ class YAMNetGongDetector:
     ) -> None:
         """Initialize the YAMNet gong detector.
 
-        Args:
-            use_trained_classifier: Whether to use the trained classifier for enhanced detection
-            batch_size: Batch size for classifier predictions (larger = faster but more memory)
+        Parameters
+        ----------
+        use_trained_classifier : bool, default=False
+            When `True`, enable the Random Forest classifier that consumes YAMNet embeddings.
+        batch_size : int, default=4000
+            Number of embeddings evaluated per batch during classifier inference.
         """
         # Initialize basic attributes first
         self.model: Optional[hub.KerasLayer] = None
@@ -164,8 +167,10 @@ class YAMNetGongDetector:
     def load_trained_classifier(self) -> None:
         """Load the trained classifier for enhanced gong detection.
 
-        Raises:
-            RuntimeError: If classifier loading fails
+        Raises
+        ------
+        RuntimeError
+            Raised when the classifier assets are missing or cannot be deserialized.
         """
         if not self.use_trained_classifier:
             return
@@ -217,17 +222,25 @@ class YAMNetGongDetector:
         return self.class_names[self.gong_class_index]
 
     def load_and_preprocess_audio(self, audio_path: str) -> tuple[np.ndarray, int]:
-        """Load and preprocess audio file for YAMNet inference.
+        """Load an audio file and convert it to YAMNet-compatible format.
 
-        Args:
-            audio_path: Path to the audio file to process
+        Parameters
+        ----------
+        audio_path : str
+            Path to the audio file that should be analysed.
 
-        Returns:
-            Tuple of (preprocessed_waveform, sample_rate)
+        Returns
+        -------
+        tuple[numpy.ndarray, int]
+            Pair containing the normalized waveform and the sampling rate used during
+            inference.
 
-        Raises:
-            FileNotFoundError: If audio file doesn't exist
-            ValueError: If audio processing fails
+        Raises
+        ------
+        FileNotFoundError
+            Raised when the input file does not exist.
+        ValueError
+            Raised when preprocessing fails for any reason.
         """
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
@@ -295,16 +308,22 @@ class YAMNetGongDetector:
     def run_inference(
         self, waveform: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Run YAMNet inference on audio waveform with memory protection.
+        """Execute YAMNet inference on a waveform with memory safeguards.
 
-        Args:
-            waveform: Audio waveform as numpy array
+        Parameters
+        ----------
+        waveform : numpy.ndarray
+            Normalized mono waveform sampled at `self.target_sample_rate`.
 
-        Returns:
-            Tuple of (scores, embeddings, spectrogram)
+        Returns
+        -------
+        tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+            Scores, embeddings, and the log-mel spectrogram returned by YAMNet.
 
-        Raises:
-            RuntimeError: If model is not loaded or inference fails
+        Raises
+        ------
+        RuntimeError
+            Raised when the model has not been loaded or inference fails.
         """
         if self.model is None:
             raise RuntimeError("Model not loaded. Call load_model() first.")
@@ -472,16 +491,23 @@ class YAMNetGongDetector:
         max_confidence_threshold: Optional[float] = None,
         audio_duration: Optional[float] = None,
     ) -> list[tuple[float, float, float]]:
-        """Detect gong sounds based on YAMNet scores.
+        """Identify gong events directly from YAMNet class scores.
 
-        Args:
-            scores: YAMNet prediction scores array
-            confidence_threshold: Minimum confidence for gong detection
-            max_confidence_threshold: Maximum confidence for gong detection (optional)
-            audio_duration: Total audio duration in seconds (for validation)
+        Parameters
+        ----------
+        scores : numpy.ndarray
+            Matrix of class probabilities returned by YAMNet.
+        confidence_threshold : float, default=0.94
+            Minimum class confidence required to emit a detection.
+        max_confidence_threshold : float, optional
+            Upper bound applied when sweeping thresholds.
+        audio_duration : float, optional
+            Total audio duration in seconds, used to derive hop length when available.
 
-        Returns:
-            List of (window_start, confidence, display_timestamp) tuples for detected gongs
+        Returns
+        -------
+        list[tuple[float, float, float]]
+            Detection tuples `(window_start, confidence, display_timestamp)`.
         """
         if max_confidence_threshold is not None:
             print(
@@ -520,16 +546,28 @@ class YAMNetGongDetector:
         max_confidence_threshold: Optional[float] = None,
         audio_duration: Optional[float] = None,
     ) -> list[tuple[float, float, float]]:
-        """Detect gong sounds using trained classifier on YAMNet embeddings.
+        """Detect gong events using the trained classifier on YAMNet embeddings.
 
-        Args:
-            embeddings: YAMNet embeddings array
-            confidence_threshold: Minimum confidence for gong detection
-            max_confidence_threshold: Maximum confidence for gong detection (optional)
-            audio_duration: Total audio duration in seconds (for validation)
+        Parameters
+        ----------
+        embeddings : numpy.ndarray
+            Embedding matrix output by YAMNet.
+        confidence_threshold : float, default=0.94
+            Minimum classifier probability required to emit a detection.
+        max_confidence_threshold : float, optional
+            Upper bound applied when sweeping thresholds.
+        audio_duration : float, optional
+            Total audio duration in seconds, used to derive hop length when available.
 
-        Returns:
-            List of (window_start, confidence, display_timestamp) tuples for detected gongs
+        Returns
+        -------
+        list[tuple[float, float, float]]
+            Detection tuples `(window_start, confidence, display_timestamp)`.
+
+        Raises
+        ------
+        RuntimeError
+            Raised when the classifier has not been loaded.
         """
         if not self.use_trained_classifier or self.trained_classifier is None:
             raise RuntimeError(
@@ -609,17 +647,21 @@ class YAMNetGongDetector:
     def set_batch_size(self, batch_size: int) -> None:
         """Set the batch size for classifier predictions.
 
-        Args:
-            batch_size: New batch size (larger = faster but more memory)
+        Parameters
+        ----------
+        batch_size : int
+            New batch size. Larger values improve throughput but require more memory.
         """
         self.batch_size = batch_size
         print(f"Batch size set to {batch_size}")
 
     def get_performance_info(self) -> dict:
-        """Get information about current performance configuration.
+        """Return details about the current performance configuration.
 
-        Returns:
-            Dictionary with performance settings
+        Returns
+        -------
+        dict
+            Dictionary describing batch size, device availability, and threading settings.
         """
         gpus = tf.config.list_physical_devices("GPU")
         gpu_details = []
@@ -664,8 +706,10 @@ class YAMNetGongDetector:
     def print_detections(self, detections: list[tuple[float, float, float]]) -> None:
         """Print gong detections in a formatted table with YouTube timestamps.
 
-        Args:
-            detections: List of (window_start, confidence, display_timestamp) tuples to display
+        Parameters
+        ----------
+        detections : list[tuple[float, float, float]]
+            Collection of `(window_start, confidence, display_timestamp)` tuples.
         """
         if not detections:
             print("No gong detections found.")
@@ -691,11 +735,16 @@ class YAMNetGongDetector:
     ) -> pd.DataFrame:
         """Convert detections to a pandas DataFrame.
 
-        Args:
-            detections: List of (window_start, confidence, display_timestamp) tuples
+        Parameters
+        ----------
+        detections : list[tuple[float, float, float]]
+            Collection of `(window_start, confidence, display_timestamp)` tuples.
 
-        Returns:
-            DataFrame with window_start_seconds, youtube_timestamp, and confidence columns
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with `window_start_seconds`, `youtube_timestamp`, and `confidence`
+            columns.
         """
         if not detections:
             return pd.DataFrame(

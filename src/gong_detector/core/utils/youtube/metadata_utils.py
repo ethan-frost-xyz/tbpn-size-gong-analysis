@@ -11,11 +11,15 @@ from datetime import datetime
 def video_id_from_url(url: str) -> str:
     """Extract YouTube video ID from a URL.
 
-    Args:
-        url: YouTube URL to extract video ID from
+    Parameters
+    ----------
+    url : str
+        YouTube URL from which to extract the video identifier.
 
-    Returns:
-        YouTube video ID or empty string if not found
+    Returns
+    -------
+    str
+        Video ID or an empty string when parsing fails.
     """
     # youtu.be/<id>
     match = re.search(r"youtu\.be/([A-Za-z0-9_-]{11})", url)
@@ -38,11 +42,15 @@ def video_id_from_url(url: str) -> str:
 def create_folder_name_from_title(video_title: str) -> str:
     """Create folder name from video title date information.
 
-    Args:
-        video_title: Video title from YouTube (e.g., "TBPN | Monday, July 7th")
+    Parameters
+    ----------
+    video_title : str
+        YouTube video title (for example, "TBPN | Monday, July 7th").
 
-    Returns:
-        Folder name in format tbpn_monday_july_7th
+    Returns
+    -------
+    str
+        Folder name formatted as `tbpn_monday_july_7th` or `tbpn_unknown_date` when parsing fails.
     """
     if not video_title:
         return "tbpn_unknown_date"
@@ -76,11 +84,15 @@ def create_folder_name_from_title(video_title: str) -> str:
 def create_folder_name_from_date(upload_date: str) -> str:
     """Create folder name from YouTube upload date in format tbpn_dayname_month_dayordinal.
 
-    Args:
-        upload_date: Upload date from YouTube (format: YYYYMMDD)
+    Parameters
+    ----------
+    upload_date : str
+        Upload date from YouTube (`YYYYMMDD`).
 
-    Returns:
-        Folder name in format tbpn_monday_june_23rd
+    Returns
+    -------
+    str
+        Folder name formatted as `tbpn_monday_june_23rd` or `tbpn_unknown_date` when parsing fails.
     """
     if not upload_date or len(upload_date) != 8:
         return "tbpn_unknown_date"
@@ -112,11 +124,15 @@ def create_folder_name_from_date(upload_date: str) -> str:
 def sanitize_title_for_folder(title: str) -> str:
     """Convert video title to safe folder name.
 
-    Args:
-        title: Video title from YouTube
+    Parameters
+    ----------
+    title : str
+        YouTube video title.
 
-    Returns:
-        Sanitized folder name safe for filesystem
+    Returns
+    -------
+    str
+        Sanitized folder name safe for filesystem usage.
     """
     # Convert to lowercase
     sanitized = title.lower()

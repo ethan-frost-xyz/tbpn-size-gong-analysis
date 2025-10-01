@@ -28,12 +28,17 @@ def create_manual_detection(
 ) -> list[tuple[float, float, float]]:
     """Create a single manual detection tuple for the save_positive_samples function.
 
-    Args:
-        timestamp: Timestamp in seconds where the gong occurs
-        confidence: Confidence value (default 1.0 for manual detections)
+    Parameters
+    ----------
+    timestamp : float
+        Timestamp in seconds where the gong occurs.
+    confidence : float, default=1.0
+        Confidence assigned to the manual detection.
 
-    Returns:
-        List containing a single detection tuple (window_start, confidence, display_timestamp)
+    Returns
+    -------
+    list[tuple[float, float, float]]
+        List containing a single `(window_start, confidence, display_timestamp)` tuple.
     """
     # For manual detections, window_start and display_timestamp are the same
     return [(timestamp, confidence, timestamp)]
@@ -44,13 +49,19 @@ def process_single_sample(
 ) -> bool:
     """Process a single YouTube video sample.
 
-    Args:
-        youtube_url: YouTube URL to process
-        timestamp: Timestamp in seconds where gong occurs
-        confidence: Confidence value for manual detection
+    Parameters
+    ----------
+    youtube_url : str
+        YouTube URL to process.
+    timestamp : float
+        Timestamp in seconds where the gong occurs.
+    confidence : float, default=1.0
+        Confidence assigned to the manual detection.
 
-    Returns:
-        True if successful, False if error occurred
+    Returns
+    -------
+    bool
+        `True` when the sample is processed successfully, otherwise `False`.
     """
     # Setup directories
     temp_audio_dir, _ = setup_directories()

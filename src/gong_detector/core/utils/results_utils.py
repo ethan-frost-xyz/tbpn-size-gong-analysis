@@ -24,13 +24,17 @@ logger = logging.getLogger(__name__)
 
 
 def format_time(seconds: float) -> str:
-    """Format seconds as HH:MM:SS string.
+    """Render an absolute timestamp in HH:MM:SS notation.
 
-    Args:
-        seconds: Time in seconds
+    Parameters
+    ----------
+    seconds : float
+        Number of seconds elapsed from the start of the recording.
 
-    Returns:
-        Formatted time string in HH:MM:SS format
+    Returns
+    -------
+    str
+        Zero-padded time string (for example, `"01:23:45"`).
     """
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
@@ -39,13 +43,17 @@ def format_time(seconds: float) -> str:
 
 
 def format_time_for_filename(seconds: float) -> str:
-    """Format seconds as HH_MM_SS string for filenames.
+    """Render a timestamp suitable for filenames (HH_MM_SS).
 
-    Args:
-        seconds: Time in seconds
+    Parameters
+    ----------
+    seconds : float
+        Number of seconds elapsed from the start of the recording.
 
-    Returns:
-        Formatted time string in HH_MM_SS format (underscores instead of colons)
+    Returns
+    -------
+    str
+        Timestamp string using underscores in place of colons.
     """
     return format_time(seconds).replace(":", "_")
 
@@ -54,11 +62,14 @@ def print_summary(
     detections: list[tuple[float, float, float]],
     total_duration: float,
 ) -> None:
-    """Print detection summary.
+    """Display an interactive summary of detection results.
 
-    Args:
-        detections: List of (window_start, confidence, display_timestamp) tuples
-        total_duration: Total audio duration in seconds
+    Parameters
+    ----------
+    detections : list[tuple[float, float, float]]
+        Collection of `(window_start, confidence, display_timestamp)` tuples.
+    total_duration : float
+        Total audio duration evaluated, in seconds.
     """
     count = len(detections)
     start_time = format_time(0.0)
@@ -77,12 +88,16 @@ def print_summary(
 def save_results_to_csv(
     detections: list[tuple[float, float, float]], csv_filename: str, csv_dir: str
 ) -> None:
-    """Save detection results to CSV file.
+    """Write detection rows to a CSV in the results directory.
 
-    Args:
-        detections: List of (window_start, confidence, display_timestamp) tuples
-        csv_filename: Name of the CSV file
-        csv_dir: Directory to save CSV files
+    Parameters
+    ----------
+    detections : list[tuple[float, float, float]]
+        Collection of `(window_start, confidence, display_timestamp)` tuples.
+    csv_filename : str
+        Target filename. The `.csv` suffix is appended when missing.
+    csv_dir : str
+        Directory where the CSV should be written.
     """
     if not csv_filename.endswith(".csv"):
         csv_filename += ".csv"
@@ -104,14 +119,20 @@ def save_positive_samples(
     upload_date: str = "",
     video_title: str = "",
 ) -> None:
-    """Save detected gong segments to positive samples folder.
+    """Export trimmed detection segments for manual review or training.
 
-    Args:
-        detections: List of (window_start, confidence, display_timestamp) tuples
-        audio_path: Path to source audio file
-        positive_dir: Base directory for positive samples (will create date-based subfolder)
-        upload_date: YouTube upload date (YYYYMMDD format) for proper folder naming
-        video_title: Video title from YouTube for date-based folder naming
+    Parameters
+    ----------
+    detections : list[tuple[float, float, float]]
+        Collection of `(window_start, confidence, display_timestamp)` tuples.
+    audio_path : str
+        Source WAV file produced during detection.
+    positive_dir : pathlib.Path
+        Root directory for positive samples; date-based folders are added automatically.
+    upload_date : str, default=""
+        Optional `YYYYMMDD` identifier used when deriving folder names.
+    video_title : str, default=""
+        Episode title used to construct readable folder names when available.
     """
     if not detections:
         print("No gong detections to save")
@@ -179,39 +200,42 @@ def consolidate_overlapping_detections(
     detections: list[tuple[float, float, float]],
     consolidation_window: Optional[float] = None,
 ) -> list[tuple[float, float, float]]:
-    """Consolidate overlapping detections using improved clustering algorithm.
+    """Merge detections that represent the same gong event.
 
-    Uses a more robust approach that properly handles overlapping detection windows
-    by clustering detections that are close in time, regardless of processing order.
+    Parameters
+    ----------
+    detections : list[tuple[float, float, float]]
+        Detection tuples `(window_start, confidence, display_timestamp)` sorted by time.
+    consolidation_window : float, optional
+        Time window in seconds used to cluster detections. Defaults to
+        `DEFAULT_CONSOLIDATION_WINDOW` when not provided.
 
-    Args:
-        detections: List of detection tuples in format:
-            (window_start, confidence, display_timestamp)
-            where display_timestamp is used for temporal grouping
-        consolidation_window: Time window in seconds for grouping detections.
-            Detections within this window are considered part of the same
-            gong event. Defaults to DEFAULT_CONSOLIDATION_WINDOW (3.0s)
+    Returns
+    -------
+    list[tuple[float, float, float]]
+        Representative detection tuples, one per consolidated cluster, preserving the
+        highest confidence observation in each group.
 
-    Returns:
-        List of consolidated detection tuples with one detection per gong event,
-        each representing the peak confidence detection from its temporal cluster.
+    Raises
+    ------
+    ValueError
+        Raised when `consolidation_window` is non-positive.
+    TypeError
+        Raised when `detections` does not contain three-element tuples.
 
-    Raises:
-        ValueError: If consolidation_window is negative or zero
-        TypeError: If detections contain invalid tuple structure
-
-    Examples:
-        >>> detections = [
-        ...     (10.0, 0.95, 10.5),  # Gong 1: cluster
-        ...     (10.5, 0.97, 11.0),  # Gong 1: peak
-        ...     (11.0, 0.94, 11.5),  # Gong 1: trailing
-        ...     (20.0, 0.92, 20.5),  # Gong 2: isolated
-        ... ]
-        >>> consolidated = consolidate_overlapping_detections(detections, 3.0)
-        >>> len(consolidated)
-        2
-        >>> consolidated[0][1]  # First detection confidence
-        0.97
+    Examples
+    --------
+    >>> detections = [
+    ...     (10.0, 0.95, 10.5),
+    ...     (10.5, 0.97, 11.0),
+    ...     (11.0, 0.94, 11.5),
+    ...     (20.0, 0.92, 20.5),
+    ... ]
+    >>> consolidated = consolidate_overlapping_detections(detections, 3.0)
+    >>> len(consolidated)
+    2
+    >>> consolidated[0][1]
+    0.97
     """
     if consolidation_window is None:
         consolidation_window = DEFAULT_CONSOLIDATION_WINDOW
@@ -297,12 +321,17 @@ def _merge_connected_clusters(
 ) -> list[list[tuple[float, float, float]]]:
     """Merge clusters that became connected through intermediate detections.
 
-    Args:
-        clusters: List of detection clusters
-        window: Time window for connecting clusters
+    Parameters
+    ----------
+    clusters : list[list[tuple[float, float, float]]]
+        Detection clusters produced by the initial grouping algorithm.
+    window : float
+        Time window in seconds used to determine whether clusters are adjacent.
 
-    Returns:
-        List of merged clusters
+    Returns
+    -------
+    list[list[tuple[float, float, float]]]
+        Updated clusters with indirectly connected groups merged together.
     """
     if len(clusters) <= 1:
         return clusters

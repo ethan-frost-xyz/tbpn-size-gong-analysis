@@ -24,13 +24,17 @@ SILENCE_THRESHOLD_DBFS: float = SILENCE_FLOOR_DBFS + 10  # Silence detection thr
 
 
 def compute_peak_dbfs(waveform: np.ndarray) -> float:
-    """Compute peak dBFS level from a numpy waveform.
+    """Calculate the peak level of a waveform in dBFS.
 
-    Args:
-        waveform: Audio waveform as numpy array, normalized to [-1, 1]
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to the range [-1, 1].
 
-    Returns:
-        Peak dBFS value, or SILENCE_FLOOR_DBFS if waveform is silent
+    Returns
+    -------
+    float
+        Peak dBFS value. Returns `SILENCE_FLOOR_DBFS` for empty or silent inputs.
     """
     if len(waveform) == 0:
         return SILENCE_FLOOR_DBFS
@@ -44,13 +48,17 @@ def compute_peak_dbfs(waveform: np.ndarray) -> float:
 
 
 def compute_rms_dbfs(waveform: np.ndarray) -> float:
-    """Compute RMS dBFS level from a numpy waveform.
+    """Calculate the RMS level of a waveform in dBFS.
 
-    Args:
-        waveform: Audio waveform as numpy array, normalized to [-1, 1]
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to the range [-1, 1].
 
-    Returns:
-        RMS dBFS value, or SILENCE_FLOOR_DBFS if waveform is silent
+    Returns
+    -------
+    float
+        RMS dBFS level. Returns `SILENCE_FLOOR_DBFS` when no meaningful signal exists.
     """
     if len(waveform) == 0:
         return SILENCE_FLOOR_DBFS
@@ -64,13 +72,17 @@ def compute_rms_dbfs(waveform: np.ndarray) -> float:
 
 
 def compute_crest_factor(waveform: np.ndarray) -> float:
-    """Compute crest factor (peak-to-RMS ratio) from a waveform.
+    """Estimate the peak-to-RMS ratio (crest factor) of a waveform.
 
-    Args:
-        waveform: Audio waveform as numpy array, normalized to [-1, 1]
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to the range [-1, 1].
 
-    Returns:
-        Crest factor as linear ratio (1.0 = pure sine, >10 = very peaky)
+    Returns
+    -------
+    float
+        Linear crest factor. Silence returns a neutral value of `1.0`.
     """
     if len(waveform) == 0:
         return 1.0
@@ -87,14 +99,18 @@ def compute_crest_factor(waveform: np.ndarray) -> float:
 
 
 def compute_loudness_metrics(waveform: np.ndarray) -> dict[str, Union[float, bool]]:
-    """Compute comprehensive loudness metrics optimized for clipped gong detection.
+    """Derive peak, RMS, crest factor, and clipping heuristics for a waveform.
 
-    Args:
-        waveform: Audio waveform as numpy array, normalized to [-1, 1]
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to the range [-1, 1].
 
-    Returns:
-        Dictionary with keys: peak_dbfs, rms_dbfs, crest_factor, likely_clipped,
-        peak_amplitude, rms_amplitude
+    Returns
+    -------
+    dict[str, float | bool]
+        Dictionary containing `peak_dbfs`, `rms_dbfs`, `crest_factor`,
+        `likely_clipped`, `peak_amplitude`, and `rms_amplitude`.
     """
     if len(waveform) == 0:
         return {
@@ -149,13 +165,17 @@ def compute_loudness_metrics(waveform: np.ndarray) -> dict[str, Union[float, boo
 
 
 def compute_audio_levels(waveform: np.ndarray) -> tuple[float, float]:
-    """Compute both peak and RMS dBFS levels from a waveform.
+    """Return both peak and RMS levels for a waveform.
 
-    Args:
-        waveform: Audio waveform as numpy array, normalized to [-1, 1]
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to the range [-1, 1].
 
-    Returns:
-        Tuple of (peak_dbfs, rms_dbfs)
+    Returns
+    -------
+    tuple[float, float]
+        Pair containing `(peak_dbfs, rms_dbfs)`.
     """
     if len(waveform) == 0:
         return SILENCE_FLOOR_DBFS, SILENCE_FLOOR_DBFS
@@ -186,17 +206,25 @@ def extract_audio_slice(
     duration_after: float = 5.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
 ) -> np.ndarray:
-    """Extract an audio slice around a specific timestamp.
+    """Extract a padded audio segment around a timestamp.
 
-    Args:
-        waveform: Full audio waveform as numpy array
-        timestamp: Center timestamp in seconds
-        duration_before: Seconds before timestamp to include
-        duration_after: Seconds after timestamp to include
-        sample_rate: Sample rate in Hz
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Full waveform array.
+    timestamp : float
+        Center point in seconds from which to slice.
+    duration_before : float, default=20.0
+        Amount of context to include before the timestamp.
+    duration_after : float, default=5.0
+        Amount of context to include after the timestamp.
+    sample_rate : int, default=DEFAULT_SAMPLE_RATE
+        Sample rate used to translate seconds into samples.
 
-    Returns:
-        Audio slice as numpy array, zero-padded if needed at boundaries
+    Returns
+    -------
+    numpy.ndarray
+        Slice padded with zeros when the requested window falls outside the waveform.
     """
     if len(waveform) == 0:
         return np.array([])
@@ -228,16 +256,23 @@ def get_slice_around_timestamp(
     context_seconds: float = 20.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
 ) -> np.ndarray:
-    """Extract audio slice centered around a timestamp.
+    """Retrieve a symmetric audio slice centered on a timestamp.
 
-    Args:
-        waveform: Full audio waveform as numpy array
-        timestamp: Center timestamp in seconds
-        context_seconds: Total context duration (split equally before/after)
-        sample_rate: Sample rate in Hz
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Full waveform array.
+    timestamp : float
+        Center timestamp in seconds.
+    context_seconds : float, default=20.0
+        Total duration of the slice; distributed equally before and after `timestamp`.
+    sample_rate : int, default=DEFAULT_SAMPLE_RATE
+        Sample rate used to translate seconds into samples.
 
-    Returns:
-        Audio slice as numpy array
+    Returns
+    -------
+    numpy.ndarray
+        Audio slice extracted with zero padding at the boundaries.
     """
     half_context = context_seconds / 2.0
     return extract_audio_slice(
@@ -255,16 +290,23 @@ def analyze_audio_slice_levels(
     context_seconds: float = 20.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
 ) -> tuple[float, float]:
-    """Extract audio slice and compute its dBFS levels.
+    """Compute peak and RMS levels for a contextual audio slice.
 
-    Args:
-        waveform: Full audio waveform as numpy array
-        timestamp: Center timestamp in seconds
-        context_seconds: Context duration around timestamp
-        sample_rate: Sample rate in Hz
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Full waveform array.
+    timestamp : float
+        Center timestamp in seconds.
+    context_seconds : float, default=20.0
+        Total analysis window around the timestamp.
+    sample_rate : int, default=DEFAULT_SAMPLE_RATE
+        Sample rate used for sample conversion.
 
-    Returns:
-        Tuple of (peak_dbfs, rms_dbfs) for the extracted slice
+    Returns
+    -------
+    tuple[float, float]
+        Tuple containing `(peak_dbfs, rms_dbfs)` for the extracted slice.
     """
     audio_slice = get_slice_around_timestamp(
         waveform, timestamp, context_seconds, sample_rate
@@ -276,14 +318,19 @@ def analyze_audio_slice_levels(
 def is_silent(
     waveform: np.ndarray, threshold_dbfs: float = SILENCE_THRESHOLD_DBFS
 ) -> bool:
-    """Check if an audio waveform is effectively silent.
+    """Determine whether a waveform falls below the silence threshold.
 
-    Args:
-        waveform: Audio waveform as numpy array
-        threshold_dbfs: Silence threshold in dBFS (default: -70 dBFS)
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to [-1, 1].
+    threshold_dbfs : float, default=SILENCE_THRESHOLD_DBFS
+        RMS level below which the signal is considered silent.
 
-    Returns:
-        True if audio is below silence threshold
+    Returns
+    -------
+    bool
+        `True` when the RMS level is below `threshold_dbfs`.
     """
     if len(waveform) == 0:
         return True
@@ -301,14 +348,19 @@ def is_silent(
 def normalize_waveform(
     waveform: np.ndarray, target_level_dbfs: float = DEFAULT_TARGET_LEVEL_DBFS
 ) -> np.ndarray:
-    """Normalize waveform to a target peak level in dBFS.
+    """Scale a waveform so its peak matches the desired dBFS level.
 
-    Args:
-        waveform: Audio waveform as numpy array
-        target_level_dbfs: Target peak level in dBFS (default: -3.0 dBFS)
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to [-1, 1].
+    target_level_dbfs : float, default=DEFAULT_TARGET_LEVEL_DBFS
+        Desired peak level expressed in dBFS.
 
-    Returns:
-        Normalized waveform as numpy array
+    Returns
+    -------
+    numpy.ndarray
+        Normalized waveform copied to a new array.
     """
     if len(waveform) == 0:
         return waveform.copy()
@@ -327,14 +379,18 @@ def normalize_waveform(
 
 
 def get_audio_stats(waveform: np.ndarray) -> dict[str, Union[int, float, bool]]:
-    """Get comprehensive audio statistics for a waveform.
+    """Summarize key statistics for a waveform.
 
-    Args:
-        waveform: Audio waveform as numpy array
+    Parameters
+    ----------
+    waveform : numpy.ndarray
+        Audio data normalized to [-1, 1].
 
-    Returns:
-        Dictionary with keys: length, peak_dbfs, rms_dbfs, is_silent,
-        peak_amplitude, rms_amplitude
+    Returns
+    -------
+    dict[str, int | float | bool]
+        Dictionary containing length (samples), `peak_dbfs`, `rms_dbfs`, `is_silent`,
+        `peak_amplitude`, and `rms_amplitude`.
     """
     if len(waveform) == 0:
         return {

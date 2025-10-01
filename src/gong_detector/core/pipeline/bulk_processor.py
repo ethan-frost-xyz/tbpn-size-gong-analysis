@@ -16,13 +16,17 @@ from .detection_pipeline import detect_from_youtube_comprehensive
 
 
 def format_time(seconds: float) -> str:
-    """Format seconds as human-readable time string.
+    """Convert a second count into a concise human-readable label.
 
-    Args:
-        seconds: Time in seconds
+    Parameters
+    ----------
+    seconds : float
+        Duration expressed in seconds.
 
-    Returns:
-        Formatted string like "1h 15m 30s"
+    Returns
+    -------
+    str
+        Time formatted as either `"Xm Ys"` or `"Xh Ym Zs"` depending on length.
     """
     total_seconds = int(seconds)
     hours = total_seconds // 3600
@@ -36,17 +40,24 @@ def format_time(seconds: float) -> str:
 
 
 def read_youtube_links(file_path: Path) -> list[str]:
-    """Read YouTube URLs from text file.
+    """Load a list of YouTube URLs from a manifest file.
 
-    Args:
-        file_path: Path to text file containing YouTube URLs
+    Parameters
+    ----------
+    file_path : pathlib.Path
+        Location of a UTF-8 text file containing one URL per line.
 
-    Returns:
-        List of YouTube URLs
+    Returns
+    -------
+    list[str]
+        All valid YouTube URLs discovered in the file.
 
-    Raises:
-        FileNotFoundError: If the file doesn't exist
-        ValueError: If no valid URLs found
+    Raises
+    ------
+    FileNotFoundError
+        Raised when `file_path` does not exist.
+    ValueError
+        Raised when no usable URLs are detected in the manifest.
     """
     urls = []
 
@@ -71,7 +82,7 @@ def read_youtube_links(file_path: Path) -> list[str]:
 
 
 def main() -> None:
-    """Run bulk YouTube gong detection."""
+    """Run bulk YouTube gong detection from the command line."""
     parser = argparse.ArgumentParser(
         description="Bulk process YouTube URLs for gong detection",
         formatter_class=argparse.RawDescriptionHelpFormatter,
