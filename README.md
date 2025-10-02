@@ -1,6 +1,6 @@
 # TBPN Gong Analysis
 
-TBPN Gong Analysis is a reproducible machine learning pipeline for detecting gong strikes in TBPN episodes. The system downloads or reuses cached video and audio, runs a YAMNet-based classifier augmented with a trained Random Forest, verifies detections through saved artifacts, and exports structured datasets and charts for downstream analysis.
+TBPN Gong Analysis is a reproducible ML pipeline with TensorFlow for detecting gong strikes in TBPN episodes. The system downloads or reuses cached video and audio, runs a YAMNet-based classifier augmented with a trained Random Forest, verifies detections through saved artifacts, and exports structured datasets and charts for downstream analysis.
 
 ## Workflow
 1. Acquire source media from curated YouTube playlists using `yt-dlp`, storing raw downloads plus preprocessed 16 kHz mono WAV files in the local cache.
